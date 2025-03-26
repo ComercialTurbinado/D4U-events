@@ -1,6 +1,6 @@
 import { MongoClient } from 'mongodb';
 
-const MONGODB_URI = "mongodb+srv://comercialturbinado:bm3H1IgSMdgqyS25@d4uevents.cuftzbf.mongodb.net/test?retryWrites=true&w=majority";
+const MONGODB_URI = "mongodb+srv://comercialturbinado:bm3H1IgSMdgqyS25@d4uevents.cuftzbf.mongodb.net/d4uevents?retryWrites=true&w=majority";
 
 const client = new MongoClient(MONGODB_URI);
 
@@ -25,3 +25,4 @@ async function testMongoDB() {
 }
 
 testMongoDB(); 
+
