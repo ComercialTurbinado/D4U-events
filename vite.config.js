@@ -20,9 +20,5 @@ export default defineConfig({
         '.js': 'jsx',
       },
     },
-  },
-  define: {
-    'process.env.VITE_BASE44_APP_ID': JSON.stringify(process.env.VITE_BASE44_APP_ID),
-    'process.env.VITE_BASE44_API_KEY': JSON.stringify(process.env.VITE_BASE44_API_KEY),
   }
 }) 

@@ -17,7 +17,6 @@ Sistema de gerenciamento de eventos desenvolvido com React, Vite e Base44.
 
 - Node.js 18 ou superior
 - npm ou yarn
-- Conta no Base44
 
 ## 🔧 Instalação
 
@@ -32,14 +31,7 @@ cd D4U-events
 npm install
 ```
 
-3. Configure as variáveis de ambiente:
-Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
-```env
-VITE_BASE44_APP_ID=seu_app_id
-VITE_BASE44_API_KEY=sua_api_key
-```
-
-4. Inicie o servidor de desenvolvimento:
+3. Inicie o servidor de desenvolvimento:
 ```bash
 npm run dev
 ```
@@ -69,7 +61,6 @@ src/
 
 ## 🔒 Segurança
 
-- Autenticação via Base44
 - Proteção de rotas
 - Validação de dados com Zod
 
