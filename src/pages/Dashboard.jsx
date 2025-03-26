@@ -358,7 +358,7 @@ export default function Dashboard() {
               {upcomingEvents.map((event) => (
                 <Card key={event.id} className="hover:shadow-md transition-shadow">
                   <CardHeader className="pb-2">
-                    <Badge className={getStatusColor(event.status)} className="mb-2 w-fit">
+                    <Badge className={`${getStatusColor(event.status)} mb-2 w-fit`}>
                       {getStatusLabel(event.status)}
                     </Badge>
                     <CardTitle className="text-lg">{event.name}</CardTitle>

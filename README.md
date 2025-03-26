@@ -1,17 +1,14 @@
 # D4U Events
 
-Sistema de gerenciamento de eventos desenvolvido com React, Vite e Base44.
+Sistema de gerenciamento de eventos desenvolvido com React, Vite e MongoDB.
 
 ## 🚀 Tecnologias
 
-- React 18
+- React
 - Vite
-- Tailwind CSS
-- Base44 (Backend as a Service)
-- Radix UI
-- React Router
-- React Hook Form
-- Zod
+- TailwindCSS
+- MongoDB
+- Mongoose
 
 ## 📋 Pré-requisitos
 
@@ -31,7 +28,12 @@ cd D4U-events
 npm install
 ```
 
-3. Inicie o servidor de desenvolvimento:
+3. Configure as variáveis de ambiente:
+```bash
+MONGODB_URI=sua_uri_do_mongodb
+```
+
+4. Inicie o servidor de desenvolvimento:
 ```bash
 npm run dev
 ```
@@ -40,10 +42,10 @@ npm run dev
 
 ```
 src/
-├── api/           # Configurações e integrações com o Base44
-├── components/    # Componentes reutilizáveis
-├── hooks/         # Custom hooks React
-├── lib/           # Utilitários e configurações
+├── api/           # Configurações e integrações com o MongoDB
+├── components/    # Componentes React reutilizáveis
+├── hooks/         # Custom hooks
+├── lib/           # Bibliotecas e utilitários
 ├── pages/         # Páginas da aplicação
 └── utils/         # Funções utilitárias
 ```

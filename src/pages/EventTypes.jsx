@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { EventType, DefaultTask, DefaultMaterial } from "@/api/entities";
+import { EventType } from "@/api/entities";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, Edit, CheckCircle2, Archive } from "lucide-react";
 import { useNavigate } from "react-router-dom";

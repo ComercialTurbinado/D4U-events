@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { EventTask, Task, DefaultTask } from "@/api/entities";
+import { EventTask, Task } from "@/api/entities";
 import { Button } from "@/components/ui/button";
 import { Plus, Edit, Trash2, CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";

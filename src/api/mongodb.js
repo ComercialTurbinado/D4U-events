@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const MONGODB_URI = "mongodb+srv://comercialturbinado:bm3H1IgSMdgqyS25@d4uevents.cuftzbf.mongodb.net/?retryWrites=true&w=majority";
+const MONGODB_URI = "mongodb+srv://comercialturbinado:bm3H1IgSMdgqyS25@d4uevents.cuftzbf.mongodb.net/test?retryWrites=true&w=majority";
 
 // Conecta ao MongoDB
 export const connectDB = async () => {
@@ -9,7 +9,6 @@ export const connectDB = async () => {
     console.log('MongoDB conectado com sucesso!');
   } catch (error) {
     console.error('Erro ao conectar ao MongoDB:', error);
-    process.exit(1);
   }
 };
 

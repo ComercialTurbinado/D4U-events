@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { EventSupplier, Supplier, DefaultSupplier } from "@/api/entities";
+import { EventSupplier, Supplier } from "@/api/entities";
 import { Button } from "@/components/ui/button";
 import { Plus, Edit, Trash2, CheckSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Event, EventType, EventTask, EventMaterial, EventSupplier, Task, Material, Supplier, DefaultTask, DefaultMaterial, DefaultSupplier } from "@/api/entities";
+import { Event, EventType, EventTask, EventMaterial, EventSupplier, Task, Material, Supplier } from "@/api/entities";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
