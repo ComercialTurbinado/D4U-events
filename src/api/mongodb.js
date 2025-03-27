@@ -1,4 +1,4 @@
-const API_URL = process.env.REACT_APP_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod';
+const API_URL = import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod';
 
 const createEntityOperations = (collection) => ({
   list: async () => {
