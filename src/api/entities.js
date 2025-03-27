@@ -1,39 +1,42 @@
-import {
-  EventTypeOps as EventType,
-  TaskOps as Task,
-  MaterialOps as Material,
-  SupplierOps as Supplier,
-  DepartmentOps as Department,
-  EventOps as Event,
-  EventTaskOps as EventTask,
-  EventMaterialOps as EventMaterial,
-  EventSupplierOps as EventSupplier,
-  TaskCategoryOps as TaskCategory,
-  MaterialCategoryOps as MaterialCategory,
-  SupplierCategoryOps as SupplierCategory,
-  connectDB
-} from './mongodb';
+import { EventTypeOps, TaskOps, MaterialOps, SupplierOps, DepartmentOps, EventOps, EventTaskOps, EventMaterialOps, EventSupplierOps, TaskCategoryOps, MaterialCategoryOps, SupplierCategoryOps } from './mongodb';
 
-// Conecta ao MongoDB quando o arquivo é carregado
-connectDB();
+// Mock entities para desenvolvimento
+export const EventType = EventTypeOps;
 
-// Exporta as entidades
-export {
-  EventType,
-  Task,
-  Material,
-  Supplier,
-  Department,
-  Event,
-  EventTask,
-  EventMaterial,
-  EventSupplier,
-  TaskCategory,
-  MaterialCategory,
-  SupplierCategory
+export const DefaultTask = {
+  list: () => Promise.resolve([]),
+  create: () => Promise.resolve({}),
+  update: () => Promise.resolve({}),
+  delete: () => Promise.resolve({})
 };
 
-// Mock auth (mantido para compatibilidade)
+export const DefaultMaterial = {
+  list: () => Promise.resolve([]),
+  create: () => Promise.resolve({}),
+  update: () => Promise.resolve({}),
+  delete: () => Promise.resolve({})
+};
+
+export const DefaultSupplier = {
+  list: () => Promise.resolve([]),
+  create: () => Promise.resolve({}),
+  update: () => Promise.resolve({}),
+  delete: () => Promise.resolve({})
+};
+
+export const Task = TaskOps;
+export const Material = MaterialOps;
+export const Supplier = SupplierOps;
+export const Department = DepartmentOps;
+export const Event = EventOps;
+export const EventTask = EventTaskOps;
+export const EventMaterial = EventMaterialOps;
+export const EventSupplier = EventSupplierOps;
+export const TaskCategory = TaskCategoryOps;
+export const MaterialCategory = MaterialCategoryOps;
+export const SupplierCategory = SupplierCategoryOps;
+
+// Mock auth
 export const User = {
   login: () => Promise.resolve({}),
   logout: () => Promise.resolve({}),

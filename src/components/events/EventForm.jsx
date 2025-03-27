@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { EventType } from "@/api/entities";
 import { Card } from "@/components/ui/card";
@@ -45,8 +44,10 @@ export default function EventForm({ initialData, onSubmit, onCancel }) {
   const loadEventTypes = async () => {
     setIsLoading(true);
     try {
-      const types = await EventType.filter({ is_active: true });
-      setEventTypes(types);
+      const types = await EventType.list();
+      // Filtra os tipos ativos no lado do cliente
+      const activeTypes = types.filter(type => type.is_active);
+      setEventTypes(activeTypes);
     } catch (error) {
       console.error("Error loading event types:", error);
     } finally {
