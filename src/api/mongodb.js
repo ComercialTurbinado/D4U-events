@@ -66,5 +66,7 @@ export const EventSupplierOps = createEntityOperations('event-suppliers');
 export const TaskCategoryOps = createEntityOperations('task-categories');
 export const MaterialCategoryOps = createEntityOperations('material-categories');
 export const SupplierCategoryOps = createEntityOperations('supplier-categories');
+export const DefaultTaskOps = createEntityOperations('default-tasks');
+export const DefaultMaterialOps = createEntityOperations('default-materials');
 
 export { API_URL, cleanDataForApi }; 
