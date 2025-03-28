@@ -45,61 +45,31 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
   }, [eventId]);
 
   const loadMaterials = async () => {
-    setIsLoading(true);
     try {
-      const eventMaterials = await EventMaterial.filter({ event_id: eventId });
-      setMaterials(eventMaterials);
-      
-      const allMaterials = await Material.list();
-      
-      // Criar mapa de estoque de materiais
-      const stockMap = {};
-      allMaterials.forEach(m => {
-        stockMap[m.id] = {
-          currentStock: m.current_stock || 0,
-          name: m.name,
-          cost: m.initial_purchase_cost ? m.initial_purchase_cost / (m.initial_purchase_quantity || 1) : 0
-        };
-      });
-      setMaterialStock(stockMap);
-      
-      // Inicializar editableQuantities e editableCosts com os valores atuais
-      const quantities = {};
-      const costs = {};
-      eventMaterials.forEach(m => {
-        quantities[m.id] = m.quantity;
-        costs[m.id] = calculateTotalCost(m);
-      });
-      setEditableQuantities(quantities);
-      setEditableCosts(costs);
-      
+      // Carregar materiais do evento
+      const eventMaterials = await EventMaterial.list();
       const eventMaterialIds = eventMaterials
+        .filter(em => em.event_id === eventId)
         .filter(em => em.material_id)
         .map(em => em.material_id);
-      
+
+      // Carregar todos os materiais disponíveis
+      const allMaterials = await Material.list();
       setAvailableMaterials(allMaterials.filter(material => !eventMaterialIds.includes(material.id)));
-      
-      if (eventTypeId) {
-        const defaultMaterials = await DefaultMaterial.filter({ event_type_id: eventTypeId });
-        
-        const enrichedTypeMaterials = await Promise.all(
-          defaultMaterials.map(async (dm) => {
-            const materialDetails = allMaterials.find(m => m.id === dm.material_id);
-            return {
-              ...dm,
-              material_details: materialDetails || null
-            };
-          })
-        );
-        
-        setAvailableTypeMaterials(
-          enrichedTypeMaterials.filter(dm => !eventMaterialIds.includes(dm.material_id))
-        );
-      }
+
+      // Carregar materiais padrão do tipo de evento
+      const defaultMaterials = await DefaultMaterial.list();
+      const enrichedTypeMaterials = defaultMaterials
+        .filter(dm => dm.event_type_id === eventTypeId)
+        .filter(dm => !eventMaterialIds.includes(dm.material_id))
+        .map(dm => ({
+          ...dm,
+          material: allMaterials.find(m => m.id === dm.material_id)
+        }));
+
+      setAvailableTypeMaterials(enrichedTypeMaterials);
     } catch (error) {
       console.error("Error loading materials:", error);
-    } finally {
-      setIsLoading(false);
     }
   };
 

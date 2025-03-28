@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { EventSupplier, Supplier } from "@/api/entities";
+import { EventSupplier, Supplier, DefaultSupplier } from "@/api/entities";
 import { Button } from "@/components/ui/button";
 import { Plus, Edit, Trash2, CheckSquare } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -19,31 +19,57 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
   const [showForm, setShowForm] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState(null);
   const [availableSuppliers, setAvailableSuppliers] = useState([]);
+  const [typeSuppliers, setTypeSuppliers] = useState([]);
 
   useEffect(() => {
     loadSuppliers();
   }, [eventId]);
 
   const loadSuppliers = async () => {
-    setIsLoading(true);
     try {
-      // Load event-specific suppliers
-      const eventSuppliers = await EventSupplier.filter({ event_id: eventId });
-      setSuppliers(eventSuppliers);
-      
-      // Load available template suppliers that could be added
-      const allSuppliers = await Supplier.filter({ is_active: true });
-      
-      // Filter out suppliers already added to the event
+      // Carregar fornecedores do evento
+      const eventSuppliers = await EventSupplier.list();
       const eventSupplierIds = eventSuppliers
-        .filter(es => es.supplier_id) // Only consider suppliers with a reference to template
+        .filter(es => es.event_id === eventId)
+        .filter(es => es.supplier_id)
         .map(es => es.supplier_id);
-      
+
+      // Carregar todos os fornecedores disponíveis
+      const allSuppliers = await Supplier.list();
       setAvailableSuppliers(allSuppliers.filter(supplier => !eventSupplierIds.includes(supplier.id)));
+
+      // Carregar fornecedores padrão do tipo de evento
+      const defaultSuppliers = await DefaultSupplier.list();
+      const enrichedTypeSuppliers = defaultSuppliers
+        .filter(s => s.event_type_id === eventTypeId)
+        .filter(s => !eventSupplierIds.includes(s.supplier_id))
+        .map(s => ({
+          ...s,
+          supplier: allSuppliers.find(sup => sup.id === s.supplier_id)
+        }));
+
+      setTypeSuppliers(enrichedTypeSuppliers);
     } catch (error) {
       console.error("Error loading suppliers:", error);
-    } finally {
-      setIsLoading(false);
+    }
+  };
+
+  const loadDefaultSuppliers = async () => {
+    try {
+      const defaultSuppliers = await DefaultSupplier.list();
+      const allSuppliers = await Supplier.list();
+      
+      const enrichedSuppliers = defaultSuppliers
+        .filter(s => s.event_type_id === eventTypeId)
+        .filter(s => s.supplier_id)
+        .map(s => ({
+          ...s,
+          supplier: allSuppliers.find(as => as.id === s.supplier_id)
+        }));
+
+      setTypeSuppliers(enrichedSuppliers);
+    } catch (error) {
+      console.error("Error loading default suppliers:", error);
     }
   };
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { EventTask, Task } from "@/api/entities";
+import { EventTask, Task, DefaultTask } from "@/api/entities";
 import { Button } from "@/components/ui/button";
 import { Plus, Edit, Trash2, CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -28,45 +28,57 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
   const [editingTask, setEditingTask] = useState(null);
   const [availableTasks, setAvailableTasks] = useState([]);
   const [availableTypeTasks, setAvailableTypeTasks] = useState([]);
+  const [typeTasks, setTypeTasks] = useState([]);
 
   useEffect(() => {
     loadTasks();
   }, [eventId]);
 
   const loadTasks = async () => {
-    setIsLoading(true);
     try {
-      const eventTasks = await EventTask.filter({ event_id: eventId });
-      setTasks(eventTasks);
-      
-      const allTasks = await Task.list();
+      // Carregar tarefas do evento
+      const eventTasks = await EventTask.list();
       const eventTaskIds = eventTasks
+        .filter(et => et.event_id === eventId)
         .filter(et => et.task_id)
         .map(et => et.task_id);
-      
+
+      // Carregar todas as tarefas disponíveis
+      const allTasks = await Task.list();
       setAvailableTasks(allTasks.filter(task => !eventTaskIds.includes(task.id)));
-      
-      if (eventTypeId) {
-        const defaultTasks = await DefaultTask.filter({ event_type_id: eventTypeId });
-        
-        const enrichedTypeTasks = await Promise.all(
-          defaultTasks.map(async (dt) => {
-            const taskDetails = allTasks.find(t => t.id === dt.task_id);
-            return {
-              ...dt,
-              task_details: taskDetails || null
-            };
-          })
-        );
-        
-        setAvailableTypeTasks(
-          enrichedTypeTasks.filter(dt => !eventTaskIds.includes(dt.task_id))
-        );
-      }
+
+      // Carregar tarefas padrão do tipo de evento
+      const defaultTasks = await DefaultTask.list();
+      const enrichedTypeTasks = defaultTasks
+        .filter(dt => dt.event_type_id === eventTypeId)
+        .filter(dt => !eventTaskIds.includes(dt.task_id))
+        .map(dt => ({
+          ...dt,
+          task: allTasks.find(t => t.id === dt.task_id)
+        }));
+
+      setTypeTasks(enrichedTypeTasks);
     } catch (error) {
       console.error("Error loading tasks:", error);
-    } finally {
-      setIsLoading(false);
+    }
+  };
+
+  const loadDefaultTasks = async () => {
+    try {
+      const defaultTasks = await DefaultTask.list();
+      const allTasks = await Task.list();
+      
+      const enrichedTasks = defaultTasks
+        .filter(t => t.event_type_id === eventTypeId)
+        .filter(t => t.task_id)
+        .map(t => ({
+          ...t,
+          task: allTasks.find(at => at.id === t.task_id)
+        }));
+
+      setTypeTasks(enrichedTasks);
+    } catch (error) {
+      console.error("Error loading default tasks:", error);
     }
   };
 

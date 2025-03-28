@@ -58,24 +58,26 @@ export default function EventDetailsPage() {
   const calculateProgress = async () => {
     try {
       // Calcular progresso das tarefas
-      const tasks = await EventTask.filter({ event_id: eventId });
-      const completedTasks = tasks.filter(task => task.status === "completed").length;
-      const taskPercentage = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
+      const tasks = await EventTask.list();
+      const eventTasks = tasks.filter(task => task.event_id === eventId);
+      const completedTasks = eventTasks.filter(task => task.status === "completed").length;
+      const taskPercentage = eventTasks.length > 0 ? Math.round((completedTasks / eventTasks.length) * 100) : 0;
       
       // Calcular progresso dos materiais
-      const materials = await EventMaterial.filter({ event_id: eventId });
-      const receivedMaterials = materials.filter(material => material.status === "received").length;
-      const materialPercentage = materials.length > 0 ? Math.round((receivedMaterials / materials.length) * 100) : 0;
+      const materials = await EventMaterial.list();
+      const eventMaterials = materials.filter(material => material.event_id === eventId);
+      const receivedMaterials = eventMaterials.filter(material => material.status === "received").length;
+      const materialPercentage = eventMaterials.length > 0 ? Math.round((receivedMaterials / eventMaterials.length) * 100) : 0;
       
       setProgress({
         tasks: {
           completed: completedTasks,
-          total: tasks.length,
+          total: eventTasks.length,
           percentage: taskPercentage
         },
         materials: {
           completed: receivedMaterials,
-          total: materials.length,
+          total: eventMaterials.length,
           percentage: materialPercentage
         }
       });
