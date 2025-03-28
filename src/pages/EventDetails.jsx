@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Event, EventType, EventTask, EventMaterial, EventSupplier, Task, Material, Supplier } from "@/api/entities";
 import { Button } from "@/components/ui/button";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,9 +25,7 @@ export default function EventDetailsPage() {
     materials: { completed: 0, total: 0, percentage: 0 }
   });
   const navigate = useNavigate();
-  
-  const urlParams = new URLSearchParams(window.location.search);
-  const eventId = urlParams.get("id");
+  const { id: eventId } = useParams();
 
   useEffect(() => {
     if (eventId) {

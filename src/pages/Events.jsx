@@ -54,7 +54,7 @@ export default function EventsPage() {
   };
 
   const handleViewEvent = (eventId) => {
-    navigate(createPageUrl(`EventDetails?id=${eventId}`));
+    navigate(createPageUrl(`events/${eventId}`));
   };
 
   return (

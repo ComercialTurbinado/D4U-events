@@ -409,7 +409,7 @@ export default function Dashboard() {
                     <Button
                       variant="outline"
                       className="w-full"
-                      onClick={() => navigate(createPageUrl(`EventDetails?id=${event.id}`))}
+                      onClick={() => navigate(createPageUrl(`events/${event.id}`))}
                     >
                       Ver detalhes <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
@@ -477,7 +477,7 @@ export default function Dashboard() {
                     <Button
                       variant="outline"
                       className="w-full"
-                      onClick={() => navigate(createPageUrl(`EventDetails?id=${event.id}`))}
+                      onClick={() => navigate(createPageUrl(`events/${event.id}`))}
                     >
                       Ver detalhes <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
