@@ -51,6 +51,23 @@ const createEntityOperations = (collection) => ({
     if (!response.ok) throw new Error('Erro ao deletar documento');
     return response.json();
   },
+
+  bulkCreate: async (items) => {
+    const promises = items.map(item => {
+      const cleanData = cleanDataForApi(item);
+      return fetch(`${API_URL}/${collection}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(cleanData),
+      }).then(response => {
+        if (!response.ok) throw new Error('Erro ao criar documento');
+        return response.json();
+      });
+    });
+    return Promise.all(promises);
+  }
 });
 
 // Exporta as operações para cada entidade

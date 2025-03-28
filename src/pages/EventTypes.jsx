@@ -23,85 +23,97 @@ export default function EventTypesPage() {
   };
 
   const handleCreateType = async (typeData) => {
-    const eventType = await EventType.create({
-      name: typeData.name,
-      description: typeData.description,
-      country: typeData.country,
-      cost: typeData.cost,
-      is_active: true
-    });
-    
-    // Create default tasks
-    if (typeData.defaultTasks && typeData.defaultTasks.length > 0) {
-      await DefaultTask.bulkCreate(
-        typeData.defaultTasks.map(task => ({
+    try {
+      // Criar o tipo de evento
+      const eventType = await EventType.create({
+        name: typeData.name,
+        description: typeData.description,
+        country: typeData.country,
+        cost: typeData.cost,
+        is_active: true
+      });
+      
+      // Criar tarefas padrão
+      if (typeData.defaultTasks && typeData.defaultTasks.length > 0) {
+        const tasksToCreate = typeData.defaultTasks.map(task => ({
           event_type_id: eventType.id,
           task_id: task.task_id,
-          days_before_event: task.days_before_event
-        }))
-      );
-    }
+          days_before_event: task.days_before_event || 7,
+          is_active: true
+        }));
+        await DefaultTask.bulkCreate(tasksToCreate);
+      }
 
-    // Create default materials
-    if (typeData.defaultMaterials && typeData.defaultMaterials.length > 0) {
-      await DefaultMaterial.bulkCreate(
-        typeData.defaultMaterials.map(material => ({
+      // Criar materiais padrão
+      if (typeData.defaultMaterials && typeData.defaultMaterials.length > 0) {
+        const materialsToCreate = typeData.defaultMaterials.map(material => ({
           event_type_id: eventType.id,
           material_id: material.material_id,
-          default_quantity: material.default_quantity
-        }))
-      );
-    }
+          default_quantity: material.default_quantity || 1,
+          is_active: true
+        }));
+        await DefaultMaterial.bulkCreate(materialsToCreate);
+      }
 
-    setShowForm(false);
-    loadEventTypes();
+      setShowForm(false);
+      loadEventTypes();
+    } catch (error) {
+      console.error("Error creating event type:", error);
+      alert("Erro ao criar o tipo de evento. Por favor, tente novamente.");
+    }
   };
 
   const handleUpdateType = async (typeId, typeData) => {
-    await EventType.update(typeId, {
-      name: typeData.name,
-      description: typeData.description,
-      country: typeData.country,
-      cost: typeData.cost,
-      is_active: typeData.is_active
-    });
-    
-    // Handle related items
-    const allTasks = await DefaultTask.list();
-    const allMaterials = await DefaultMaterial.list();
-    
-    const oldTasks = allTasks.filter(task => task.event_type_id === typeId);
-    const oldMaterials = allMaterials.filter(material => material.event_type_id === typeId);
+    try {
+      // Atualizar o tipo de evento
+      await EventType.update(typeId, {
+        name: typeData.name,
+        description: typeData.description,
+        country: typeData.country,
+        cost: typeData.cost,
+        is_active: typeData.is_active
+      });
+      
+      // Carregar e excluir registros antigos
+      const allTasks = await DefaultTask.list();
+      const allMaterials = await DefaultMaterial.list();
+      
+      const oldTasks = allTasks.filter(task => task.event_type_id === typeId);
+      const oldMaterials = allMaterials.filter(material => material.event_type_id === typeId);
 
-    // Delete old records
-    for (const task of oldTasks) await DefaultTask.delete(task.id);
-    for (const material of oldMaterials) await DefaultMaterial.delete(material.id);
+      // Excluir registros antigos
+      for (const task of oldTasks) await DefaultTask.delete(task.id);
+      for (const material of oldMaterials) await DefaultMaterial.delete(material.id);
 
-    // Create new default tasks
-    if (typeData.defaultTasks && typeData.defaultTasks.length > 0) {
-      await DefaultTask.bulkCreate(
-        typeData.defaultTasks.map(task => ({
+      // Criar novas tarefas padrão
+      if (typeData.defaultTasks && typeData.defaultTasks.length > 0) {
+        const tasksToCreate = typeData.defaultTasks.map(task => ({
           event_type_id: typeId,
           task_id: task.task_id,
-          days_before_event: task.days_before_event
-        }))
-      );
-    }
+          days_before_event: task.days_before_event || 7,
+          is_active: true
+        }));
+        await DefaultTask.bulkCreate(tasksToCreate);
+      }
 
-    // Create new default materials
-    if (typeData.defaultMaterials && typeData.defaultMaterials.length > 0) {
-      await DefaultMaterial.bulkCreate(
-        typeData.defaultMaterials.map(material => ({
+      // Criar novos materiais padrão
+      if (typeData.defaultMaterials && typeData.defaultMaterials.length > 0) {
+        const materialsToCreate = typeData.defaultMaterials.map(material => ({
           event_type_id: typeId,
           material_id: material.material_id,
-          default_quantity: material.default_quantity
-        }))
-      );
-    }
+          default_quantity: material.default_quantity || 1,
+          is_active: true
+        }));
+        await DefaultMaterial.bulkCreate(materialsToCreate);
+      }
 
-    setEditingType(null);
-    setShowForm(false);
-    loadEventTypes();
+      setEditingType(null);
+      setShowForm(false);
+      loadEventTypes();
+    } catch (error) {
+      console.error("Error updating event type:", error);
+      alert("Erro ao atualizar o tipo de evento. Por favor, tente novamente.");
+    }
   };
 
   const handleEdit = async (eventType) => {
