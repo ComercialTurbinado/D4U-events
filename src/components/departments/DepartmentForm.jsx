@@ -7,18 +7,19 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 
 export default function DepartmentForm({ initialData, onSubmit, onCancel }) {
-  const [formData, setFormData] = useState(initialData || {
+  const [formData, setFormData] = useState({
     name: "",
     description: "",
     manager: "",
     email: "",
-    is_active: true
+    is_active: true,
+    ...initialData
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (initialData) {
-      onSubmit(initialData.id, formData);
+      onSubmit(formData.id, formData);
     } else {
       onSubmit(formData);
     }

@@ -9,11 +9,12 @@ import { AlertCircle } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 export default function CategoryForm({ initialData, onSubmit, onCancel, entityType }) {
-  const [formData, setFormData] = useState(initialData || {
+  const [formData, setFormData] = useState({
     name: "",
     description: "",
     color: "#3b82f6", // Default blue color
-    is_active: true
+    is_active: true,
+    ...initialData // Isso vai incluir o id se estiver editando
   });
   
   const [formError, setFormError] = useState(null);
@@ -36,7 +37,7 @@ export default function CategoryForm({ initialData, onSubmit, onCancel, entityTy
     }
     
     if (initialData) {
-      onSubmit(initialData.id, formData);
+      onSubmit(formData.id, formData);
     } else {
       onSubmit(formData);
     }
