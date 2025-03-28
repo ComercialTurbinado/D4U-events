@@ -73,7 +73,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
       <Card className="p-6">
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {availableTasks && availableTasks.length > 0 && (
+            {!initialData && availableTasks && availableTasks.length > 0 && (
               <div>
                 <Label htmlFor="task_template">Tarefa Base (Opcional)</Label>
                 <Select
@@ -103,6 +103,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                 onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="Nome da tarefa"
                 required
+                disabled={initialData}
               />
             </div>
           </div>
@@ -115,6 +116,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
               onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
               placeholder="Descreva a tarefa..."
               className="h-24"
+              disabled={initialData}
             />
           </div>
 
@@ -206,20 +208,24 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
               value={formData.notes}
               onChange={e => setFormData(prev => ({ ...prev, notes: e.target.value }))}
               placeholder="Observações adicionais..."
-              className="h-20"
+              className="h-24"
             />
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+            >
+              Cancelar
+            </Button>
+            <Button type="submit">
+              {initialData ? "Atualizar" : "Criar"} Tarefa
+            </Button>
           </div>
         </div>
       </Card>
-
-      <div className="flex justify-end gap-3">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Cancelar
-        </Button>
-        <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-          {initialData ? "Salvar Alterações" : "Adicionar Tarefa"}
-        </Button>
-      </div>
     </form>
   );
 }

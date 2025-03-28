@@ -43,22 +43,43 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
       const eventTasks = await EventTask.list();
       console.log('EventTasksTab - Todas as tarefas:', eventTasks);
       
-      // Filtrar tarefas do evento atual
-      const tasksForEvent = eventTasks.filter(et => {
-        const eventIdMatches = et.event_id === eventId;
-        console.log('EventTasksTab - Comparando:', {
-          taskEventId: et.event_id,
-          currentEventId: eventId,
-          matches: eventIdMatches
-        });
-        return eventIdMatches;
-      });
-      console.log('EventTasksTab - Tarefas filtradas para o evento:', tasksForEvent);
-      
-      // Carregar todas as tarefas base disponíveis
+      // Carregar todas as tarefas base
       const allTasks = await Task.list();
       console.log('EventTasksTab - Todas as tarefas base:', allTasks);
       setAvailableTasks(allTasks);
+      
+      // Filtrar e enriquecer tarefas do evento atual
+      const tasksForEvent = eventTasks
+        .filter(et => {
+          const eventIdMatches = et.event_id === eventId;
+          console.log('EventTasksTab - Comparando:', {
+            taskEventId: et.event_id,
+            currentEventId: eventId,
+            matches: eventIdMatches
+          });
+          return eventIdMatches;
+        })
+        .map(et => {
+          // Buscar detalhes da tarefa base
+          const baseTask = allTasks.find(t => t.id === et.task_id);
+          console.log('EventTasksTab - Enriquecendo tarefa:', {
+            eventTask: et,
+            baseTask
+          });
+          
+          // Combinar dados da tarefa do evento com a tarefa base
+          return {
+            ...et,
+            name: baseTask?.name || "Tarefa não encontrada",
+            description: baseTask?.description || "",
+            responsible_role: et.assigned_to || baseTask?.responsible_role || "",
+            category: baseTask?.category || "other",
+            priority: baseTask?.priority || "medium",
+            estimated_hours: baseTask?.estimated_hours || 0
+          };
+        });
+      
+      console.log('EventTasksTab - Tarefas enriquecidas:', tasksForEvent);
       
       // Se tiver tipo de evento, carregar tarefas padrão
       if (eventTypeId) {
@@ -164,7 +185,14 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
   };
 
   const handleEdit = (task) => {
-    setEditingTask(task);
+    // Formatar dados para o formulário
+    const formData = {
+      ...task,
+      responsible_role: task.assigned_to || task.responsible_role || "",
+      task_id: task.task_id || null
+    };
+    console.log('EventTasksTab - Dados formatados para edição:', formData);
+    setEditingTask(formData);
     setShowForm(true);
   };
 
