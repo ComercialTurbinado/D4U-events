@@ -22,15 +22,21 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
   const [typeSuppliers, setTypeSuppliers] = useState([]);
 
   useEffect(() => {
-    loadSuppliers();
+    if (eventId) {
+      loadSuppliers();
+    }
   }, [eventId]);
 
   const loadSuppliers = async () => {
+    if (!eventId) return;
+    
     setIsLoading(true);
     try {
       // Carregar fornecedores do evento
       const eventSuppliers = await EventSupplier.list();
+      console.log('Fornecedores do evento:', eventSuppliers);
       const suppliersForEvent = eventSuppliers.filter(es => es.event_id === eventId);
+      console.log('Fornecedores filtrados:', suppliersForEvent);
       setSuppliers(suppliersForEvent);
 
       // Carregar todos os fornecedores disponíveis
@@ -38,41 +44,54 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
       setAvailableSuppliers(allSuppliers);
 
       // Carregar fornecedores padrão do tipo de evento
-      const defaultSuppliers = await DefaultSupplier.list();
-      const enrichedTypeSuppliers = defaultSuppliers
-        .filter(s => s.event_type_id === eventTypeId)
-        .map(s => ({
-          ...s,
-          supplier: allSuppliers.find(sup => sup.id === s.supplier_id)
-        }));
-
-      setTypeSuppliers(enrichedTypeSuppliers);
+      if (eventTypeId) {
+        const defaultSuppliers = await DefaultSupplier.list();
+        const enrichedTypeSuppliers = defaultSuppliers
+          .filter(s => s.event_type_id === eventTypeId)
+          .map(s => ({
+            ...s,
+            supplier: allSuppliers.find(sup => sup.id === s.supplier_id)
+          }));
+        setTypeSuppliers(enrichedTypeSuppliers);
+      }
     } catch (error) {
-      console.error("Error loading suppliers:", error);
+      console.error("Erro ao carregar fornecedores:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleCreateSupplier = async (supplierData) => {
-    await EventSupplier.create({
-      ...supplierData,
-      event_id: eventId
-    });
-    setShowForm(false);
-    loadSuppliers();
+    try {
+      await EventSupplier.create({
+        ...supplierData,
+        event_id: eventId
+      });
+      setShowForm(false);
+      loadSuppliers();
+    } catch (error) {
+      console.error("Erro ao criar fornecedor:", error);
+    }
   };
 
   const handleUpdateSupplier = async (id, supplierData) => {
-    await EventSupplier.update(id, supplierData);
-    setShowForm(false);
-    setEditingSupplier(null);
-    loadSuppliers();
+    try {
+      await EventSupplier.update(id, supplierData);
+      setShowForm(false);
+      setEditingSupplier(null);
+      loadSuppliers();
+    } catch (error) {
+      console.error("Erro ao atualizar fornecedor:", error);
+    }
   };
 
   const handleDeleteSupplier = async (id) => {
-    await EventSupplier.delete(id);
-    loadSuppliers();
+    try {
+      await EventSupplier.delete(id);
+      loadSuppliers();
+    } catch (error) {
+      console.error("Erro ao deletar fornecedor:", error);
+    }
   };
 
   const handleEdit = (supplier) => {
@@ -119,7 +138,7 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
       
       loadSuppliers();
     } catch (error) {
-      console.error("Error importing suppliers:", error);
+      console.error("Erro ao importar fornecedores:", error);
     } finally {
       setIsLoading(false);
     }
@@ -174,12 +193,22 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">Fornecedores do Evento</h2>
             <div className="flex gap-2">
+              {eventTypeId && typeSuppliers.length > 0 && (
+                <Button
+                  onClick={handleImportFromEventType}
+                  className="bg-green-600 hover:bg-green-700"
+                  disabled={isLoading}
+                >
+                  Importar do Tipo de Evento
+                </Button>
+              )}
               <Button 
                 onClick={() => {
                   setEditingSupplier(null);
                   setShowForm(true);
                 }}
                 className="bg-blue-600 hover:bg-blue-700"
+                disabled={isLoading}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Novo Fornecedor
