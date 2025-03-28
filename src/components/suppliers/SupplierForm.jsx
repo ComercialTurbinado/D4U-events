@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { SupplierCategory } from "@/api/entities";
 import { Card } from "@/components/ui/card";
@@ -40,8 +39,10 @@ export default function SupplierForm({ initialData, onSubmit, onCancel }) {
   const loadCategories = async () => {
     setIsLoadingCategories(true);
     try {
-      const supplierCategories = await SupplierCategory.filter({ is_active: true });
-      setCategories(supplierCategories);
+      const supplierCategories = await SupplierCategory.list();
+      // Filtra as categorias ativas no lado do cliente
+      const activeCategories = supplierCategories.filter(category => category.is_active);
+      setCategories(activeCategories);
     } catch (error) {
       console.error("Error loading supplier categories:", error);
     } finally {
