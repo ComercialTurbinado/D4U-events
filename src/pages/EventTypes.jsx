@@ -67,8 +67,11 @@ export default function EventTypesPage() {
     });
     
     // Handle related items
-    const oldTasks = await DefaultTask.filter({ event_type_id: typeId });
-    const oldMaterials = await DefaultMaterial.filter({ event_type_id: typeId });
+    const allTasks = await DefaultTask.list();
+    const allMaterials = await DefaultMaterial.list();
+    
+    const oldTasks = allTasks.filter(task => task.event_type_id === typeId);
+    const oldMaterials = allMaterials.filter(material => material.event_type_id === typeId);
 
     // Delete old records
     for (const task of oldTasks) await DefaultTask.delete(task.id);
@@ -104,8 +107,11 @@ export default function EventTypesPage() {
   const handleEdit = async (eventType) => {
     try {
       // Load related data
-      const tasks = await DefaultTask.filter({ event_type_id: eventType.id });
-      const materials = await DefaultMaterial.filter({ event_type_id: eventType.id });
+      const allTasks = await DefaultTask.list();
+      const allMaterials = await DefaultMaterial.list();
+      
+      const tasks = allTasks.filter(task => task.event_type_id === eventType.id);
+      const materials = allMaterials.filter(material => material.event_type_id === eventType.id);
 
       setEditingType({
         ...eventType,
