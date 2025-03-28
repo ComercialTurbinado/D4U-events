@@ -1,4 +1,4 @@
-import { EventTypeOps, TaskOps, MaterialOps, SupplierOps, DepartmentOps, EventOps, EventTaskOps, EventMaterialOps, EventSupplierOps, TaskCategoryOps, MaterialCategoryOps, SupplierCategoryOps, DefaultTaskOps, DefaultMaterialOps } from './mongodb';
+import { EventTypeOps, TaskOps, MaterialOps, SupplierOps, DepartmentOps, EventOps, EventTaskOps, EventMaterialOps, EventSupplierOps, TaskCategoryOps, MaterialCategoryOps, SupplierCategoryOps, DefaultTaskOps, DefaultMaterialOps, DefaultSupplierOps } from './mongodb';
 import { API_URL, cleanDataForApi } from './mongodb';
 
 // Mock entities para desenvolvimento
@@ -6,13 +6,7 @@ export const EventType = EventTypeOps;
 
 export const DefaultTask = DefaultTaskOps;
 export const DefaultMaterial = DefaultMaterialOps;
-
-export const DefaultSupplier = {
-  list: () => Promise.resolve([]),
-  create: () => Promise.resolve({}),
-  update: () => Promise.resolve({}),
-  delete: () => Promise.resolve({})
-};
+export const DefaultSupplier = DefaultSupplierOps;
 
 export const Task = TaskOps;
 export const Material = MaterialOps;

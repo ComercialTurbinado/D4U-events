@@ -48,7 +48,7 @@ export default function Dashboard() {
     setIsLoading(true);
     try {
       // Get all events
-      const eventData = await Event.list("start_date", 50);
+      const eventData = await Event.list();
       setEvents(eventData);
       
       // Calculate progress for each event
