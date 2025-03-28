@@ -16,6 +16,9 @@ import EventMaterialsTab from "../components/event-details/EventMaterialsTab";
 import EventSuppliersTab from "../components/event-details/EventSuppliersTab";
 
 export default function EventDetailsPage() {
+  const { id } = useParams();
+  console.log('ID do evento da URL:', id);
+  
   const [event, setEvent] = useState(null);
   const [eventType, setEventType] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -25,29 +28,31 @@ export default function EventDetailsPage() {
     materials: { completed: 0, total: 0, percentage: 0 }
   });
   const navigate = useNavigate();
-  const { id: eventId } = useParams();
 
   useEffect(() => {
-    if (eventId) {
+    if (id) {
+      console.log('Event ID no EventDetails:', id);
       loadEventData();
       calculateProgress();
     } else {
       navigate(createPageUrl("Events"));
     }
-  }, [eventId, activeTab]);
+  }, [id, activeTab]);
 
   const loadEventData = async () => {
-    setIsLoading(true);
     try {
-      const eventData = await Event.get(eventId);
+      setIsLoading(true);
+      const eventData = await Event.get(id);
+      console.log('Dados do evento carregados:', eventData);
       setEvent(eventData);
       
-      if (eventData.event_type_id) {
-        const typeData = await EventType.get(eventData.event_type_id);
-        setEventType(typeData);
+      if (eventData?.event_type_id) {
+        const eventTypeData = await EventType.get(eventData.event_type_id);
+        console.log('Dados do tipo de evento:', eventTypeData);
+        setEventType(eventTypeData);
       }
     } catch (error) {
-      console.error("Error loading event data:", error);
+      console.error('Erro ao carregar dados do evento:', error);
     } finally {
       setIsLoading(false);
     }
@@ -57,13 +62,13 @@ export default function EventDetailsPage() {
     try {
       // Calcular progresso das tarefas
       const tasks = await EventTask.list();
-      const eventTasks = tasks.filter(task => task.event_id === eventId);
+      const eventTasks = tasks.filter(task => task.event_id === id);
       const completedTasks = eventTasks.filter(task => task.status === "completed").length;
       const taskPercentage = eventTasks.length > 0 ? Math.round((completedTasks / eventTasks.length) * 100) : 0;
       
       // Calcular progresso dos materiais
       const materials = await EventMaterial.list();
-      const eventMaterials = materials.filter(material => material.event_id === eventId);
+      const eventMaterials = materials.filter(material => material.event_id === id);
       const receivedMaterials = eventMaterials.filter(material => material.status === "received").length;
       const materialPercentage = eventMaterials.length > 0 ? Math.round((receivedMaterials / eventMaterials.length) * 100) : 0;
       
@@ -255,7 +260,7 @@ export default function EventDetailsPage() {
 
       <div className="flex justify-end mb-4">
         <Button
-          onClick={() => navigate(createPageUrl(`Events?edit=${eventId}`))}
+          onClick={() => navigate(createPageUrl(`Events?edit=${id}`))}
           className="bg-blue-600 hover:bg-blue-700"
         >
           <Edit className="w-4 h-4 mr-2" />
@@ -277,15 +282,15 @@ export default function EventDetailsPage() {
         </TabsList>
         
         <TabsContent value="tasks">
-          <EventTasksTab eventId={eventId} eventTypeId={event?.event_type_id} />
+          <EventTasksTab eventId={id} eventTypeId={event?.event_type_id} />
         </TabsContent>
         
         <TabsContent value="materials">
-          <EventMaterialsTab eventId={eventId} eventTypeId={event?.event_type_id} />
+          <EventMaterialsTab eventId={id} eventTypeId={event?.event_type_id} />
         </TabsContent>
         
         <TabsContent value="suppliers">
-          <EventSuppliersTab eventId={eventId} eventTypeId={event?.event_type_id} />
+          <EventSuppliersTab eventId={id} eventTypeId={event?.event_type_id} />
         </TabsContent>
       </Tabs>
     </div>

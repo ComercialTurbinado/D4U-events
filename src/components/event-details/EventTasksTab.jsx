@@ -35,29 +35,28 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
   }, [eventId]);
 
   const loadTasks = async () => {
-    setIsLoading(true);
     try {
-      // Carregar tarefas do evento
+      setIsLoading(true);
       const eventTasks = await EventTask.list();
-      const tasksForEvent = eventTasks.filter(et => et.event_id === eventId);
+      console.log('Todas as tarefas:', eventTasks);
+      
+      const tasksForEvent = eventTasks.filter(et => {
+        console.log('Comparando:', et.event_id, eventId);
+        return et.event_id === eventId;
+      });
+      console.log('Tarefas filtradas para o evento:', tasksForEvent);
+      
       setTasks(tasksForEvent);
-
-      // Carregar todas as tarefas disponíveis
+      
       const allTasks = await Task.list();
       setAvailableTasks(allTasks);
-
-      // Carregar tarefas padrão do tipo de evento
-      const defaultTasks = await DefaultTask.list();
-      const enrichedTypeTasks = defaultTasks
-        .filter(dt => dt.event_type_id === eventTypeId)
-        .map(dt => ({
-          ...dt,
-          task: allTasks.find(t => t.id === dt.task_id)
-        }));
-
-      setTypeTasks(enrichedTypeTasks);
+      
+      if (eventTypeId) {
+        const defaultTasks = await DefaultTask.list();
+        setTypeTasks(defaultTasks.filter(dt => dt.event_type_id === eventTypeId));
+      }
     } catch (error) {
-      console.error("Error loading tasks:", error);
+      console.error('Erro ao carregar tarefas:', error);
     } finally {
       setIsLoading(false);
     }

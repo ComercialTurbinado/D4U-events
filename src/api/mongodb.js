@@ -14,15 +14,27 @@ const cleanDataForApi = (data) => {
 
 const createEntityOperations = (collection) => ({
   list: async () => {
+    console.log(`Fazendo requisição GET para ${API_URL}/${collection}`);
     const response = await fetch(`${API_URL}/${collection}`);
-    if (!response.ok) throw new Error('Erro ao buscar dados');
-    return response.json();
+    if (!response.ok) {
+      console.error(`Erro na requisição GET ${collection}:`, response.status, response.statusText);
+      throw new Error('Erro ao buscar dados');
+    }
+    const data = await response.json();
+    console.log(`Dados retornados para ${collection}:`, data);
+    return data;
   },
 
   get: async (id) => {
+    console.log(`Fazendo requisição GET para ${API_URL}/${collection}/${id}`);
     const response = await fetch(`${API_URL}/${collection}/${id}`);
-    if (!response.ok) throw new Error('Erro ao buscar documento');
-    return response.json();
+    if (!response.ok) {
+      console.error(`Erro na requisição GET ${collection}/${id}:`, response.status, response.statusText);
+      throw new Error('Erro ao buscar documento');
+    }
+    const data = await response.json();
+    console.log(`Dados retornados para ${collection}/${id}:`, data);
+    return data;
   },
 
   create: async (data) => {
