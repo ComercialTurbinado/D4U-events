@@ -28,6 +28,8 @@ const connectToDatabase = async () => {
 const eventTypeSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: String,
+  country: String,
+  cost: Number,
   color: { type: String, default: "#3b82f6" },
   is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
@@ -169,6 +171,22 @@ const supplierCategorySchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+const defaultTaskSchema = new mongoose.Schema({
+  event_type_id: { type: mongoose.Schema.Types.ObjectId, ref: 'EventType', required: true },
+  task_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Task', required: true },
+  days_before_event: { type: Number, default: 7 },
+  is_active: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const defaultMaterialSchema = new mongoose.Schema({
+  event_type_id: { type: mongoose.Schema.Types.ObjectId, ref: 'EventType', required: true },
+  material_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Material', required: true },
+  default_quantity: { type: Number, default: 1 },
+  is_active: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now }
+});
+
 // Models
 const models = {
   'event-types': mongoose.model('EventType', eventTypeSchema),
@@ -182,7 +200,9 @@ const models = {
   'event-suppliers': mongoose.model('EventSupplier', eventSupplierSchema),
   'task-categories': mongoose.model('TaskCategory', taskCategorySchema),
   'material-categories': mongoose.model('MaterialCategory', materialCategorySchema),
-  'supplier-categories': mongoose.model('SupplierCategory', supplierCategorySchema)
+  'supplier-categories': mongoose.model('SupplierCategory', supplierCategorySchema),
+  'default-tasks': mongoose.model('DefaultTask', defaultTaskSchema),
+  'default-materials': mongoose.model('DefaultMaterial', defaultMaterialSchema)
 };
 
 module.exports = {

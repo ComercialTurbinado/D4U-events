@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { EventType } from "@/api/entities";
+import { EventType, DefaultTask, DefaultMaterial } from "@/api/entities";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, Edit, CheckCircle2, Archive } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -26,6 +26,8 @@ export default function EventTypesPage() {
     const eventType = await EventType.create({
       name: typeData.name,
       description: typeData.description,
+      country: typeData.country,
+      cost: typeData.cost,
       is_active: true
     });
     
@@ -59,6 +61,8 @@ export default function EventTypesPage() {
     await EventType.update(typeId, {
       name: typeData.name,
       description: typeData.description,
+      country: typeData.country,
+      cost: typeData.cost,
       is_active: typeData.is_active
     });
     
