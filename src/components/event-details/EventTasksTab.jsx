@@ -109,25 +109,24 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
     try {
       console.log('EventTasksTab - Criando nova tarefa, dados recebidos:', taskData);
       
-      // Remover campos que podem causar conflito
-      const { _id, __v, createdAt, updatedAt, category_id, id, ...cleanData } = taskData;
-      
-      // Dados básicos da tarefa
+      // Dados básicos da tarefa - formato MongoDB
       const newTaskData = {
-        name: cleanData.name,
-        description: cleanData.description || "",
-        responsible_role: cleanData.responsible_role || "",
-        category: "other", // Valor padrão
-        priority: cleanData.priority || "medium",
-        estimated_hours: cleanData.estimated_hours || 0,
-        notes: cleanData.notes || "",
         event_id: eventId,
-        task_id: cleanData.task_id,
-        is_active: true,
-        status: "not_started",
-        due_date: cleanData.due_date || null,
+        task_id: taskData.task_id || null,
+        name: taskData.name || "",
+        description: taskData.description || "",
+        responsible_role: taskData.responsible_role || "",
+        category: "other",
+        priority: "medium",
+        estimated_hours: 0,
         actual_hours: 0,
-        cost: 0
+        cost: 0,
+        notes: "",
+        status: "not_started",
+        is_active: true,
+        is_required: false,
+        days_before_event: 0,
+        due_date: taskData.due_date || null
       };
       
       console.log('EventTasksTab - Dados formatados para criar tarefa:', newTaskData);
@@ -145,25 +144,24 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
     try {
       console.log('EventTasksTab - Atualizando tarefa, dados recebidos:', { id, taskData });
       
-      // Remover campos que podem causar conflito
-      const { _id, __v, createdAt, updatedAt, category_id, id: taskId, ...cleanData } = taskData;
-      
-      // Dados básicos da tarefa
+      // Dados básicos da tarefa - formato MongoDB
       const updateData = {
-        name: cleanData.name,
-        description: cleanData.description || "",
-        responsible_role: cleanData.responsible_role || "",
-        category: "other", // Valor padrão
-        priority: cleanData.priority || "medium",
-        estimated_hours: cleanData.estimated_hours || 0,
-        notes: cleanData.notes || "",
         event_id: eventId,
-        task_id: cleanData.task_id,
+        task_id: taskData.task_id || null,
+        name: taskData.name || "",
+        description: taskData.description || "",
+        responsible_role: taskData.responsible_role || "",
+        category: "other",
+        priority: "medium",
+        estimated_hours: 0,
+        actual_hours: taskData.actual_hours || 0,
+        cost: taskData.cost || 0,
+        notes: taskData.notes || "",
+        status: taskData.status || "not_started",
         is_active: true,
-        status: cleanData.status || "not_started",
-        due_date: cleanData.due_date || null,
-        actual_hours: cleanData.actual_hours || 0,
-        cost: cleanData.cost || 0
+        is_required: false,
+        days_before_event: taskData.days_before_event || 0,
+        due_date: taskData.due_date || null
       };
       
       console.log('EventTasksTab - Dados formatados para atualizar tarefa:', updateData);
@@ -232,27 +230,24 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
           }
           console.log('EventTasksTab - Detalhes da tarefa base:', taskDetails);
           
-          // Remover campos que podem causar conflito
-          const { _id, __v, createdAt, updatedAt, category_id, ...cleanTaskDetails } = taskDetails;
-          
-          // Dados básicos da tarefa
+          // Dados básicos da tarefa - formato MongoDB
           const taskData = {
-            name: cleanTaskDetails.name,
-            description: cleanTaskDetails.description || "",
-            responsible_role: cleanTaskDetails.responsible_role || "",
-            category: "other", // Valor padrão
-            priority: cleanTaskDetails.priority || "medium",
-            estimated_hours: cleanTaskDetails.estimated_hours || 0,
-            notes: cleanTaskDetails.notes || "",
             event_id: eventId,
             task_id: defaultTask.task_id,
-            is_active: true,
-            is_required: defaultTask.is_required || false,
-            days_before_event: defaultTask.days_before_event || 0,
-            status: "not_started",
-            due_date: null,
+            name: taskDetails.name || "",
+            description: taskDetails.description || "",
+            responsible_role: taskDetails.responsible_role || "",
+            category: "other",
+            priority: "medium",
+            estimated_hours: 0,
             actual_hours: 0,
-            cost: 0
+            cost: 0,
+            notes: "",
+            status: "not_started",
+            is_active: true,
+            is_required: false,
+            days_before_event: defaultTask.days_before_event || 0,
+            due_date: null
           };
           
           console.log('EventTasksTab - Dados da tarefa para criar/atualizar:', taskData);
