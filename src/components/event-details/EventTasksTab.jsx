@@ -35,6 +35,7 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
   }, [eventId]);
 
   const loadTasks = async () => {
+    setIsLoading(true);
     try {
       // Carregar tarefas do evento
       const eventTasks = await EventTask.list();
@@ -57,6 +58,8 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
       setTypeTasks(enrichedTypeTasks);
     } catch (error) {
       console.error("Error loading tasks:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 

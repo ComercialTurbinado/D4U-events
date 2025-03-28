@@ -45,6 +45,7 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
   }, [eventId]);
 
   const loadMaterials = async () => {
+    setIsLoading(true);
     try {
       // Carregar materiais do evento
       const eventMaterials = await EventMaterial.list();
@@ -67,6 +68,8 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
       setAvailableTypeMaterials(enrichedTypeMaterials);
     } catch (error) {
       console.error("Error loading materials:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 

@@ -26,6 +26,7 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
   }, [eventId]);
 
   const loadSuppliers = async () => {
+    setIsLoading(true);
     try {
       // Carregar fornecedores do evento
       const eventSuppliers = await EventSupplier.list();
@@ -35,27 +36,21 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
       // Carregar todos os fornecedores disponíveis
       const allSuppliers = await Supplier.list();
       setAvailableSuppliers(allSuppliers);
-    } catch (error) {
-      console.error("Error loading suppliers:", error);
-    }
-  };
 
-  const loadDefaultSuppliers = async () => {
-    try {
+      // Carregar fornecedores padrão do tipo de evento
       const defaultSuppliers = await DefaultSupplier.list();
-      const allSuppliers = await Supplier.list();
-      
-      const enrichedSuppliers = defaultSuppliers
+      const enrichedTypeSuppliers = defaultSuppliers
         .filter(s => s.event_type_id === eventTypeId)
-        .filter(s => s.supplier_id)
         .map(s => ({
           ...s,
-          supplier: allSuppliers.find(as => as.id === s.supplier_id)
+          supplier: allSuppliers.find(sup => sup.id === s.supplier_id)
         }));
 
-      setTypeSuppliers(enrichedSuppliers);
+      setTypeSuppliers(enrichedTypeSuppliers);
     } catch (error) {
-      console.error("Error loading default suppliers:", error);
+      console.error("Error loading suppliers:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
