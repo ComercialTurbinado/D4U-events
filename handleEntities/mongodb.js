@@ -26,68 +26,50 @@ const connectToDatabase = async () => {
 
 // Schemas
 const eventTypeSchema = new mongoose.Schema({
-  name: { type: String, required: true },
+  name: String,
   description: String,
-  color: { type: String, default: "#3b82f6" },
   is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
 
 const taskSchema = new mongoose.Schema({
-  name: { type: String, required: true },
+  name: String,
   description: String,
-  category_id: { type: mongoose.Schema.Types.ObjectId, ref: 'TaskCategory' },
-  department_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' },
-  estimated_time: Number,
+  category: { type: mongoose.Schema.Types.ObjectId, ref: 'TaskCategory' },
   is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
 
 const materialSchema = new mongoose.Schema({
-  name: { type: String, required: true },
+  name: String,
   description: String,
-  category_id: { type: mongoose.Schema.Types.ObjectId, ref: 'MaterialCategory' },
-  unit: String,
-  quantity: Number,
-  price: Number,
+  category: { type: mongoose.Schema.Types.ObjectId, ref: 'MaterialCategory' },
   is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
 
 const supplierSchema = new mongoose.Schema({
-  name: { type: String, required: true },
+  name: String,
   description: String,
-  category_id: { type: mongoose.Schema.Types.ObjectId, ref: 'SupplierCategory' },
-  contact_person: String,
-  phone: String,
-  email: String,
-  country: String,
-  state: String,
-  city: String,
-  address: String,
-  service_description: String,
+  category: { type: mongoose.Schema.Types.ObjectId, ref: 'SupplierCategory' },
   is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
 
 const departmentSchema = new mongoose.Schema({
-  name: { type: String, required: true },
+  name: String,
   description: String,
-  manager: String,
-  email: String,
   is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
 
 const eventSchema = new mongoose.Schema({
-  name: { type: String, required: true },
+  name: String,
   event_type_id: { type: mongoose.Schema.Types.ObjectId, ref: 'EventType' },
   description: String,
   start_date: Date,
   end_date: Date,
   country: String,
-  state: String,
-  city: String,
   location: String,
   status: { 
     type: String, 
@@ -101,8 +83,8 @@ const eventSchema = new mongoose.Schema({
 });
 
 const eventTaskSchema = new mongoose.Schema({
-  event_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
-  task_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Task', required: true },
+  event_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Event' },
+  task_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Task' },
   status: { 
     type: String, 
     enum: ['pending', 'in_progress', 'completed'],
@@ -111,60 +93,52 @@ const eventTaskSchema = new mongoose.Schema({
   assigned_to: String,
   due_date: Date,
   notes: String,
-  is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
 
 const eventMaterialSchema = new mongoose.Schema({
-  event_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
-  material_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Material', required: true },
+  event_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Event' },
+  material_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Material' },
   quantity: Number,
   unit: String,
-  price: Number,
   status: { 
     type: String, 
     enum: ['pending', 'ordered', 'received'],
     default: 'pending'
   },
   notes: String,
-  is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
 
 const eventSupplierSchema = new mongoose.Schema({
-  event_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
-  supplier_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier', required: true },
+  event_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Event' },
+  supplier_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier' },
   status: { 
     type: String, 
     enum: ['pending', 'contacted', 'confirmed', 'cancelled'],
     default: 'pending'
   },
   notes: String,
-  price: Number,
-  is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
 
 const taskCategorySchema = new mongoose.Schema({
-  name: { type: String, required: true },
+  name: String,
   description: String,
-  color: { type: String, default: "#3b82f6" },
   is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
 
 const materialCategorySchema = new mongoose.Schema({
-  name: { type: String, required: true },
+  name: String,
   description: String,
-  color: { type: String, default: "#3b82f6" },
   is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
 
 const supplierCategorySchema = new mongoose.Schema({
-  name: { type: String, required: true },
+  name: String,
   description: String,
-  color: { type: String, default: "#3b82f6" },
   is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { MaterialCategory, Supplier } from "@/api/entities";
 import { Card } from "@/components/ui/card";
@@ -42,8 +41,9 @@ export default function MaterialForm({ initialData, onSubmit, onCancel }) {
   const loadCategories = async () => {
     setIsLoadingCategories(true);
     try {
-      const materialCategories = await MaterialCategory.filter({ is_active: true });
-      setCategories(materialCategories);
+      const materialCategories = await MaterialCategory.list();
+      const activeCategories = materialCategories.filter(category => category.is_active);
+      setCategories(activeCategories);
     } catch (error) {
       console.error("Error loading material categories:", error);
     } finally {
@@ -54,7 +54,8 @@ export default function MaterialForm({ initialData, onSubmit, onCancel }) {
   const loadSuppliers = async () => {
     setIsLoadingSuppliers(true);
     try {
-      const activeSuppliers = await Supplier.filter({ is_active: true });
+      const suppliers = await Supplier.list();
+      const activeSuppliers = suppliers.filter(supplier => supplier.is_active);
       setSuppliers(activeSuppliers);
     } catch (error) {
       console.error("Error loading suppliers:", error);

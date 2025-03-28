@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Task, Material } from "@/api/entities";
 import { Card } from "@/components/ui/card";
@@ -46,8 +45,12 @@ export default function EventTypeForm({ initialData, onSubmit, onCancel }) {
         Material.list()
       ]);
       
-      setAvailableTasks(tasksData);
-      setAvailableMaterials(materialsData);
+      // Filtra as tarefas e materiais ativos no lado do cliente
+      const activeTasks = tasksData.filter(task => task.is_active);
+      const activeMaterials = materialsData.filter(material => material.is_active);
+      
+      setAvailableTasks(activeTasks);
+      setAvailableMaterials(activeMaterials);
     } catch (error) {
       console.error("Error loading data:", error);
     } finally {
@@ -84,6 +87,7 @@ export default function EventTypeForm({ initialData, onSubmit, onCancel }) {
     }));
   };
 
+  // Filtra as tarefas e materiais com base no termo de busca
   const filteredTasks = availableTasks.filter(task => 
     task.name.toLowerCase().includes(taskSearchTerm.toLowerCase())
   );

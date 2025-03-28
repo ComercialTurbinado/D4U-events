@@ -40,8 +40,10 @@ export default function TaskForm({ initialData, onSubmit, onCancel }) {
   const loadCategories = async () => {
     setIsLoadingCategories(true);
     try {
-      const taskCategories = await TaskCategory.filter({ is_active: true });
-      setCategories(taskCategories);
+      const taskCategories = await TaskCategory.list();
+      // Filtra as categorias ativas no lado do cliente
+      const activeCategories = taskCategories.filter(category => category.is_active);
+      setCategories(activeCategories);
     } catch (error) {
       console.error("Error loading task categories:", error);
     } finally {
@@ -52,8 +54,10 @@ export default function TaskForm({ initialData, onSubmit, onCancel }) {
   const loadDepartments = async () => {
     setIsLoadingDepartments(true);
     try {
-      const depts = await Department.filter({ is_active: true });
-      setDepartments(depts);
+      const depts = await Department.list();
+      // Filtra os departamentos ativos no lado do cliente
+      const activeDepts = depts.filter(dept => dept.is_active);
+      setDepartments(activeDepts);
     } catch (error) {
       console.error("Error loading departments:", error);
     } finally {

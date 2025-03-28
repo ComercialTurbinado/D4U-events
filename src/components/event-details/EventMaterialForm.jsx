@@ -62,17 +62,18 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
   };
   
   const loadSuppliers = async () => {
-    setIsLoading(true);
+    setIsLoadingSuppliers(true);
     try {
-      const supplierList = await Supplier.filter({ is_active: true });
+      const allSuppliers = await Supplier.list();
+      const supplierList = allSuppliers.filter(supplier => supplier.is_active);
       setSuppliers(supplierList);
     } catch (error) {
-      console.error("Erro ao carregar fornecedores:", error);
+      console.error("Error loading suppliers:", error);
     } finally {
-      setIsLoading(false);
+      setIsLoadingSuppliers(false);
     }
   };
-
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     
