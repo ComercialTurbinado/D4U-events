@@ -1,5 +1,16 @@
 const API_URL = import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod/entities';
 
+// Função auxiliar para limpar os dados antes de enviar para a API
+const cleanDataForApi = (data) => {
+  const cleanData = { ...data };
+  // Remove campos internos do MongoDB
+  delete cleanData._id;
+  delete cleanData.__v;
+  delete cleanData.createdAt;
+  delete cleanData.updatedAt;
+  return cleanData;
+};
+
 const createEntityOperations = (collection) => ({
   list: async () => {
     const response = await fetch(`${API_URL}/${collection}`);
@@ -8,24 +19,26 @@ const createEntityOperations = (collection) => ({
   },
 
   create: async (data) => {
+    const cleanData = cleanDataForApi(data);
     const response = await fetch(`${API_URL}/${collection}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify(cleanData),
     });
     if (!response.ok) throw new Error('Erro ao criar documento');
     return response.json();
   },
 
   update: async (id, data) => {
+    const cleanData = cleanDataForApi(data);
     const response = await fetch(`${API_URL}/${collection}/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify(cleanData),
     });
     if (!response.ok) throw new Error('Erro ao atualizar documento');
     return response.json();
