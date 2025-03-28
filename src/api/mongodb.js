@@ -18,6 +18,12 @@ const createEntityOperations = (collection) => ({
     return response.json();
   },
 
+  get: async (id) => {
+    const response = await fetch(`${API_URL}/${collection}/${id}`);
+    if (!response.ok) throw new Error('Erro ao buscar documento');
+    return response.json();
+  },
+
   create: async (data) => {
     const cleanData = cleanDataForApi(data);
     const response = await fetch(`${API_URL}/${collection}`, {
