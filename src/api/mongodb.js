@@ -8,6 +8,7 @@ const cleanDataForApi = (data) => {
   delete cleanData.__v;
   delete cleanData.createdAt;
   delete cleanData.updatedAt;
+  // Mantém os campos event_id e task_id
   return cleanData;
 };
 

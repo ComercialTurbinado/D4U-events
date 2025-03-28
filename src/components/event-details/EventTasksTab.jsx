@@ -126,6 +126,7 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
         
         if (!taskDetails) continue;
         
+        // Criar uma nova tarefa do evento usando os dados da tarefa padrão
         await EventTask.create({
           event_id: eventId,
           task_id: defaultTask.task_id,
@@ -143,7 +144,10 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
         });
       }
       
-      loadTasks();
+      // Recarregar as tarefas do evento
+      const eventTasks = await EventTask.list();
+      const tasksForEvent = eventTasks.filter(et => et.event_id === eventId);
+      setTasks(tasksForEvent);
     } catch (error) {
       console.error("Error importing default tasks:", error);
     } finally {
