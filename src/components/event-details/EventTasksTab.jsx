@@ -45,8 +45,13 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
       
       // Filtrar tarefas do evento atual
       const tasksForEvent = eventTasks.filter(et => {
-        console.log('EventTasksTab - Comparando:', et.event_id, eventId);
-        return et.event_id === eventId;
+        const eventIdMatches = et.event_id === eventId;
+        console.log('EventTasksTab - Comparando:', {
+          taskEventId: et.event_id,
+          currentEventId: eventId,
+          matches: eventIdMatches
+        });
+        return eventIdMatches;
       });
       console.log('EventTasksTab - Tarefas filtradas para o evento:', tasksForEvent);
       
@@ -59,7 +64,15 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
       if (eventTypeId) {
         console.log('EventTasksTab - Carregando tarefas padrão para o tipo:', eventTypeId);
         const defaultTasks = await DefaultTask.list();
-        const filteredDefaultTasks = defaultTasks.filter(dt => dt.event_type_id === eventTypeId);
+        const filteredDefaultTasks = defaultTasks.filter(dt => {
+          const typeIdMatches = dt.event_type_id === eventTypeId;
+          console.log('EventTasksTab - Comparando tipo:', {
+            taskTypeId: dt.event_type_id,
+            currentTypeId: eventTypeId,
+            matches: typeIdMatches
+          });
+          return typeIdMatches;
+        });
         console.log('EventTasksTab - Tarefas padrão filtradas:', filteredDefaultTasks);
         setTypeTasks(filteredDefaultTasks);
       }
@@ -94,17 +107,25 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
 
   const handleCreateTask = async (taskData) => {
     try {
-      console.log('EventTasksTab - Criando nova tarefa:', taskData);
-      const newTask = await EventTask.create({
-        ...taskData,
+      console.log('EventTasksTab - Criando nova tarefa, dados recebidos:', taskData);
+      
+      // Remover campos que podem causar conflito
+      const { _id, __v, createdAt, updatedAt, ...cleanData } = taskData;
+      
+      const newTaskData = {
+        ...cleanData,
         event_id: eventId,
         category: taskData.category || "other",
         is_active: true,
-        status: "not_started",
-        actual_hours: 0,
-        cost: 0
-      });
+        status: taskData.status || "not_started",
+        actual_hours: taskData.actual_hours || 0,
+        cost: taskData.cost || 0
+      };
+      
+      console.log('EventTasksTab - Dados formatados para criar tarefa:', newTaskData);
+      const newTask = await EventTask.create(newTaskData);
       console.log('EventTasksTab - Nova tarefa criada:', newTask);
+      
       setShowForm(false);
       await loadTasks();
     } catch (error) {
@@ -114,12 +135,20 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
 
   const handleUpdateTask = async (id, taskData) => {
     try {
-      console.log('EventTasksTab - Atualizando tarefa:', id, taskData);
-      await EventTask.update(id, {
-        ...taskData,
+      console.log('EventTasksTab - Atualizando tarefa, dados recebidos:', { id, taskData });
+      
+      // Remover campos que podem causar conflito
+      const { _id, __v, createdAt, updatedAt, ...cleanData } = taskData;
+      
+      const updateData = {
+        ...cleanData,
         category: taskData.category || "other"
-      });
-      console.log('EventTasksTab - Tarefa atualizada:', id);
+      };
+      
+      console.log('EventTasksTab - Dados formatados para atualizar tarefa:', updateData);
+      const updatedTask = await EventTask.update(id, updateData);
+      console.log('EventTasksTab - Tarefa atualizada:', updatedTask);
+      
       setShowForm(false);
       setEditingTask(null);
       await loadTasks();
@@ -182,21 +211,26 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
           }
           console.log('EventTasksTab - Detalhes da tarefa base:', taskDetails);
           
-          const taskData = {
-            event_id: eventId,
-            task_id: defaultTask.task_id,
+          // Remover campos que podem causar conflito
+          const cleanTaskDetails = {
             name: taskDetails.name,
             description: taskDetails.description || "",
             responsible_role: taskDetails.responsible_role || "",
             category: taskDetails.category || "other",
+            priority: taskDetails.priority || "medium",
+            estimated_hours: taskDetails.estimated_hours || 0,
+            notes: taskDetails.notes || ""
+          };
+          
+          const taskData = {
+            event_id: eventId,
+            task_id: defaultTask.task_id,
+            ...cleanTaskDetails,
             is_active: true,
             is_required: defaultTask.is_required || false,
             days_before_event: defaultTask.days_before_event || 0,
             status: "not_started",
             due_date: null,
-            notes: taskDetails.notes || "",
-            priority: taskDetails.priority || "medium",
-            estimated_hours: taskDetails.estimated_hours || 0,
             actual_hours: 0,
             cost: 0
           };
@@ -205,8 +239,8 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
           
           if (existingTask) {
             // Atualizar tarefa existente
-            await EventTask.update(existingTask.id, taskData);
-            console.log('EventTasksTab - Tarefa atualizada:', existingTask.id);
+            const updatedTask = await EventTask.update(existingTask.id, taskData);
+            console.log('EventTasksTab - Tarefa atualizada:', updatedTask);
           } else {
             // Criar nova tarefa
             const createdTask = await EventTask.create(taskData);
