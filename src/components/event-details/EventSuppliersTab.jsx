@@ -85,27 +85,35 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
     
     setIsLoading(true);
     try {
-      // Get all suppliers from the event type
-      const suppliers = await Supplier.list();
-      const suppliersToImport = suppliers.filter(s => s.event_type_id === eventTypeId);
+      const defaultSuppliers = await DefaultSupplier.list();
+      const suppliersToImport = defaultSuppliers.filter(ds => ds.event_type_id === eventTypeId);
       
-      // Filter out suppliers that have already been added to the event
       const existingSupplierIds = suppliers
         .filter(s => s.supplier_id)
         .map(s => s.supplier_id);
       
-      // Create event-specific suppliers
-      for (const supplier of suppliersToImport) {
-        if (existingSupplierIds.includes(supplier.id)) continue;
+      for (const defaultSupplier of suppliersToImport) {
+        if (existingSupplierIds.includes(defaultSupplier.supplier_id)) continue;
+        
+        const supplierDetails = await Supplier.get(defaultSupplier.supplier_id);
+        
+        if (!supplierDetails) continue;
         
         await EventSupplier.create({
           event_id: eventId,
-          supplier_id: supplier.id,
-          name: supplier.name,
-          supplier_type: supplier.supplier_type,
-          contact_person: supplier.contact_person,
-          service_description: supplier.service_description,
-          status: "requested"
+          supplier_id: defaultSupplier.supplier_id,
+          name: supplierDetails.name,
+          supplier_type: supplierDetails.supplier_type || "other",
+          contact_person: supplierDetails.contact_person || "",
+          contact_email: supplierDetails.contact_email || "",
+          contact_phone: supplierDetails.contact_phone || "",
+          service_description: supplierDetails.service_description || "",
+          status: "requested",
+          notes: supplierDetails.notes || "",
+          cost: 0,
+          payment_status: "pending",
+          contract_status: "pending",
+          delivery_date: null
         });
       }
       

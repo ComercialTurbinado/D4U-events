@@ -3,7 +3,7 @@ import { Event } from "@/api/entities";
 import { Button } from "@/components/ui/button";
 import { Plus, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl } from "@/lib/utils";
 import EventList from "../components/events/EventList";
 import EventForm from "../components/events/EventForm";
 
@@ -33,7 +33,7 @@ export default function EventsPage() {
   const handleCreateEvent = async (eventData) => {
     const newEvent = await Event.create(eventData);
     setShowForm(false);
-    navigate(createPageUrl(`EventDetails?id=${newEvent.id}`));
+    navigate(createPageUrl(`events/${newEvent.id}`));
   };
 
   const handleUpdateEvent = async (id, eventData) => {

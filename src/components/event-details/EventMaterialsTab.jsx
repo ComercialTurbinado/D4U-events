@@ -135,13 +135,19 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
           event_id: eventId,
           material_id: defaultMaterial.material_id,
           name: materialDetails.name,
+          description: materialDetails.description || "",
           quantity: defaultMaterial.default_quantity || materialDetails.default_quantity || 1,
+          unit: materialDetails.unit || "un",
           status: "pending",
-          notes: materialDetails.notes,
+          notes: materialDetails.notes || "",
           unit_cost: materialDetails.initial_purchase_cost 
             ? materialDetails.initial_purchase_cost / (materialDetails.initial_purchase_quantity || 1) 
             : 0,
-          supplier_id: materialDetails.supplier_id || ""
+          total_cost: 0,
+          supplier_id: materialDetails.supplier_id || "",
+          category: materialDetails.category || "other",
+          priority: materialDetails.priority || "medium",
+          delivery_date: null
         });
       }
       

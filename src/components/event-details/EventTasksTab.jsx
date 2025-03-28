@@ -130,11 +130,16 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
           event_id: eventId,
           task_id: defaultTask.task_id,
           name: taskDetails.name,
-          description: taskDetails.description,
-          responsible_role: taskDetails.responsible_role,
-          category: taskDetails.category,
+          description: taskDetails.description || "",
+          responsible_role: taskDetails.responsible_role || "",
+          category: taskDetails.category || "other",
           status: "not_started",
-          due_date: null
+          due_date: null,
+          notes: taskDetails.notes || "",
+          priority: taskDetails.priority || "medium",
+          estimated_hours: taskDetails.estimated_hours || 0,
+          actual_hours: 0,
+          cost: 0
         });
       }
       
