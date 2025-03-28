@@ -38,20 +38,17 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
     try {
       // Carregar tarefas do evento
       const eventTasks = await EventTask.list();
-      const eventTaskIds = eventTasks
-        .filter(et => et.event_id === eventId)
-        .filter(et => et.task_id)
-        .map(et => et.task_id);
+      const tasksForEvent = eventTasks.filter(et => et.event_id === eventId);
+      setTasks(tasksForEvent);
 
       // Carregar todas as tarefas disponíveis
       const allTasks = await Task.list();
-      setAvailableTasks(allTasks.filter(task => !eventTaskIds.includes(task.id)));
+      setAvailableTasks(allTasks);
 
       // Carregar tarefas padrão do tipo de evento
       const defaultTasks = await DefaultTask.list();
       const enrichedTypeTasks = defaultTasks
         .filter(dt => dt.event_type_id === eventTypeId)
-        .filter(dt => !eventTaskIds.includes(dt.task_id))
         .map(dt => ({
           ...dt,
           task: allTasks.find(t => t.id === dt.task_id)

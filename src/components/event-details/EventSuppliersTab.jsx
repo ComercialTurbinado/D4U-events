@@ -29,26 +29,12 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
     try {
       // Carregar fornecedores do evento
       const eventSuppliers = await EventSupplier.list();
-      const eventSupplierIds = eventSuppliers
-        .filter(es => es.event_id === eventId)
-        .filter(es => es.supplier_id)
-        .map(es => es.supplier_id);
+      const suppliersForEvent = eventSuppliers.filter(es => es.event_id === eventId);
+      setSuppliers(suppliersForEvent);
 
       // Carregar todos os fornecedores disponíveis
       const allSuppliers = await Supplier.list();
-      setAvailableSuppliers(allSuppliers.filter(supplier => !eventSupplierIds.includes(supplier.id)));
-
-      // Carregar fornecedores padrão do tipo de evento
-      const defaultSuppliers = await DefaultSupplier.list();
-      const enrichedTypeSuppliers = defaultSuppliers
-        .filter(s => s.event_type_id === eventTypeId)
-        .filter(s => !eventSupplierIds.includes(s.supplier_id))
-        .map(s => ({
-          ...s,
-          supplier: allSuppliers.find(sup => sup.id === s.supplier_id)
-        }));
-
-      setTypeSuppliers(enrichedTypeSuppliers);
+      setAvailableSuppliers(allSuppliers);
     } catch (error) {
       console.error("Error loading suppliers:", error);
     }
@@ -104,35 +90,33 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
     
     setIsLoading(true);
     try {
-      // Get all default suppliers from the event type
-      const defaultSuppliers = await DefaultSupplier.list();
-      const suppliersToImport = defaultSuppliers.filter(s => s.event_type_id === eventTypeId);
+      // Get all suppliers from the event type
+      const suppliers = await Supplier.list();
+      const suppliersToImport = suppliers.filter(s => s.event_type_id === eventTypeId);
       
       // Filter out suppliers that have already been added to the event
       const existingSupplierIds = suppliers
-        .filter(s => s.supplier_id) // Look for suppliers linked to a template
+        .filter(s => s.supplier_id)
         .map(s => s.supplier_id);
       
-      // Create event-specific suppliers from default suppliers
-      for (const defaultSupplier of suppliersToImport) {
-        // Skip if this supplier was already added
-        if (existingSupplierIds.includes(defaultSupplier.id)) continue;
+      // Create event-specific suppliers
+      for (const supplier of suppliersToImport) {
+        if (existingSupplierIds.includes(supplier.id)) continue;
         
-        // Add the supplier to the event
         await EventSupplier.create({
           event_id: eventId,
-          supplier_id: defaultSupplier.id,
-          name: defaultSupplier.name,
-          supplier_type: defaultSupplier.supplier_type,
-          contact_person: defaultSupplier.contact_person,
-          service_description: defaultSupplier.service_description,
+          supplier_id: supplier.id,
+          name: supplier.name,
+          supplier_type: supplier.supplier_type,
+          contact_person: supplier.contact_person,
+          service_description: supplier.service_description,
           status: "requested"
         });
       }
       
       loadSuppliers();
     } catch (error) {
-      console.error("Error importing default suppliers:", error);
+      console.error("Error importing suppliers:", error);
     } finally {
       setIsLoading(false);
     }

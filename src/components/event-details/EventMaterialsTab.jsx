@@ -48,20 +48,17 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
     try {
       // Carregar materiais do evento
       const eventMaterials = await EventMaterial.list();
-      const eventMaterialIds = eventMaterials
-        .filter(em => em.event_id === eventId)
-        .filter(em => em.material_id)
-        .map(em => em.material_id);
+      const materialsForEvent = eventMaterials.filter(em => em.event_id === eventId);
+      setMaterials(materialsForEvent);
 
       // Carregar todos os materiais disponíveis
       const allMaterials = await Material.list();
-      setAvailableMaterials(allMaterials.filter(material => !eventMaterialIds.includes(material.id)));
+      setAvailableMaterials(allMaterials);
 
       // Carregar materiais padrão do tipo de evento
       const defaultMaterials = await DefaultMaterial.list();
       const enrichedTypeMaterials = defaultMaterials
         .filter(dm => dm.event_type_id === eventTypeId)
-        .filter(dm => !eventMaterialIds.includes(dm.material_id))
         .map(dm => ({
           ...dm,
           material: allMaterials.find(m => m.id === dm.material_id)
