@@ -114,13 +114,14 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
     
     setIsLoading(true);
     try {
-      const defaultMaterials = await DefaultMaterial.filter({ event_type_id: eventTypeId });
+      const defaultMaterials = await DefaultMaterial.list();
+      const materialsToImport = defaultMaterials.filter(dm => dm.event_type_id === eventTypeId);
       
       const existingMaterialIds = materials
         .filter(m => m.material_id)
         .map(m => m.material_id);
       
-      for (const defaultMaterial of defaultMaterials) {
+      for (const defaultMaterial of materialsToImport) {
         if (existingMaterialIds.includes(defaultMaterial.material_id)) continue;
         
         const materialDetails = await Material.get(defaultMaterial.material_id);

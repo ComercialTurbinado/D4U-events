@@ -277,15 +277,15 @@ export default function EventDetailsPage() {
         </TabsList>
         
         <TabsContent value="tasks">
-          <EventTasksTab eventId={eventId} eventTypeId={event.event_type_id} />
+          <EventTasksTab eventId={eventId} eventTypeId={event?.event_type_id} />
         </TabsContent>
         
         <TabsContent value="materials">
-          <EventMaterialsTab eventId={eventId} eventTypeId={event.event_type_id} />
+          <EventMaterialsTab eventId={eventId} eventTypeId={event?.event_type_id} />
         </TabsContent>
         
         <TabsContent value="suppliers">
-          <EventSuppliersTab eventId={eventId} eventTypeId={event.event_type_id} />
+          <EventSuppliersTab eventId={eventId} eventTypeId={event?.event_type_id} />
         </TabsContent>
       </Tabs>
     </div>

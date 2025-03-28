@@ -110,12 +110,13 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
     
     setIsLoading(true);
     try {
-      const defaultTasks = await DefaultTask.filter({ event_type_id: eventTypeId });
+      const defaultTasks = await DefaultTask.list();
+      const tasksToImport = defaultTasks.filter(dt => dt.event_type_id === eventTypeId);
       const existingTaskIds = tasks
         .filter(t => t.task_id)
         .map(t => t.task_id);
       
-      for (const defaultTask of defaultTasks) {
+      for (const defaultTask of tasksToImport) {
         if (existingTaskIds.includes(defaultTask.task_id)) continue;
         
         const taskDetails = await Task.get(defaultTask.task_id);
