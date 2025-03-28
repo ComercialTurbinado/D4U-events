@@ -27,7 +27,10 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
     description: "",
     responsible_role: "",
     due_date: "",
-    category: "other",
+    category_id: "",
+    is_active: true,
+    is_required: false,
+    days_before_event: 0,
     status: "not_started",
     notes: ""
   });
@@ -37,7 +40,10 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
     if (initialData) {
       onSubmit(initialData.id, formData);
     } else {
-      onSubmit(formData);
+      onSubmit({
+        ...formData,
+        event_id: eventId
+      });
     }
   };
 
@@ -50,7 +56,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
         name: selectedTask.name,
         description: selectedTask.description,
         responsible_role: selectedTask.responsible_role,
-        category: selectedTask.category || "other"
+        category_id: selectedTask.category_id || ""
       });
     }
   };
@@ -150,8 +156,8 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
               <Label htmlFor="category">Categoria</Label>
               <Select
                 id="category"
-                value={formData.category}
-                onValueChange={value => setFormData(prev => ({ ...prev, category: value }))}
+                value={formData.category_id}
+                onValueChange={value => setFormData(prev => ({ ...prev, category_id: value }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione uma categoria" />
