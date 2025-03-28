@@ -300,15 +300,6 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">Materiais do Evento</h2>
             <div className="flex gap-2">
-              {eventTypeId && (
-                <Button 
-                  variant="outline" 
-                  onClick={handleImportFromEventType}
-                  disabled={isLoading}
-                >
-                  Importar do Tipo de Evento
-                </Button>
-              )}
               <Button 
                 onClick={() => {
                   setEditingMaterial(null);

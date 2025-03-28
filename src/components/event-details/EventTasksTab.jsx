@@ -113,21 +113,26 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
     
     setIsLoading(true);
     try {
+      // Carregar tarefas padrão do tipo de evento
       const defaultTasks = await DefaultTask.list();
       const tasksToImport = defaultTasks.filter(dt => dt.event_type_id === eventTypeId);
-      const existingTaskIds = tasks
-        .filter(t => t.task_id)
-        .map(t => t.task_id);
+      
+      // Carregar todas as tarefas disponíveis
+      const allTasks = await Task.list();
+      
+      // Carregar tarefas existentes do evento
+      const eventTasks = await EventTask.list();
+      const existingTasks = eventTasks.filter(et => et.event_id === eventId);
       
       for (const defaultTask of tasksToImport) {
-        if (existingTaskIds.includes(defaultTask.task_id)) continue;
+        // Verificar se a tarefa já existe no evento
+        const existingTask = existingTasks.find(et => et.task_id === defaultTask.task_id);
         
-        const taskDetails = await Task.get(defaultTask.task_id);
-        
+        // Buscar detalhes da tarefa base
+        const taskDetails = allTasks.find(t => t.id === defaultTask.task_id);
         if (!taskDetails) continue;
         
-        // Criar uma nova tarefa do evento usando os dados da tarefa padrão
-        await EventTask.create({
+        const taskData = {
           event_id: eventId,
           task_id: defaultTask.task_id,
           name: taskDetails.name,
@@ -144,12 +149,20 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
           estimated_hours: taskDetails.estimated_hours || 0,
           actual_hours: 0,
           cost: 0
-        });
+        };
+        
+        if (existingTask) {
+          // Atualizar tarefa existente
+          await EventTask.update(existingTask.id, taskData);
+        } else {
+          // Criar nova tarefa
+          await EventTask.create(taskData);
+        }
       }
       
       // Recarregar as tarefas do evento
-      const eventTasks = await EventTask.list();
-      const tasksForEvent = eventTasks.filter(et => et.event_id === eventId);
+      const updatedEventTasks = await EventTask.list();
+      const tasksForEvent = updatedEventTasks.filter(et => et.event_id === eventId);
       setTasks(tasksForEvent);
     } catch (error) {
       console.error("Error importing default tasks:", error);
@@ -222,15 +235,6 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">Tarefas do Evento</h2>
             <div className="flex gap-2">
-              {eventTypeId && (
-                <Button 
-                  variant="outline" 
-                  onClick={handleImportFromEventType}
-                  disabled={isLoading}
-                >
-                  Importar do Tipo de Evento
-                </Button>
-              )}
               <Button 
                 onClick={() => {
                   setEditingTask(null);
