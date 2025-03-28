@@ -110,16 +110,24 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
       console.log('EventTasksTab - Criando nova tarefa, dados recebidos:', taskData);
       
       // Remover campos que podem causar conflito
-      const { _id, __v, createdAt, updatedAt, ...cleanData } = taskData;
+      const { _id, __v, createdAt, updatedAt, category_id, id, ...cleanData } = taskData;
       
+      // Dados básicos da tarefa
       const newTaskData = {
-        ...cleanData,
+        name: cleanData.name,
+        description: cleanData.description || "",
+        responsible_role: cleanData.responsible_role || "",
+        category: "other", // Valor padrão
+        priority: cleanData.priority || "medium",
+        estimated_hours: cleanData.estimated_hours || 0,
+        notes: cleanData.notes || "",
         event_id: eventId,
-        category: taskData.category || "other",
+        task_id: cleanData.task_id,
         is_active: true,
-        status: taskData.status || "not_started",
-        actual_hours: taskData.actual_hours || 0,
-        cost: taskData.cost || 0
+        status: "not_started",
+        due_date: cleanData.due_date || null,
+        actual_hours: 0,
+        cost: 0
       };
       
       console.log('EventTasksTab - Dados formatados para criar tarefa:', newTaskData);
@@ -138,11 +146,24 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
       console.log('EventTasksTab - Atualizando tarefa, dados recebidos:', { id, taskData });
       
       // Remover campos que podem causar conflito
-      const { _id, __v, createdAt, updatedAt, ...cleanData } = taskData;
+      const { _id, __v, createdAt, updatedAt, category_id, id: taskId, ...cleanData } = taskData;
       
+      // Dados básicos da tarefa
       const updateData = {
-        ...cleanData,
-        category: taskData.category || "other"
+        name: cleanData.name,
+        description: cleanData.description || "",
+        responsible_role: cleanData.responsible_role || "",
+        category: "other", // Valor padrão
+        priority: cleanData.priority || "medium",
+        estimated_hours: cleanData.estimated_hours || 0,
+        notes: cleanData.notes || "",
+        event_id: eventId,
+        task_id: cleanData.task_id,
+        is_active: true,
+        status: cleanData.status || "not_started",
+        due_date: cleanData.due_date || null,
+        actual_hours: cleanData.actual_hours || 0,
+        cost: cleanData.cost || 0
       };
       
       console.log('EventTasksTab - Dados formatados para atualizar tarefa:', updateData);
@@ -212,20 +233,19 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
           console.log('EventTasksTab - Detalhes da tarefa base:', taskDetails);
           
           // Remover campos que podem causar conflito
-          const cleanTaskDetails = {
-            name: taskDetails.name,
-            description: taskDetails.description || "",
-            responsible_role: taskDetails.responsible_role || "",
-            category: taskDetails.category || "other",
-            priority: taskDetails.priority || "medium",
-            estimated_hours: taskDetails.estimated_hours || 0,
-            notes: taskDetails.notes || ""
-          };
+          const { _id, __v, createdAt, updatedAt, category_id, ...cleanTaskDetails } = taskDetails;
           
+          // Dados básicos da tarefa
           const taskData = {
+            name: cleanTaskDetails.name,
+            description: cleanTaskDetails.description || "",
+            responsible_role: cleanTaskDetails.responsible_role || "",
+            category: "other", // Valor padrão
+            priority: cleanTaskDetails.priority || "medium",
+            estimated_hours: cleanTaskDetails.estimated_hours || 0,
+            notes: cleanTaskDetails.notes || "",
             event_id: eventId,
             task_id: defaultTask.task_id,
-            ...cleanTaskDetails,
             is_active: true,
             is_required: defaultTask.is_required || false,
             days_before_event: defaultTask.days_before_event || 0,
