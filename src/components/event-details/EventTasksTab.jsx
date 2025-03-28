@@ -124,45 +124,54 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
       const existingTasks = eventTasks.filter(et => et.event_id === eventId);
       
       for (const defaultTask of tasksToImport) {
-        // Verificar se a tarefa já existe no evento
-        const existingTask = existingTasks.find(et => et.task_id === defaultTask.task_id);
-        
-        // Buscar detalhes da tarefa base
-        const taskDetails = allTasks.find(t => t.id === defaultTask.task_id);
-        if (!taskDetails) continue;
-        
-        const taskData = {
-          event_id: eventId,
-          task_id: defaultTask.task_id,
-          name: taskDetails.name,
-          description: taskDetails.description || "",
-          responsible_role: taskDetails.responsible_role || "",
-          category_id: taskDetails.category_id || "",
-          is_active: true,
-          is_required: defaultTask.is_required || false,
-          days_before_event: defaultTask.days_before_event || 0,
-          status: "not_started",
-          due_date: null,
-          notes: taskDetails.notes || "",
-          priority: taskDetails.priority || "medium",
-          estimated_hours: taskDetails.estimated_hours || 0,
-          actual_hours: 0,
-          cost: 0
-        };
-        
-        if (existingTask) {
-          // Atualizar tarefa existente
-          await EventTask.update(existingTask.id, taskData);
-        } else {
-          // Criar nova tarefa
-          await EventTask.create(taskData);
+        try {
+          // Verificar se a tarefa já existe no evento
+          const existingTask = existingTasks.find(et => et.task_id === defaultTask.task_id);
+          
+          // Buscar detalhes da tarefa base
+          const taskDetails = allTasks.find(t => t.id === defaultTask.task_id);
+          if (!taskDetails) {
+            console.log('Tarefa base não encontrada:', defaultTask.task_id);
+            continue;
+          }
+          
+          const taskData = {
+            event_id: eventId,
+            task_id: defaultTask.task_id,
+            name: taskDetails.name,
+            description: taskDetails.description || "",
+            responsible_role: taskDetails.responsible_role || "",
+            category_id: taskDetails.category_id || "",
+            is_active: true,
+            is_required: defaultTask.is_required || false,
+            days_before_event: defaultTask.days_before_event || 0,
+            status: "not_started",
+            due_date: null,
+            notes: taskDetails.notes || "",
+            priority: taskDetails.priority || "medium",
+            estimated_hours: taskDetails.estimated_hours || 0,
+            actual_hours: 0,
+            cost: 0
+          };
+          
+          if (existingTask) {
+            // Atualizar tarefa existente
+            await EventTask.update(existingTask.id, taskData);
+            console.log('Tarefa atualizada:', existingTask.id);
+          } else {
+            // Criar nova tarefa
+            const createdTask = await EventTask.create(taskData);
+            console.log('Nova tarefa criada:', createdTask);
+          }
+        } catch (error) {
+          console.error('Erro ao processar tarefa:', defaultTask, error);
+          // Continuar com a próxima tarefa mesmo se houver erro
+          continue;
         }
       }
       
       // Recarregar as tarefas do evento
-      const updatedEventTasks = await EventTask.list();
-      const tasksForEvent = updatedEventTasks.filter(et => et.event_id === eventId);
-      setTasks(tasksForEvent);
+      await loadTasks();
     } catch (error) {
       console.error("Error importing default tasks:", error);
     } finally {

@@ -49,25 +49,58 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
     try {
       // Carregar materiais do evento
       const eventMaterials = await EventMaterial.list();
-      const materialsForEvent = eventMaterials.filter(em => em.event_id === eventId);
-      setMaterials(materialsForEvent);
-
+      console.log('Materiais do evento (brutos):', eventMaterials);
+      
       // Carregar todos os materiais disponíveis
       const allMaterials = await Material.list();
+      console.log('Todos os materiais:', allMaterials);
+      
+      // Enriquecer os materiais do evento com informações do material base
+      const materialsForEvent = eventMaterials
+        .filter(em => em.event_id === eventId)
+        .map(em => {
+          const baseMaterial = allMaterials.find(m => m.id === em.material_id);
+          return {
+            ...em,
+            name: em.name || baseMaterial?.name || 'Material sem nome',
+            description: em.description || baseMaterial?.description || '',
+            unit: em.unit || baseMaterial?.unit || 'un',
+            category: em.category || baseMaterial?.category || 'other',
+            priority: em.priority || baseMaterial?.priority || 'medium'
+          };
+        });
+      
+      console.log('Materiais do evento (enriquecidos):', materialsForEvent);
+      setMaterials(materialsForEvent);
       setAvailableMaterials(allMaterials);
 
       // Carregar materiais padrão do tipo de evento
-      const defaultMaterials = await DefaultMaterial.list();
-      const enrichedTypeMaterials = defaultMaterials
-        .filter(dm => dm.event_type_id === eventTypeId)
-        .map(dm => ({
-          ...dm,
-          material: allMaterials.find(m => m.id === dm.material_id)
-        }));
+      if (eventTypeId) {
+        try {
+          const defaultMaterials = await DefaultMaterial.list();
+          console.log('Materiais padrão:', defaultMaterials);
+          const enrichedTypeMaterials = defaultMaterials
+            .filter(dm => dm.event_type_id === eventTypeId)
+            .map(dm => {
+              const baseMaterial = allMaterials.find(m => m.id === dm.material_id);
+              return {
+                ...dm,
+                material: baseMaterial
+              };
+            });
 
-      setAvailableTypeMaterials(enrichedTypeMaterials);
+          console.log('Materiais do tipo enriquecidos:', enrichedTypeMaterials);
+          setAvailableTypeMaterials(enrichedTypeMaterials);
+        } catch (error) {
+          console.error('Erro ao carregar materiais padrão:', error);
+          setAvailableTypeMaterials([]);
+        }
+      }
     } catch (error) {
-      console.error("Error loading materials:", error);
+      console.error("Erro ao carregar materiais:", error);
+      setMaterials([]);
+      setAvailableMaterials([]);
+      setAvailableTypeMaterials([]);
     } finally {
       setIsLoading(false);
     }
