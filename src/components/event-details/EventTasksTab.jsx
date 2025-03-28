@@ -37,26 +37,37 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
   const loadTasks = async () => {
     try {
       setIsLoading(true);
-      const eventTasks = await EventTask.list();
-      console.log('Todas as tarefas:', eventTasks);
+      console.log('EventTasksTab - Iniciando carregamento de tarefas para o evento:', eventId);
       
+      // Carregar todas as tarefas de eventos
+      const eventTasks = await EventTask.list();
+      console.log('EventTasksTab - Todas as tarefas:', eventTasks);
+      
+      // Filtrar tarefas do evento atual
       const tasksForEvent = eventTasks.filter(et => {
-        console.log('Comparando:', et.event_id, eventId);
+        console.log('EventTasksTab - Comparando:', et.event_id, eventId);
         return et.event_id === eventId;
       });
-      console.log('Tarefas filtradas para o evento:', tasksForEvent);
+      console.log('EventTasksTab - Tarefas filtradas para o evento:', tasksForEvent);
       
-      setTasks(tasksForEvent);
-      
+      // Carregar todas as tarefas base disponíveis
       const allTasks = await Task.list();
+      console.log('EventTasksTab - Todas as tarefas base:', allTasks);
       setAvailableTasks(allTasks);
       
+      // Se tiver tipo de evento, carregar tarefas padrão
       if (eventTypeId) {
+        console.log('EventTasksTab - Carregando tarefas padrão para o tipo:', eventTypeId);
         const defaultTasks = await DefaultTask.list();
-        setTypeTasks(defaultTasks.filter(dt => dt.event_type_id === eventTypeId));
+        const filteredDefaultTasks = defaultTasks.filter(dt => dt.event_type_id === eventTypeId);
+        console.log('EventTasksTab - Tarefas padrão filtradas:', filteredDefaultTasks);
+        setTypeTasks(filteredDefaultTasks);
       }
+      
+      // Atualizar estado com as tarefas do evento
+      setTasks(tasksForEvent);
     } catch (error) {
-      console.error('Erro ao carregar tarefas:', error);
+      console.error('EventTasksTab - Erro ao carregar tarefas:', error);
     } finally {
       setIsLoading(false);
     }
@@ -82,19 +93,39 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
   };
 
   const handleCreateTask = async (taskData) => {
-    await EventTask.create({
-      ...taskData,
-      event_id: eventId
-    });
-    setShowForm(false);
-    loadTasks();
+    try {
+      console.log('EventTasksTab - Criando nova tarefa:', taskData);
+      const newTask = await EventTask.create({
+        ...taskData,
+        event_id: eventId,
+        category: taskData.category || "other",
+        is_active: true,
+        status: "not_started",
+        actual_hours: 0,
+        cost: 0
+      });
+      console.log('EventTasksTab - Nova tarefa criada:', newTask);
+      setShowForm(false);
+      await loadTasks();
+    } catch (error) {
+      console.error('EventTasksTab - Erro ao criar tarefa:', error);
+    }
   };
 
   const handleUpdateTask = async (id, taskData) => {
-    await EventTask.update(id, taskData);
-    setShowForm(false);
-    setEditingTask(null);
-    loadTasks();
+    try {
+      console.log('EventTasksTab - Atualizando tarefa:', id, taskData);
+      await EventTask.update(id, {
+        ...taskData,
+        category: taskData.category || "other"
+      });
+      console.log('EventTasksTab - Tarefa atualizada:', id);
+      setShowForm(false);
+      setEditingTask(null);
+      await loadTasks();
+    } catch (error) {
+      console.error('EventTasksTab - Erro ao atualizar tarefa:', error);
+    }
   };
 
   const handleDeleteTask = async (id) => {
@@ -108,32 +139,48 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
   };
 
   const handleImportFromEventType = async () => {
-    if (!eventTypeId) return;
+    if (!eventTypeId) {
+      console.log('EventTasksTab - eventTypeId não disponível');
+      return;
+    }
     
     setIsLoading(true);
     try {
+      console.log('EventTasksTab - Iniciando importação de tarefas do tipo:', eventTypeId);
+      
       // Carregar tarefas padrão do tipo de evento
       const defaultTasks = await DefaultTask.list();
+      console.log('EventTasksTab - Tarefas padrão:', defaultTasks);
+      
       const tasksToImport = defaultTasks.filter(dt => dt.event_type_id === eventTypeId);
+      console.log('EventTasksTab - Tarefas filtradas para importar:', tasksToImport);
       
       // Carregar todas as tarefas disponíveis
       const allTasks = await Task.list();
+      console.log('EventTasksTab - Todas as tarefas:', allTasks);
       
       // Carregar tarefas existentes do evento
       const eventTasks = await EventTask.list();
+      console.log('EventTasksTab - Tarefas do evento:', eventTasks);
+      
       const existingTasks = eventTasks.filter(et => et.event_id === eventId);
+      console.log('EventTasksTab - Tarefas existentes filtradas:', existingTasks);
       
       for (const defaultTask of tasksToImport) {
         try {
+          console.log('EventTasksTab - Processando tarefa:', defaultTask);
+          
           // Verificar se a tarefa já existe no evento
           const existingTask = existingTasks.find(et => et.task_id === defaultTask.task_id);
+          console.log('EventTasksTab - Tarefa existente:', existingTask);
           
           // Buscar detalhes da tarefa base
           const taskDetails = allTasks.find(t => t.id === defaultTask.task_id);
           if (!taskDetails) {
-            console.log('Tarefa base não encontrada:', defaultTask.task_id);
+            console.log('EventTasksTab - Tarefa base não encontrada:', defaultTask.task_id);
             continue;
           }
+          console.log('EventTasksTab - Detalhes da tarefa base:', taskDetails);
           
           const taskData = {
             event_id: eventId,
@@ -141,7 +188,7 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
             name: taskDetails.name,
             description: taskDetails.description || "",
             responsible_role: taskDetails.responsible_role || "",
-            category_id: taskDetails.category_id || "",
+            category: taskDetails.category || "other",
             is_active: true,
             is_required: defaultTask.is_required || false,
             days_before_event: defaultTask.days_before_event || 0,
@@ -154,17 +201,19 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
             cost: 0
           };
           
+          console.log('EventTasksTab - Dados da tarefa para criar/atualizar:', taskData);
+          
           if (existingTask) {
             // Atualizar tarefa existente
             await EventTask.update(existingTask.id, taskData);
-            console.log('Tarefa atualizada:', existingTask.id);
+            console.log('EventTasksTab - Tarefa atualizada:', existingTask.id);
           } else {
             // Criar nova tarefa
             const createdTask = await EventTask.create(taskData);
-            console.log('Nova tarefa criada:', createdTask);
+            console.log('EventTasksTab - Nova tarefa criada:', createdTask);
           }
         } catch (error) {
-          console.error('Erro ao processar tarefa:', defaultTask, error);
+          console.error('EventTasksTab - Erro ao processar tarefa:', defaultTask, error);
           // Continuar com a próxima tarefa mesmo se houver erro
           continue;
         }
@@ -173,7 +222,7 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
       // Recarregar as tarefas do evento
       await loadTasks();
     } catch (error) {
-      console.error("Error importing default tasks:", error);
+      console.error("EventTasksTab - Erro ao importar tarefas:", error);
     } finally {
       setIsLoading(false);
     }
@@ -181,17 +230,12 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
 
   const handleStatusChange = async (taskId, newStatus) => {
     try {
-      const task = tasks.find(t => t.id === taskId);
-      if (!task) return;
-      
-      await EventTask.update(taskId, {
-        ...task,
-        status: newStatus
-      });
-      
-      loadTasks();
+      console.log('EventTasksTab - Alterando status da tarefa:', taskId, newStatus);
+      await EventTask.update(taskId, { status: newStatus });
+      console.log('EventTasksTab - Status atualizado com sucesso');
+      await loadTasks();
     } catch (error) {
-      console.error("Erro ao atualizar status:", error);
+      console.error('EventTasksTab - Erro ao alterar status:', error);
     }
   };
 
@@ -208,7 +252,7 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
   const getStatusColor = (status) => {
     const colors = {
       not_started: "bg-gray-100 text-gray-800",
-      in_progress: "bg-blue-100 text-blue-800",
+      in_progress: "bg-yellow-100 text-yellow-800",
       completed: "bg-green-100 text-green-800",
       cancelled: "bg-red-100 text-red-800"
     };
@@ -216,19 +260,19 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
   };
   
   const getCategoryLabel = (category) => {
-    const categories = {
+    const categoryMap = {
       design: "Design",
       logistics: "Logística",
       suppliers: "Fornecedores",
       media: "Mídia",
       other: "Outros"
     };
-    return categories[category] || category;
+    return categoryMap[category] || category;
   };
 
   return (
     <div className="space-y-4">
-      {showForm ? (
+      {showForm && (
         <EventTaskForm
           initialData={editingTask}
           availableTasks={availableTasks}
@@ -237,109 +281,105 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
             setShowForm(false);
             setEditingTask(null);
           }}
+          eventId={eventId}
         />
-      ) : (
-        <>
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Tarefas do Evento</h2>
-            <div className="flex gap-2">
-              <Button 
-                onClick={() => {
-                  setEditingTask(null);
-                  setShowForm(true);
-                }}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Nova Tarefa
-              </Button>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg border shadow-sm">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Responsável</TableHead>
-                  <TableHead>Data Limite</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-24">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                      Carregando tarefas...
-                    </TableCell>
-                  </TableRow>
-                ) : tasks.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                      Nenhuma tarefa cadastrada para este evento
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  tasks.map((task) => (
-                    <TableRow key={task.id}>
-                      <TableCell className="font-medium">{task.name}</TableCell>
-                      <TableCell>
-                        {task.category && (
-                          <Badge variant="outline">
-                            {getCategoryLabel(task.category)}
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>{task.responsible_role || "-"}</TableCell>
-                      <TableCell>
-                        {task.due_date ? format(new Date(task.due_date), "dd/MM/yyyy") : "-"}
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          value={task.status}
-                          onValueChange={(value) => handleStatusChange(task.id, value)}
-                        >
-                          <SelectTrigger className="h-8 w-36">
-                            <SelectValue placeholder="Status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="not_started">Não Iniciada</SelectItem>
-                            <SelectItem value="in_progress">Em Andamento</SelectItem>
-                            <SelectItem value="completed">Concluída</SelectItem>
-                            <SelectItem value="cancelled">Cancelada</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEdit(task)}
-                            title="Editar"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteTask(task.id)}
-                            title="Excluir"
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </>
       )}
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold">Tarefas do Evento</h2>
+        <div className="flex gap-2">
+          {eventTypeId && (
+            <Button
+              onClick={handleImportFromEventType}
+              className="bg-green-600 hover:bg-green-700"
+              disabled={isLoading}
+            >
+              Importar do Tipo de Evento
+            </Button>
+          )}
+          <Button 
+            onClick={() => {
+              setEditingTask(null);
+              setShowForm(true);
+            }}
+            className="bg-blue-600 hover:bg-blue-700"
+            disabled={isLoading}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Nova Tarefa
+          </Button>
+        </div>
+      </div>
+      <div className="border rounded-lg">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nome</TableHead>
+              <TableHead>Responsável</TableHead>
+              <TableHead>Data Limite</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Categoria</TableHead>
+              <TableHead>Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {tasks.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center text-gray-500">
+                  Nenhuma tarefa cadastrada
+                </TableCell>
+              </TableRow>
+            ) : (
+              tasks.map(task => (
+                <TableRow key={task.id}>
+                  <TableCell>{task.name}</TableCell>
+                  <TableCell>{task.responsible_role || "-"}</TableCell>
+                  <TableCell>
+                    {task.due_date ? format(new Date(task.due_date), "dd/MM/yyyy") : "-"}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={getStatusColor(task.status)}>
+                      {getStatusLabel(task.status)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">
+                      {getCategoryLabel(task.category)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEdit(task)}
+                        disabled={isLoading}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteTask(task.id)}
+                        disabled={isLoading}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleStatusChange(task.id, task.status === "completed" ? "not_started" : "completed")}
+                        disabled={isLoading}
+                      >
+                        <CheckCircle className={`h-4 w-4 ${task.status === "completed" ? "text-green-500" : "text-gray-400"}`} />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

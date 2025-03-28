@@ -20,28 +20,23 @@ import {
 } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
 
-export default function EventTaskForm({ initialData, availableTasks, onSubmit, onCancel }) {
+export default function EventTaskForm({ initialData, availableTasks, onSubmit, onCancel, eventId }) {
   const [formData, setFormData] = useState(initialData || {
     name: "",
     task_id: "",
     description: "",
     responsible_role: "",
     due_date: "",
-    category_id: "",
+    category: "other",
     is_active: true,
     is_required: false,
     days_before_event: 0,
     status: "not_started",
     notes: "",
-    category: "other",
-    task_category_id: "",
-    task_category: "other",
-    task_name: "",
-    task_description: "",
-    task_responsible_role: "",
-    task_priority: "medium",
-    task_estimated_hours: 0,
-    task_notes: ""
+    priority: "medium",
+    estimated_hours: 0,
+    actual_hours: 0,
+    cost: 0
   });
   
   const handleSubmit = (e) => {
@@ -63,18 +58,12 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
         ...formData,
         task_id: taskId,
         name: selectedTask.name,
-        description: selectedTask.description,
-        responsible_role: selectedTask.responsible_role,
-        category_id: selectedTask.category_id || "",
+        description: selectedTask.description || "",
+        responsible_role: selectedTask.responsible_role || "",
         category: selectedTask.category || "other",
-        task_category_id: selectedTask.category_id || "",
-        task_category: selectedTask.category || "other",
-        task_name: selectedTask.name,
-        task_description: selectedTask.description,
-        task_responsible_role: selectedTask.responsible_role,
-        task_priority: selectedTask.priority || "medium",
-        task_estimated_hours: selectedTask.estimated_hours || 0,
-        task_notes: selectedTask.notes || ""
+        priority: selectedTask.priority || "medium",
+        estimated_hours: selectedTask.estimated_hours || 0,
+        notes: selectedTask.notes || ""
       });
     }
   };
