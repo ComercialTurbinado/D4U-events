@@ -113,20 +113,11 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
       const newTaskData = {
         event_id: eventId,
         task_id: taskData.task_id || null,
-        name: taskData.name || "",
-        description: taskData.description || "",
-        responsible_role: taskData.responsible_role || "",
-        category: "other",
-        priority: "medium",
-        estimated_hours: 0,
-        actual_hours: 0,
-        cost: 0,
-        notes: "",
-        status: "not_started",
-        is_active: true,
-        is_required: false,
-        days_before_event: 0,
-        due_date: taskData.due_date || null
+        status: "pending",
+        assigned_to: taskData.responsible_role || "",
+        due_date: taskData.due_date || null,
+        notes: taskData.notes || "",
+        is_active: true
       };
       
       console.log('EventTasksTab - Dados formatados para criar tarefa:', newTaskData);
@@ -148,20 +139,11 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
       const updateData = {
         event_id: eventId,
         task_id: taskData.task_id || null,
-        name: taskData.name || "",
-        description: taskData.description || "",
-        responsible_role: taskData.responsible_role || "",
-        category: "other",
-        priority: "medium",
-        estimated_hours: 0,
-        actual_hours: taskData.actual_hours || 0,
-        cost: taskData.cost || 0,
+        status: taskData.status || "pending",
+        assigned_to: taskData.responsible_role || "",
+        due_date: taskData.due_date || null,
         notes: taskData.notes || "",
-        status: taskData.status || "not_started",
-        is_active: true,
-        is_required: false,
-        days_before_event: taskData.days_before_event || 0,
-        due_date: taskData.due_date || null
+        is_active: true
       };
       
       console.log('EventTasksTab - Dados formatados para atualizar tarefa:', updateData);
@@ -234,20 +216,11 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
           const taskData = {
             event_id: eventId,
             task_id: defaultTask.task_id,
-            name: taskDetails.name || "",
-            description: taskDetails.description || "",
-            responsible_role: taskDetails.responsible_role || "",
-            category: "other",
-            priority: "medium",
-            estimated_hours: 0,
-            actual_hours: 0,
-            cost: 0,
-            notes: "",
-            status: "not_started",
-            is_active: true,
-            is_required: false,
-            days_before_event: defaultTask.days_before_event || 0,
-            due_date: null
+            status: "pending",
+            assigned_to: taskDetails.responsible_role || "",
+            due_date: null,
+            notes: taskDetails.notes || "",
+            is_active: true
           };
           
           console.log('EventTasksTab - Dados da tarefa para criar/atualizar:', taskData);
@@ -280,7 +253,9 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
   const handleStatusChange = async (taskId, newStatus) => {
     try {
       console.log('EventTasksTab - Alterando status da tarefa:', taskId, newStatus);
-      await EventTask.update(taskId, { status: newStatus });
+      // Converter o status para o formato do MongoDB
+      const status = newStatus === "completed" ? "completed" : "pending";
+      await EventTask.update(taskId, { status });
       console.log('EventTasksTab - Status atualizado com sucesso');
       await loadTasks();
     } catch (error) {
@@ -290,20 +265,18 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
 
   const getStatusLabel = (status) => {
     const statusMap = {
-      not_started: "Não Iniciada",
+      pending: "Pendente",
       in_progress: "Em Andamento",
-      completed: "Concluída",
-      cancelled: "Cancelada"
+      completed: "Concluída"
     };
     return statusMap[status] || status;
   };
   
   const getStatusColor = (status) => {
     const colors = {
-      not_started: "bg-gray-100 text-gray-800",
+      pending: "bg-gray-100 text-gray-800",
       in_progress: "bg-yellow-100 text-yellow-800",
-      completed: "bg-green-100 text-green-800",
-      cancelled: "bg-red-100 text-red-800"
+      completed: "bg-green-100 text-green-800"
     };
     return colors[status] || "bg-gray-100 text-gray-800";
   };
