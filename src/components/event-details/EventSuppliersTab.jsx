@@ -105,7 +105,8 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
     setIsLoading(true);
     try {
       // Get all default suppliers from the event type
-      const defaultSuppliers = await DefaultSupplier.filter({ event_type_id: eventTypeId });
+      const defaultSuppliers = await DefaultSupplier.list();
+      const suppliersToImport = defaultSuppliers.filter(s => s.event_type_id === eventTypeId);
       
       // Filter out suppliers that have already been added to the event
       const existingSupplierIds = suppliers
@@ -113,7 +114,7 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
         .map(s => s.supplier_id);
       
       // Create event-specific suppliers from default suppliers
-      for (const defaultSupplier of defaultSuppliers) {
+      for (const defaultSupplier of suppliersToImport) {
         // Skip if this supplier was already added
         if (existingSupplierIds.includes(defaultSupplier.id)) continue;
         

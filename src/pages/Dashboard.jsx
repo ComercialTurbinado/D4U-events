@@ -92,9 +92,10 @@ export default function Dashboard() {
   const calculateEventProgress = async (event) => {
     try {
       // Get all tasks for this event
-      const tasks = await EventTask.filter({ event_id: event.id });
+      const tasks = await EventTask.list();
+      const eventTasks = tasks.filter(task => task.event_id === event.id);
       
-      if (tasks.length === 0) {
+      if (eventTasks.length === 0) {
         setEventProgress(prev => ({
           ...prev,
           [event.id]: { 
@@ -107,16 +108,16 @@ export default function Dashboard() {
       }
       
       // Count completed tasks
-      const completedTasks = tasks.filter(task => task.status === "completed").length;
+      const completedTasks = eventTasks.filter(task => task.status === "completed").length;
       
       // Calculate percentage
-      const percentage = Math.round((completedTasks / tasks.length) * 100);
+      const percentage = Math.round((completedTasks / eventTasks.length) * 100);
       
       setEventProgress(prev => ({
         ...prev,
         [event.id]: { 
           completedTasks,
-          totalTasks: tasks.length,
+          totalTasks: eventTasks.length,
           percentage 
         }
       }));
