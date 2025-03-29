@@ -18,20 +18,21 @@ export default function EventSupplierForm({ initialData, availableSuppliers, onS
     name: "",
     supplier_type: "other",
     contact_person: "",
-    phone: "",
+    contact_phone: "",
     service_description: "",
     status: "requested",
     cost: "",
-    notes: ""
+    notes: "",
+    is_active: true
   });
   
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Convert cost to number if provided
+    // Converter cost para número se fornecido
     const submittedData = {
       ...formData,
-      cost: formData.cost ? parseFloat(formData.cost) : undefined
+      cost: formData.cost ? parseFloat(formData.cost) : 0
     };
     
     if (initialData) {
@@ -49,7 +50,7 @@ export default function EventSupplierForm({ initialData, availableSuppliers, onS
         name: "",
         supplier_type: "other",
         contact_person: "",
-        phone: "",
+        contact_phone: "",
         service_description: ""
       }));
       return;
@@ -61,9 +62,9 @@ export default function EventSupplierForm({ initialData, availableSuppliers, onS
         ...prev,
         supplier_id: selectedSupplier.id,
         name: selectedSupplier.name,
-        supplier_type: selectedSupplier.supplier_type,
+        supplier_type: selectedSupplier.supplier_type || "other",
         contact_person: selectedSupplier.contact_person || "",
-        phone: selectedSupplier.phone || "",
+        contact_phone: selectedSupplier.phone || "",
         service_description: selectedSupplier.service_description || ""
       }));
     }
@@ -138,11 +139,11 @@ export default function EventSupplierForm({ initialData, availableSuppliers, onS
             </div>
             
             <div>
-              <Label htmlFor="phone">Telefone</Label>
+              <Label htmlFor="contact_phone">Telefone</Label>
               <Input
-                id="phone"
-                value={formData.phone}
-                onChange={e => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                id="contact_phone"
+                value={formData.contact_phone}
+                onChange={e => setFormData(prev => ({ ...prev, contact_phone: e.target.value }))}
                 placeholder="Ex: (11) 99999-9999"
               />
             </div>

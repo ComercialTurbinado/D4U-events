@@ -87,12 +87,29 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
 
   const handleCreateSupplier = async (supplierData) => {
     try {
-      await EventSupplier.create({
-        ...supplierData,
-        event_id: eventId
-      });
+      console.log('EventSuppliersTab - Criando fornecedor, dados recebidos:', supplierData);
+      
+      // Dados básicos do fornecedor - formato MongoDB
+      const newSupplierData = {
+        event_id: eventId,
+        supplier_id: supplierData.supplier_id || null,
+        name: supplierData.name,
+        supplier_type: supplierData.supplier_type || "other",
+        contact_person: supplierData.contact_person || "",
+        contact_phone: supplierData.phone || "",
+        service_description: supplierData.service_description || "",
+        status: "requested",
+        notes: supplierData.notes || "",
+        cost: supplierData.cost ? parseFloat(supplierData.cost) : 0,
+        is_active: true
+      };
+      
+      console.log('EventSuppliersTab - Dados formatados para criar fornecedor:', newSupplierData);
+      const newSupplier = await EventSupplier.create(newSupplierData);
+      console.log('EventSuppliersTab - Novo fornecedor criado:', newSupplier);
+      
       setShowForm(false);
-      loadSuppliers();
+      await loadSuppliers();
     } catch (error) {
       console.error("Erro ao criar fornecedor:", error);
     }
@@ -100,10 +117,30 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
 
   const handleUpdateSupplier = async (id, supplierData) => {
     try {
-      await EventSupplier.update(id, supplierData);
+      console.log('EventSuppliersTab - Atualizando fornecedor, dados recebidos:', { id, supplierData });
+      
+      // Dados básicos do fornecedor - formato MongoDB
+      const updateData = {
+        event_id: eventId,
+        supplier_id: supplierData.supplier_id || null,
+        name: supplierData.name,
+        supplier_type: supplierData.supplier_type || "other",
+        contact_person: supplierData.contact_person || "",
+        contact_phone: supplierData.phone || "",
+        service_description: supplierData.service_description || "",
+        status: supplierData.status || "requested",
+        notes: supplierData.notes || "",
+        cost: supplierData.cost ? parseFloat(supplierData.cost) : 0,
+        is_active: true
+      };
+      
+      console.log('EventSuppliersTab - Dados formatados para atualizar fornecedor:', updateData);
+      const updatedSupplier = await EventSupplier.update(id, updateData);
+      console.log('EventSuppliersTab - Fornecedor atualizado:', updatedSupplier);
+      
       setShowForm(false);
       setEditingSupplier(null);
-      loadSuppliers();
+      await loadSuppliers();
     } catch (error) {
       console.error("Erro ao atualizar fornecedor:", error);
     }
@@ -124,68 +161,86 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
   };
 
   const handleImportFromEventType = async () => {
-    if (!eventTypeId) return;
+    if (!eventTypeId) {
+      console.log('EventSuppliersTab - eventTypeId não disponível');
+      return;
+    }
     
     setIsLoading(true);
     try {
-      // Primeiro, vamos tentar carregar os fornecedores padrão
-      let suppliersToImport = [];
-      try {
-        const defaultSuppliers = await DefaultSupplier.list();
-        suppliersToImport = defaultSuppliers.filter(ds => ds.event_type_id === eventTypeId);
-      } catch (error) {
-        console.error('Erro ao carregar fornecedores padrão:', error);
-        // Se não conseguirmos carregar os fornecedores padrão, usamos os disponíveis
-        suppliersToImport = availableSuppliers.map(s => ({
-          supplier_id: s.id,
-          event_type_id: eventTypeId
-        }));
-      }
+      console.log('EventSuppliersTab - Iniciando importação de fornecedores do tipo:', eventTypeId);
       
-      const existingSupplierIds = suppliers
-        .filter(s => s.supplier_id)
-        .map(s => s.supplier_id);
+      // Carregar fornecedores padrão do tipo de evento
+      const defaultSuppliers = await DefaultSupplier.list();
+      console.log('EventSuppliersTab - Fornecedores padrão:', defaultSuppliers);
+      
+      const suppliersToImport = defaultSuppliers.filter(ds => ds.event_type_id === eventTypeId);
+      console.log('EventSuppliersTab - Fornecedores filtrados para importar:', suppliersToImport);
+      
+      // Carregar todos os fornecedores disponíveis
+      const allSuppliers = await Supplier.list();
+      console.log('EventSuppliersTab - Todos os fornecedores:', allSuppliers);
+      
+      // Carregar fornecedores existentes do evento
+      const eventSuppliers = await EventSupplier.list();
+      console.log('EventSuppliersTab - Fornecedores do evento:', eventSuppliers);
+      
+      const existingSuppliers = eventSuppliers.filter(es => es.event_id === eventId);
+      console.log('EventSuppliersTab - Fornecedores existentes filtrados:', existingSuppliers);
       
       for (const defaultSupplier of suppliersToImport) {
-        if (existingSupplierIds.includes(defaultSupplier.supplier_id)) continue;
-        
-        let supplierDetails;
         try {
-          supplierDetails = await Supplier.get(defaultSupplier.supplier_id);
-        } catch (error) {
-          console.error('Erro ao carregar detalhes do fornecedor:', error);
-          continue;
-        }
-        
-        if (!supplierDetails) continue;
-        
-        try {
-          await EventSupplier.create({
+          console.log('EventSuppliersTab - Processando fornecedor:', defaultSupplier);
+          
+          // Verificar se o fornecedor já existe no evento
+          const existingSupplier = existingSuppliers.find(es => es.supplier_id === defaultSupplier.supplier_id);
+          console.log('EventSuppliersTab - Fornecedor existente:', existingSupplier);
+          
+          // Buscar detalhes do fornecedor base
+          const supplierDetails = allSuppliers.find(s => s.id === defaultSupplier.supplier_id);
+          if (!supplierDetails) {
+            console.log('EventSuppliersTab - Fornecedor base não encontrado:', defaultSupplier.supplier_id);
+            continue;
+          }
+          console.log('EventSuppliersTab - Detalhes do fornecedor base:', supplierDetails);
+          
+          // Dados básicos do fornecedor - formato MongoDB
+          const supplierData = {
             event_id: eventId,
             supplier_id: defaultSupplier.supplier_id,
             name: supplierDetails.name,
             supplier_type: supplierDetails.supplier_type || "other",
             contact_person: supplierDetails.contact_person || "",
-            contact_email: supplierDetails.contact_email || "",
-            contact_phone: supplierDetails.contact_phone || "",
+            contact_phone: supplierDetails.phone || "",
             service_description: supplierDetails.service_description || "",
             status: "requested",
             notes: supplierDetails.notes || "",
             cost: 0,
-            payment_status: "pending",
-            contract_status: "pending",
-            delivery_date: null
-          });
+            is_active: true
+          };
+          
+          console.log('EventSuppliersTab - Dados do fornecedor para criar/atualizar:', supplierData);
+          
+          if (existingSupplier) {
+            // Atualizar fornecedor existente
+            const updatedSupplier = await EventSupplier.update(existingSupplier.id, supplierData);
+            console.log('EventSuppliersTab - Fornecedor atualizado:', updatedSupplier);
+          } else {
+            // Criar novo fornecedor
+            const createdSupplier = await EventSupplier.create(supplierData);
+            console.log('EventSuppliersTab - Novo fornecedor criado:', createdSupplier);
+          }
         } catch (error) {
-          console.error('Erro ao criar fornecedor do evento:', error);
-          // Continua para o próximo fornecedor mesmo se houver erro
+          console.error('EventSuppliersTab - Erro ao processar fornecedor:', defaultSupplier, error);
+          // Continuar com o próximo fornecedor mesmo se houver erro
           continue;
         }
       }
       
-      loadSuppliers();
+      // Recarregar os fornecedores do evento
+      await loadSuppliers();
     } catch (error) {
-      console.error("Erro ao importar fornecedores:", error);
+      console.error("EventSuppliersTab - Erro ao importar fornecedores:", error);
     } finally {
       setIsLoading(false);
     }
