@@ -39,8 +39,15 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
       setIsLoading(true);
       console.log('EventTasksTab - Iniciando carregamento de tarefas para o evento:', eventId);
       
-      // Carregar todas as tarefas de eventos
-      const eventTasks = await EventTask.list();
+      // Carregar todas as tarefas de eventos com os relacionamentos
+      const eventTasks = await EventTask.list({
+        populate: [
+          { path: 'team_member', select: 'name' },
+          { path: 'category_id', select: 'name' },
+          { path: 'task_id', select: 'department_id', populate: { path: 'department_id', select: 'name' } }
+        ]
+      });
+      
       console.log('EventTasksTab - Todas as tarefas:', eventTasks);
       
       // Carregar todas as tarefas base
@@ -50,31 +57,19 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
       
       // Filtrar e enriquecer tarefas do evento atual
       const tasksForEvent = eventTasks
-        .filter(et => {
-          const eventIdMatches = et.event_id === eventId;
-          console.log('EventTasksTab - Comparando:', {
-            taskEventId: et.event_id,
-            currentEventId: eventId,
-            matches: eventIdMatches
-          });
-          return eventIdMatches;
-        })
+        .filter(et => et.event_id === eventId)
         .map(et => {
           // Buscar detalhes da tarefa base
-          const baseTask = allTasks.find(t => t.id === et.task_id);
-          console.log('EventTasksTab - Enriquecendo tarefa:', {
-            eventTask: et,
-            baseTask
-          });
+          const baseTask = allTasks.find(t => t.id === et.task_id?._id);
           
           // Combinar dados da tarefa do evento com a tarefa base
           return {
             ...et,
-            name: baseTask?.name || "Tarefa não encontrada",
-            description: baseTask?.description || "",
-            responsible_role: et.assigned_to || baseTask?.responsible_role || "",
-            category: baseTask?.category || "other",
-            priority: baseTask?.priority || "medium",
+            name: et.name || baseTask?.name || "Tarefa não encontrada",
+            description: et.description || baseTask?.description || "",
+            category: et.category_id,
+            team_member: et.team_member,
+            department: et.task_id?.department_id,
             estimated_hours: baseTask?.estimated_hours || 0
           };
         });
@@ -83,18 +78,8 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
       
       // Se tiver tipo de evento, carregar tarefas padrão
       if (eventTypeId) {
-        console.log('EventTasksTab - Carregando tarefas padrão para o tipo:', eventTypeId);
         const defaultTasks = await DefaultTask.list();
-        const filteredDefaultTasks = defaultTasks.filter(dt => {
-          const typeIdMatches = dt.event_type_id === eventTypeId;
-          console.log('EventTasksTab - Comparando tipo:', {
-            taskTypeId: dt.event_type_id,
-            currentTypeId: eventTypeId,
-            matches: typeIdMatches
-          });
-          return typeIdMatches;
-        });
-        console.log('EventTasksTab - Tarefas padrão filtradas:', filteredDefaultTasks);
+        const filteredDefaultTasks = defaultTasks.filter(dt => dt.event_type_id === eventTypeId);
         setTypeTasks(filteredDefaultTasks);
       }
       
@@ -364,6 +349,7 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
           <TableHeader>
             <TableRow>
               <TableHead>Nome</TableHead>
+              <TableHead>Setor</TableHead>  
               <TableHead>Responsável</TableHead>
               <TableHead>Data Limite</TableHead>
               <TableHead>Status</TableHead>
@@ -374,7 +360,7 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
           <TableBody>
             {tasks.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-gray-500">
+                <TableCell colSpan={7} className="text-center text-gray-500">
                   Nenhuma tarefa cadastrada
                 </TableCell>
               </TableRow>
@@ -382,7 +368,8 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
               tasks.map(task => (
                 <TableRow key={task.id}>
                   <TableCell>{task.name}</TableCell>
-                  <TableCell>{task.responsible_role || "-"}</TableCell>
+                  <TableCell>{task.department?.name || "-"}</TableCell>
+                  <TableCell>{task.team_member?.name || "-"}</TableCell>
                   <TableCell>
                     {task.due_date ? format(new Date(task.due_date), "dd/MM/yyyy") : "-"}
                   </TableCell>
@@ -393,7 +380,7 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
                   </TableCell>
                   <TableCell>
                     <Badge variant="secondary">
-                      {getCategoryLabel(task.category)}
+                      {task.category?.name || "-"}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -417,7 +404,7 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleStatusChange(task.id, task.status === "completed" ? "not_started" : "completed")}
+                        onClick={() => handleStatusChange(task.id, task.status === "completed" ? "pending" : "completed")}
                         disabled={isLoading}
                       >
                         <CheckCircle className={`h-4 w-4 ${task.status === "completed" ? "text-green-500" : "text-gray-400"}`} />

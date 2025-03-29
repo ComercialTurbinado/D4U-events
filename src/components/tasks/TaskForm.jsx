@@ -29,6 +29,7 @@ export default function TaskForm({ initialData, onSubmit, onCancel }) {
 
   const [categories, setCategories] = useState([]);
   const [departments, setDepartments] = useState([]);
+  
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [isLoadingDepartments, setIsLoadingDepartments] = useState(true);
 
@@ -88,6 +89,17 @@ export default function TaskForm({ initialData, onSubmit, onCancel }) {
               required
             />
           </div>
+
+          <div>
+            <Label htmlFor="description">Descrição</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="Descreva os detalhes desta tarefa..."
+              className="h-24"
+            />
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -128,15 +140,6 @@ export default function TaskForm({ initialData, onSubmit, onCancel }) {
               )}
             </div>
             
-            <div>
-              <Label htmlFor="days_before_event">Dias Antes do Evento</Label>
-              <Input
-                id="days_before_event"
-                type="number"
-                value={formData.days_before_event}
-                onChange={e => setFormData(prev => ({ ...prev, days_before_event: parseInt(e.target.value) }))}
-              />
-            </div>
             
             <div>
               <div className="flex items-center justify-between">
@@ -182,6 +185,17 @@ export default function TaskForm({ initialData, onSubmit, onCancel }) {
               )}
             </div>
             
+
+            <div>
+              <Label htmlFor="days_before_event">Dias Antes do Evento</Label>
+              <Input
+                id="days_before_event"
+                type="number"
+                value={formData.days_before_event}
+                onChange={e => setFormData(prev => ({ ...prev, days_before_event: parseInt(e.target.value) }))}
+              />
+            </div>
+
             <div className="flex items-end">
               <div className="flex items-center space-x-2">
                 <Checkbox
@@ -194,16 +208,7 @@ export default function TaskForm({ initialData, onSubmit, onCancel }) {
             </div>
           </div>
           
-          <div>
-            <Label htmlFor="description">Descrição</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Descreva os detalhes desta tarefa..."
-              className="h-24"
-            />
-          </div>
+          
         </div>
       </Card>
 

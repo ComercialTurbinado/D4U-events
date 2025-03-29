@@ -67,19 +67,7 @@ export default function TeamMembersPage() {
     setShowForm(true);
   };
 
-  const getDepartmentLabel = (department) => {
-    const departments = {
-      administrativo: "Administrativo",
-      comercial: "Comercial",
-      operacional: "Operacional",
-      marketing: "Marketing",
-      financeiro: "Financeiro",
-      rh: "Recursos Humanos",
-      ti: "Tecnologia da Informação",
-      outro: "Outro"
-    };
-    return departments[department] || department;
-  };
+   
 
   return (
     <div className="container mx-auto py-8">

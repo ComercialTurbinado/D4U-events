@@ -67,22 +67,22 @@ export default function Layout() {
       ]
     },
     { 
-      name: "Departamentos", 
+      name: "Setores", 
       icon: Users, 
       path: "/departments",
       submenu: [
-        { name: "Listar Departamentos", path: "/departments" },
+        { name: "Listar setores", path: "/departments" },
         { name: "Membros da Equipe", path: "/departments/members" }
       ]
-    },
-    { name: "Configurações", icon: Settings, path: "/settings" },
+    }
+    //,{ name: "Configurações", icon: Settings, path: "/settings" },
   ];
 
   return (
     <div className="min-h-screen bg-background">
       {/* Sidebar */}
       <div className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 bg-background border-r transform transition-transform duration-200 ease-in-out",
+        "fixed inset-y-0 left-0 z-50 w-64 bg-background border-r transform transition-transform duration-200 ease-in-out translate-x-0",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex flex-col h-full">

@@ -105,14 +105,14 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
                   ))}
                   {departments.length === 0 && !isLoadingDepartments && (
                     <SelectItem value="" disabled>
-                      Nenhum departamento cadastrado
+                      Nenhum Setor cadastrado
                     </SelectItem>
                   )}
                 </SelectContent>
               </Select>
               {departments.length === 0 && !isLoadingDepartments && (
                 <p className="text-amber-600 text-xs mt-1">
-                  Cadastre departamentos primeiro
+                  Cadastre Setores primeiro
                 </p>
               )}
             </div>

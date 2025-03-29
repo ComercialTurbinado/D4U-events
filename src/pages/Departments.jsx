@@ -75,9 +75,7 @@ export default function DepartmentsPage() {
           <div className="flex justify-between items-center mb-6">
             <div>
               <h1 className="text-2xl font-bold">Departamentos</h1>
-              <p className="text-muted-foreground">
-                Gerencie os departamentos da sua organização
-              </p>
+              
             </div>
             <div className="flex gap-2">
               <Button

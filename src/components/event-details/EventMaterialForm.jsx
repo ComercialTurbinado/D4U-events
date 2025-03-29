@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Material, Supplier } from "@/api/entities";
 import { Card } from "@/components/ui/card";
@@ -37,6 +36,7 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
   const [materialDetails, setMaterialDetails] = useState(null);
   const [suppliers, setSuppliers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingSuppliers, setIsLoadingSuppliers] = useState(false);
   const [totalCost, setTotalCost] = useState(initialData?.unit_cost * initialData?.quantity || 0);
   const [showStockDialog, setShowStockDialog] = useState(false);
   const [pendingSubmission, setPendingSubmission] = useState(null);
@@ -165,7 +165,23 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
 
   const handleQuantityChange = (value) => {
     const newQuantity = parseInt(value) || 0;
-    setFormData({...formData, quantity: newQuantity});
+    setFormData(prev => {
+      const updatedData = { ...prev, quantity: newQuantity };
+      // Atualizar o custo total quando a quantidade muda
+      const unitCost = totalCost / (prev.quantity || 1);
+      setTotalCost(unitCost * newQuantity);
+      return updatedData;
+    });
+  };
+
+  const handleTotalCostChange = (value) => {
+    const newTotalCost = parseFloat(value) || 0;
+    setTotalCost(newTotalCost);
+    // Atualizar o custo unitário no formData
+    if (formData.quantity > 0) {
+      const unitCost = newTotalCost / formData.quantity;
+      setFormData(prev => ({ ...prev, unit_cost: unitCost }));
+    }
   };
 
   return (
@@ -239,7 +255,7 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
                   min="0"
                   step="0.01"
                   value={totalCost}
-                  onChange={e => setTotalCost(parseFloat(e.target.value) || 0)}
+                  onChange={e => handleTotalCostChange(e.target.value)}
                   placeholder="Valor total"
                 />
               </div>

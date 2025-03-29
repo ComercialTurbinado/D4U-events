@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Event, DefaultTask, DefaultMaterial, DefaultSupplier, EventTask, EventMaterial, EventSupplier, Task, Material, Supplier } from "@/api/entities";
+import { Event, DefaultTask, DefaultMaterial, EventTask, EventMaterial, Task, Material } from "@/api/entities";
 import { Button } from "@/components/ui/button";
 import { Plus, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -30,6 +30,26 @@ export default function EventsPage() {
     }
   };
 
+  const handleCreateEvent = async (eventData) => {
+    try {
+      // Criar o evento
+      const newEvent = await Event.create(eventData);
+      
+      // Se o evento tem um tipo, importar tarefas e materiais padrão
+      if (newEvent.event_type_id) {
+        await Promise.all([
+          importDefaultTasks(newEvent.id, newEvent.event_type_id),
+          importDefaultMaterials(newEvent.id, newEvent.event_type_id)
+        ]);
+      }
+      
+      setShowForm(false);
+      navigate(createPageUrl(`events/${newEvent.id}`));
+    } catch (error) {
+      console.error("Error creating event:", error);
+    }
+  };
+
   const importDefaultTasks = async (eventId, eventTypeId) => {
     try {
       // Carregar tarefas padrão do tipo de evento
@@ -53,7 +73,7 @@ export default function EventsPage() {
           is_active: true,
           is_required: defaultTask.is_required || false,
           days_before_event: defaultTask.days_before_event || 0,
-          status: "not_started",
+          status: "pending",
           due_date: null,
           notes: taskDetails.notes || "",
           priority: taskDetails.priority || "medium",
@@ -101,62 +121,6 @@ export default function EventsPage() {
       }
     } catch (error) {
       console.error("Error importing default materials:", error);
-    }
-  };
-
-  const importDefaultSuppliers = async (eventId, eventTypeId) => {
-    try {
-      // Carregar fornecedores padrão do tipo de evento
-      const defaultSuppliers = await DefaultSupplier.list();
-      const suppliersToImport = defaultSuppliers.filter(ds => ds.event_type_id === eventTypeId);
-      
-      // Carregar todos os fornecedores disponíveis
-      const allSuppliers = await Supplier.list();
-      
-      for (const defaultSupplier of suppliersToImport) {
-        const supplierDetails = allSuppliers.find(s => s.id === defaultSupplier.supplier_id);
-        if (!supplierDetails) continue;
-        
-        await EventSupplier.create({
-          event_id: eventId,
-          supplier_id: defaultSupplier.supplier_id,
-          name: supplierDetails.name,
-          supplier_type: supplierDetails.supplier_type || "other",
-          contact_person: supplierDetails.contact_person || "",
-          contact_email: supplierDetails.contact_email || "",
-          contact_phone: supplierDetails.contact_phone || "",
-          service_description: supplierDetails.service_description || "",
-          status: "requested",
-          notes: supplierDetails.notes || "",
-          cost: 0,
-          payment_status: "pending",
-          contract_status: "pending",
-          delivery_date: null
-        });
-      }
-    } catch (error) {
-      console.error("Error importing default suppliers:", error);
-    }
-  };
-
-  const handleCreateEvent = async (eventData) => {
-    try {
-      // Criar o evento
-      const newEvent = await Event.create(eventData);
-      
-      // Se o evento tem um tipo, importar tarefas, materiais e fornecedores padrão
-      if (newEvent.event_type_id) {
-        await Promise.all([
-          importDefaultTasks(newEvent.id, newEvent.event_type_id),
-          importDefaultMaterials(newEvent.id, newEvent.event_type_id),
-          importDefaultSuppliers(newEvent.id, newEvent.event_type_id)
-        ]);
-      }
-      
-      setShowForm(false);
-      navigate(createPageUrl(`events/${newEvent.id}`));
-    } catch (error) {
-      console.error("Error creating event:", error);
     }
   };
 

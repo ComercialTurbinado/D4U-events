@@ -47,8 +47,13 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
   const loadMaterials = async () => {
     setIsLoading(true);
     try {
-      // Carregar materiais do evento
-      const eventMaterials = await EventMaterial.list();
+      // Carregar materiais do evento com relacionamentos
+      const eventMaterials = await EventMaterial.list({
+        populate: [
+          { path: 'material_id', select: 'name description unit category supplier_id' },
+          { path: 'supplier_id', select: 'name' }
+        ]
+      });
       console.log('Materiais do evento (brutos):', eventMaterials);
       
       // Carregar todos os materiais disponíveis
@@ -59,14 +64,15 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
       const materialsForEvent = eventMaterials
         .filter(em => em.event_id === eventId)
         .map(em => {
-          const baseMaterial = allMaterials.find(m => m.id === em.material_id);
+          const baseMaterial = allMaterials.find(m => m.id === em.material_id?._id);
           return {
             ...em,
             name: em.name || baseMaterial?.name || 'Material sem nome',
             description: em.description || baseMaterial?.description || '',
             unit: em.unit || baseMaterial?.unit || 'un',
             category: em.category || baseMaterial?.category || 'other',
-            priority: em.priority || baseMaterial?.priority || 'medium'
+            supplier: em.supplier_id || baseMaterial?.supplier_id,
+            total_cost: (em.unit_cost || 0) * (em.quantity || 0)
           };
         });
       
@@ -74,11 +80,16 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
       setMaterials(materialsForEvent);
       setAvailableMaterials(allMaterials);
 
+      // Atualizar custos totais
+      const totalEventCost = materialsForEvent.reduce((sum, material) => {
+        return sum + (material.total_cost || 0);
+      }, 0);
+      console.log('Custo total do evento:', totalEventCost);
+
       // Carregar materiais padrão do tipo de evento
       if (eventTypeId) {
         try {
           const defaultMaterials = await DefaultMaterial.list();
-          console.log('Materiais padrão:', defaultMaterials);
           const enrichedTypeMaterials = defaultMaterials
             .filter(dm => dm.event_type_id === eventTypeId)
             .map(dm => {
@@ -89,7 +100,6 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
               };
             });
 
-          console.log('Materiais do tipo enriquecidos:', enrichedTypeMaterials);
           setAvailableTypeMaterials(enrichedTypeMaterials);
         } catch (error) {
           console.error('Erro ao carregar materiais padrão:', error);
@@ -218,19 +228,30 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
     // Ajustar o custo total proporcionalmente se a quantidade mudou
     const material = materials.find(m => m.id === id);
     if (material && material.unit_cost) {
+      const newTotalCost = material.unit_cost * newQuantity;
       setEditableCosts({
         ...editableCosts,
-        [id]: material.unit_cost * newQuantity
+        [id]: newTotalCost
       });
     }
   };
 
   const handleCostChange = (id, value) => {
-    const newCost = parseFloat(value) || 0;
+    const newTotalCost = parseFloat(value) || 0;
     setEditableCosts({
       ...editableCosts,
-      [id]: newCost
+      [id]: newTotalCost
     });
+    
+    // Atualizar o custo unitário
+    const material = materials.find(m => m.id === id);
+    if (material) {
+      const quantity = editableQuantities[id] || material.quantity;
+      if (quantity > 0) {
+        const newUnitCost = newTotalCost / quantity;
+        material.unit_cost = newUnitCost;
+      }
+    }
   };
 
   const saveQuantity = async (id) => {
@@ -238,39 +259,40 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
     if (!material) return;
     
     const newQuantity = editableQuantities[id];
-    
-    // Verificar se há estoque suficiente
-    const stockInfo = materialStock[material.material_id];
-    if (stockInfo && stockInfo.currentStock < newQuantity) {
-      alert(`Atenção: Estoque insuficiente! Disponível: ${stockInfo.currentStock} ${stockInfo.name}`);
-    }
-    
-    // Calcular novo custo unitário baseado no custo total
-    const totalCost = editableCosts[id] || 0;
+    const totalCost = editableCosts[id] || material.total_cost || 0;
     const unitCost = newQuantity > 0 ? totalCost / newQuantity : 0;
     
-    await EventMaterial.update(id, {
-      ...material,
-      quantity: newQuantity,
-      unit_cost: unitCost
-    });
-    
-    loadMaterials();
+    try {
+      await EventMaterial.update(id, {
+        ...material,
+        quantity: newQuantity,
+        unit_cost: unitCost
+      });
+      
+      await loadMaterials();
+    } catch (error) {
+      console.error("Erro ao salvar quantidade:", error);
+    }
   };
 
   const saveCost = async (id) => {
     const material = materials.find(m => m.id === id);
     if (!material) return;
     
-    const totalCost = editableCosts[id] || 0;
-    const unitCost = material.quantity > 0 ? totalCost / material.quantity : 0;
+    const totalCost = editableCosts[id];
+    const quantity = editableQuantities[id] || material.quantity;
+    const unitCost = quantity > 0 ? totalCost / quantity : 0;
     
-    await EventMaterial.update(id, {
-      ...material,
-      unit_cost: unitCost
-    });
-    
-    loadMaterials();
+    try {
+      await EventMaterial.update(id, {
+        ...material,
+        unit_cost: unitCost
+      });
+      
+      await loadMaterials();
+    } catch (error) {
+      console.error("Erro ao salvar custo:", error);
+    }
   };
 
   const getStatusLabel = (status) => {
@@ -485,13 +507,14 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
                   material.unit_cost ? (
                     <div key={material.id} className="flex justify-between">
                       <span>{material.name} ({material.quantity} unid.)</span>
-                      <span>R$ {calculateTotalCost(material).toFixed(2)}</span>
+                      <span>R$ {(material.unit_cost * material.quantity).toFixed(2)}</span>
                     </div>
                   ) : null
                 ))}
                 <div className="pt-2 border-t border-gray-200 font-medium text-lg flex justify-between">
                   <span>Total</span>
-                  <span>R$ {materials.reduce((sum, material) => sum + calculateTotalCost(material), 0).toFixed(2)}</span>
+                  <span>R$ {materials.reduce((sum, material) => 
+                    sum + ((material.unit_cost || 0) * (material.quantity || 0)), 0).toFixed(2)}</span>
                 </div>
               </div>
             </div>

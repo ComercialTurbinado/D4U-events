@@ -149,7 +149,7 @@ export default function EventTypesPage() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Tipos de Evento</h1>
           <p className="text-gray-500 mt-1">
-            Configure templates para diferentes tipos de eventos
+            Configure padrões para diferentes tipos de eventos
           </p>
         </div>
         <Button 
