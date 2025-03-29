@@ -28,8 +28,8 @@ const connectToDatabase = async () => {
 const eventTypeSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: String,
-  country: String,
-  cost: Number,
+  country:String,
+  cost:Number,
   color: { type: String, default: "#3b82f6" },
   is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
@@ -41,6 +41,9 @@ const taskSchema = new mongoose.Schema({
   category_id: { type: mongoose.Schema.Types.ObjectId, ref: 'TaskCategory' },
   department_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' },
   estimated_time: Number,
+  days_before_event: Number,
+  responsible_role: String,
+  is_required: { type: Boolean, default: false },
   is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
@@ -49,12 +52,20 @@ const materialSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: String,
   category_id: { type: mongoose.Schema.Types.ObjectId, ref: 'MaterialCategory' },
+  supplier_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier' },
+  storage_country: String,
+  initial_purchase_quantity: Number,
+  initial_purchase_cost: Number,
+  default_quantity: Number,
+  current_stock: Number,
+  track_inventory: Boolean,
   unit: String,
   quantity: Number,
   price: Number,
   is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
+
 
 const supplierSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -104,13 +115,16 @@ const eventSchema = new mongoose.Schema({
 
 const eventTaskSchema = new mongoose.Schema({
   event_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
-  task_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Task', required: true },
-  status: { 
+   status: { 
     type: String, 
     enum: ['pending', 'in_progress', 'completed'],
     default: 'pending'
   },
-  assigned_to: String,
+  task_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Task' },
+  name: { type: String, required: true },
+  description: String,
+  category_id: { type: mongoose.Schema.Types.ObjectId, ref: 'TaskCategory' },
+  team_member_id: { type: mongoose.Schema.Types.ObjectId, ref: 'TeamMember' },
   due_date: Date,
   notes: String,
   is_active: { type: Boolean, default: true },
@@ -146,14 +160,7 @@ const eventSupplierSchema = new mongoose.Schema({
   is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
-
-const taskCategorySchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  description: String,
-  color: { type: String, default: "#3b82f6" },
-  is_active: { type: Boolean, default: true },
-  createdAt: { type: Date, default: Date.now }
-});
+ 
 
 const materialCategorySchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -171,6 +178,7 @@ const supplierCategorySchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+
 const defaultTaskSchema = new mongoose.Schema({
   event_type_id: { type: mongoose.Schema.Types.ObjectId, ref: 'EventType', required: true },
   task_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Task', required: true },
@@ -187,6 +195,27 @@ const defaultMaterialSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+
+const taskCategorySchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  description: String,
+  color: { type: String, default: "#3b82f6" },
+  department_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' },
+  is_active: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const teamMemberSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  role: String,
+  department_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Department', required: true },
+  email: { type: String, required: true },
+  whatsapp: String,
+  is_active: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now }
+});
+
+
 // Models
 const models = {
   'event-types': mongoose.model('EventType', eventTypeSchema),
@@ -202,7 +231,8 @@ const models = {
   'material-categories': mongoose.model('MaterialCategory', materialCategorySchema),
   'supplier-categories': mongoose.model('SupplierCategory', supplierCategorySchema),
   'default-tasks': mongoose.model('DefaultTask', defaultTaskSchema),
-  'default-materials': mongoose.model('DefaultMaterial', defaultMaterialSchema)
+  'default-materials': mongoose.model('DefaultMaterial', defaultMaterialSchema),
+  'team-members': mongoose.model('TeamMember', teamMemberSchema)
 };
 
 module.exports = {

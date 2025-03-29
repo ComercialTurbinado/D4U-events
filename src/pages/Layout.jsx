@@ -66,7 +66,15 @@ export default function Layout() {
         { name: "Categorias", path: "/supplier-categories" }
       ]
     },
-    { name: "Departamentos", icon: Users, path: "/departments" },
+    { 
+      name: "Departamentos", 
+      icon: Users, 
+      path: "/departments",
+      submenu: [
+        { name: "Listar Departamentos", path: "/departments" },
+        { name: "Membros da Equipe", path: "/departments/members" }
+      ]
+    },
     { name: "Configurações", icon: Settings, path: "/settings" },
   ];
 

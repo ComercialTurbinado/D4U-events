@@ -1,4 +1,4 @@
-import { EventTypeOps, TaskOps, MaterialOps, SupplierOps, DepartmentOps, EventOps, EventTaskOps, EventMaterialOps, EventSupplierOps, TaskCategoryOps, MaterialCategoryOps, SupplierCategoryOps, DefaultTaskOps, DefaultMaterialOps, DefaultSupplierOps } from './mongodb';
+import { EventTypeOps, TaskOps, MaterialOps, SupplierOps, DepartmentOps, EventOps, EventTaskOps, EventMaterialOps, EventSupplierOps, TaskCategoryOps, MaterialCategoryOps, SupplierCategoryOps, DefaultTaskOps, DefaultMaterialOps, DefaultSupplierOps, TeamMemberOps } from './mongodb';
 import { API_URL, cleanDataForApi } from './mongodb';
 
 // Mock entities para desenvolvimento
@@ -26,3 +26,5 @@ export const User = {
   logout: () => Promise.resolve({}),
   getCurrentUser: () => Promise.resolve({})
 };
+
+export const TeamMember = TeamMemberOps;

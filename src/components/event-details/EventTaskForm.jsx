@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { Link } from "@/components/ui/link";
-import { TaskCategory } from "@/api/entities";
+import { TaskCategory, TeamMember } from "@/api/entities";
 import { createPageUrl } from "@/lib/utils";
 import { 
   Select, 
@@ -29,36 +29,35 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
     task_id: "",
     description: "",
     responsible_role: "",
+    team_member_id: "",
     due_date: "",
     category_id: "",
     is_active: true,
     is_required: false,
     days_before_event: 0,
-    status: "not_started",
+    status: "pending",
     notes: "",
     priority: "medium",
     estimated_hours: 0,
     actual_hours: 0,
     cost: 0
   });
-  
-
 
   const [categories, setCategories] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [isLoadingMembers, setIsLoadingMembers] = useState(true);
 
   useEffect(() => {
     loadCategories();
-   }, []);
+    loadTeamMembers();
+  }, []);
 
   const loadCategories = async () => {
     setIsLoadingCategories(true);
     try {
       const taskCategories = await TaskCategory.list();
-      console.log('EventTaskForm - Categorias carregadas:', taskCategories);
-      // Filtra as categorias ativas no lado do cliente
       const activeCategories = taskCategories.filter(category => category.is_active);
-      console.log('EventTaskForm - Categorias ativas:', activeCategories);
       setCategories(activeCategories);
     } catch (error) {
       console.error("Erro ao carregar categorias de tarefas:", error);
@@ -68,11 +67,41 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
     }
   };
 
+  const loadTeamMembers = async () => {
+    setIsLoadingMembers(true);
+    try {
+      const members = await TeamMember.list();
+      // Filtra apenas membros ativos
+      const activeMembers = members.filter(member => member.is_active);
+      setTeamMembers(activeMembers);
+    } catch (error) {
+      console.error("Erro ao carregar membros da equipe:", error);
+      setTeamMembers([]);
+    } finally {
+      setIsLoadingMembers(false);
+    }
+  };
+
+  const handleTaskSelect = (taskId) => {
+    const selectedTask = availableTasks.find(task => task.id === taskId);
+    if (selectedTask) {
+      setFormData({
+        ...formData,
+        task_id: taskId,
+        name: selectedTask.name,
+        description: selectedTask.description || "",
+        responsible_role: selectedTask.responsible_role || "",
+        category_id: selectedTask.category_id || "",
+        priority: selectedTask.priority || "medium",
+        estimated_hours: selectedTask.estimated_hours || 0,
+        notes: selectedTask.notes || ""
+      });
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Converter valores numéricos
     const submittedData = {
       ...formData,
       estimated_hours: parseFloat(formData.estimated_hours) || 0,
@@ -93,22 +122,15 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
     }
   };
 
-  const handleTaskSelect = (taskId) => {
-    const selectedTask = availableTasks.find(task => task.id === taskId);
-    if (selectedTask) {
-      setFormData({
-        ...formData,
-        task_id: taskId,
-        name: selectedTask.name,
-        description: selectedTask.description || "",
-        responsible_role: selectedTask.responsible_role || "",
-        category_id: selectedTask.category_id || "",
-        priority: selectedTask.priority || "medium",
-        estimated_hours: selectedTask.estimated_hours || 0,
-        notes: selectedTask.notes || ""
-      });
-    }
+  // Filtra membros pelo departamento da tarefa
+  const getFilteredMembers = () => {
+    if (!formData.category_id) return [];
+    const selectedCategory = categories.find(cat => cat.id === formData.category_id);
+    if (!selectedCategory?.department_id) return [];
+    return teamMembers.filter(member => member.department_id === selectedCategory.department_id);
   };
+
+  const filteredMembers = getFilteredMembers();
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -164,15 +186,82 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="responsible_role">Responsável</Label>
-              <Input
-                id="responsible_role"
-                value={formData.responsible_role}
-                onChange={e => setFormData(prev => ({ ...prev, responsible_role: e.target.value }))}
-                placeholder="Quem é responsável por esta tarefa"
-              />
+              <div className="flex items-center justify-between">
+                <Label htmlFor="category_id">Categoria/Departamento</Label>
+                <Link 
+                  to={createPageUrl("TaskCategories")} 
+                  className="text-xs text-blue-600 hover:underline flex items-center"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Gerenciar categorias
+                </Link>
+              </div>
+              <Select
+                value={formData.category_id}
+                onValueChange={value => setFormData(prev => ({ ...prev, category_id: value }))}
+                disabled={initialData}
+              >
+                <SelectTrigger id="category_id">
+                  <SelectValue placeholder="Selecione uma categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map(category => (
+                    <SelectItem key={category.id} value={category.id}>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: category.color || '#e5e7eb' }}
+                        />
+                        {category.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                  {categories.length === 0 && !isLoadingCategories && (
+                    <SelectItem value={null} disabled>
+                      Cadastre categorias primeiro
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
             </div>
-            
+
+            <div>
+              <Label htmlFor="team_member_id">Responsável</Label>
+              <Select
+                value={formData.team_member_id}
+                onValueChange={value => setFormData(prev => ({ ...prev, team_member_id: value }))}
+              >
+                <SelectTrigger id="team_member_id">
+                  <SelectValue placeholder={
+                    !formData.category_id 
+                      ? "Selecione uma categoria primeiro" 
+                      : filteredMembers.length === 0 
+                        ? "Nenhum membro disponível" 
+                        : "Selecione um responsável"
+                  } />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredMembers.map(member => (
+                    <SelectItem key={member.id} value={member.id}>
+                      {member.name} - {member.role}
+                    </SelectItem>
+                  ))}
+                  {formData.category_id && filteredMembers.length === 0 && (
+                    <SelectItem value="" disabled>
+                      Nenhum membro disponível neste departamento
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              {formData.category_id && filteredMembers.length === 0 && (
+                <p className="text-amber-600 text-xs mt-1">
+                  Cadastre membros para este departamento primeiro
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="due_date">Data Limite</Label>
               <Popover>
@@ -200,55 +289,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                 </PopoverContent>
               </Popover>
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-             
-            <div>
-              <div className="flex items-center justify-between">
-                <Label htmlFor="category_id">Categoria</Label>
-                <Link 
-                  to={createPageUrl("TaskCategories")} 
-                  className="text-xs text-blue-600 hover:underline flex items-center"
-                >
-                  <Plus className="h-3 w-3 mr-1" />
-                  Gerenciar categorias
-                </Link>
-              </div>
-              <Select
-                value={formData.category_id}
-                onValueChange={value => setFormData(prev => ({ ...prev, category_id: value }))}
-              >
-                <SelectTrigger id="category_id">
-                  <SelectValue placeholder="Selecione uma categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map(category => (
-                    <SelectItem key={category.id} value={category.id}>
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: category.color || '#e5e7eb' }}
-                        />
-                        {category.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                  {categories.length === 0 && !isLoadingCategories && (
-                    <SelectItem value={null} disabled>
-                      Cadastre categorias primeiro
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-              {categories.length === 0 && !isLoadingCategories && (
-                <p className="text-amber-600 text-xs mt-1">
-                  Cadastre categorias na seção Categorias de Tarefas
-                </p>
-              )}
-            </div>
-
-            
             <div>
               <Label htmlFor="status">Status</Label>
               <Select
@@ -260,10 +301,9 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                   <SelectValue placeholder="Selecione um status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="not_started">Não Iniciada</SelectItem>
+                  <SelectItem value="pending">Pendente</SelectItem>
                   <SelectItem value="in_progress">Em Andamento</SelectItem>
                   <SelectItem value="completed">Concluída</SelectItem>
-                  <SelectItem value="cancelled">Cancelada</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -279,21 +319,21 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
               className="h-24"
             />
           </div>
-
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onCancel}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit">
-              {initialData ? "Atualizar" : "Criar"} Tarefa
-            </Button>
-          </div>
         </div>
       </Card>
+
+      <div className="flex justify-end gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+        >
+          Cancelar
+        </Button>
+        <Button type="submit">
+          {initialData ? "Atualizar" : "Criar"} Tarefa
+        </Button>
+      </div>
     </form>
   );
 }

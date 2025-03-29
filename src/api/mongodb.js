@@ -105,5 +105,6 @@ export const SupplierCategoryOps = createEntityOperations('supplier-categories')
 export const DefaultTaskOps = createEntityOperations('default-tasks');
 export const DefaultMaterialOps = createEntityOperations('default-materials');
 export const DefaultSupplierOps = createEntityOperations('default-suppliers');
+export const TeamMemberOps = createEntityOperations('team-members');
 
 export { API_URL, cleanDataForApi }; 

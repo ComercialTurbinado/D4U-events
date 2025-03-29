@@ -12,6 +12,7 @@ import MaterialCategories from "@/pages/MaterialCategories"
 import Suppliers from "@/pages/Suppliers"
 import SupplierCategories from "@/pages/SupplierCategories"
 import Departments from "@/pages/Departments"
+import TeamMembers from "@/pages/departments/members"
 import Settings from "@/pages/Settings"
 import { Toaster } from "@/components/ui/toaster"
 
@@ -30,7 +31,10 @@ function App() {
           <Route path="material-categories" element={<MaterialCategories />} />
           <Route path="suppliers" element={<Suppliers />} />
           <Route path="supplier-categories" element={<SupplierCategories />} />
-          <Route path="departments" element={<Departments />} />
+          <Route path="departments">
+            <Route index element={<Departments />} />
+            <Route path="members" element={<TeamMembers />} />
+          </Route>
           <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>
