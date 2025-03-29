@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
+import { Link } from "@/components/ui/link";
+import { TaskCategory } from "@/api/entities";
+import { createPageUrl } from "@/lib/utils";
 import { 
   Select, 
   SelectContent, 
@@ -18,7 +21,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Plus } from "lucide-react";
 
 export default function EventTaskForm({ initialData, availableTasks, onSubmit, onCancel, eventId }) {
   const [formData, setFormData] = useState(initialData || {
@@ -27,7 +30,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
     description: "",
     responsible_role: "",
     due_date: "",
-    category: "other",
+    category_id: "",
     is_active: true,
     is_required: false,
     days_before_event: 0,
@@ -39,13 +42,52 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
     cost: 0
   });
   
+
+
+  const [categories, setCategories] = useState([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+
+  useEffect(() => {
+    loadCategories();
+   }, []);
+
+  const loadCategories = async () => {
+    setIsLoadingCategories(true);
+    try {
+      const taskCategories = await TaskCategory.list();
+      console.log('EventTaskForm - Categorias carregadas:', taskCategories);
+      // Filtra as categorias ativas no lado do cliente
+      const activeCategories = taskCategories.filter(category => category.is_active);
+      console.log('EventTaskForm - Categorias ativas:', activeCategories);
+      setCategories(activeCategories);
+    } catch (error) {
+      console.error("Erro ao carregar categorias de tarefas:", error);
+      setCategories([]);
+    } finally {
+      setIsLoadingCategories(false);
+    }
+  };
+
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Converter valores numéricos
+    const submittedData = {
+      ...formData,
+      estimated_hours: parseFloat(formData.estimated_hours) || 0,
+      actual_hours: parseFloat(formData.actual_hours) || 0,
+      cost: parseFloat(formData.cost) || 0,
+      days_before_event: parseInt(formData.days_before_event) || 0,
+      is_required: Boolean(formData.is_required),
+      is_active: true
+    };
+
     if (initialData) {
-      onSubmit(initialData.id, formData);
+      onSubmit(initialData.id, submittedData);
     } else {
       onSubmit({
-        ...formData,
+        ...submittedData,
         event_id: eventId
       });
     }
@@ -60,7 +102,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
         name: selectedTask.name,
         description: selectedTask.description || "",
         responsible_role: selectedTask.responsible_role || "",
-        category: selectedTask.category || "other",
+        category_id: selectedTask.category_id || "",
         priority: selectedTask.priority || "medium",
         estimated_hours: selectedTask.estimated_hours || 0,
         notes: selectedTask.notes || ""
@@ -161,25 +203,51 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             
             <div>
-              <Label htmlFor="category">Categoria</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="category_id">Categoria</Label>
+                <Link 
+                  to={createPageUrl("TaskCategories")} 
+                  className="text-xs text-blue-600 hover:underline flex items-center"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Gerenciar categorias
+                </Link>
+              </div>
               <Select
-                id="category"
-                value={formData.category}
-                onValueChange={value => setFormData(prev => ({ ...prev, category: value }))}
+                value={formData.category_id}
+                onValueChange={value => setFormData(prev => ({ ...prev, category_id: value }))}
               >
-                <SelectTrigger>
+                <SelectTrigger id="category_id">
                   <SelectValue placeholder="Selecione uma categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="design">Design</SelectItem>
-                  <SelectItem value="logistics">Logística</SelectItem>
-                  <SelectItem value="suppliers">Fornecedores</SelectItem>
-                  <SelectItem value="media">Mídia</SelectItem>
-                  <SelectItem value="other">Outros</SelectItem>
+                  {categories.map(category => (
+                    <SelectItem key={category.id} value={category.id}>
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: category.color || '#e5e7eb' }}
+                        />
+                        {category.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                  {categories.length === 0 && !isLoadingCategories && (
+                    <SelectItem value={null} disabled>
+                      Cadastre categorias primeiro
+                    </SelectItem>
+                  )}
                 </SelectContent>
               </Select>
+              {categories.length === 0 && !isLoadingCategories && (
+                <p className="text-amber-600 text-xs mt-1">
+                  Cadastre categorias na seção Categorias de Tarefas
+                </p>
+              )}
             </div>
+
             
             <div>
               <Label htmlFor="status">Status</Label>

@@ -18,6 +18,7 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
   
   const [suppliers, setSuppliers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingSuppliers, setIsLoadingSuppliers] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState(null);
   const [availableSuppliers, setAvailableSuppliers] = useState([]);
@@ -37,6 +38,7 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
     }
     
     setIsLoading(true);
+    setIsLoadingSuppliers(true);
     try {
       // Carregar fornecedores do evento
       console.log('EventSuppliersTab - Iniciando carregamento de fornecedores...');
@@ -82,6 +84,7 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
       setTypeSuppliers([]);
     } finally {
       setIsLoading(false);
+      setIsLoadingSuppliers(false);
     }
   };
 
@@ -166,7 +169,7 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
       return;
     }
     
-    setIsLoading(true);
+    setIsLoadingSuppliers(true);
     try {
       console.log('EventSuppliersTab - Iniciando importação de fornecedores do tipo:', eventTypeId);
       
@@ -242,7 +245,7 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
     } catch (error) {
       console.error("EventSuppliersTab - Erro ao importar fornecedores:", error);
     } finally {
-      setIsLoading(false);
+      setIsLoadingSuppliers(false);
     }
   };
 
@@ -299,9 +302,9 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
                 <Button
                   onClick={handleImportFromEventType}
                   className="bg-green-600 hover:bg-green-700"
-                  disabled={isLoading}
+                  disabled={isLoading || isLoadingSuppliers}
                 >
-                  Importar do Tipo de Evento
+                  {isLoadingSuppliers ? "Importando..." : "Importar do Tipo de Evento"}
                 </Button>
               )}
               <Button 
@@ -310,10 +313,10 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
                   setShowForm(true);
                 }}
                 className="bg-blue-600 hover:bg-blue-700"
-                disabled={isLoading}
+                disabled={isLoading || isLoadingSuppliers}
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Novo Fornecedor
+                {isLoadingSuppliers ? "Carregando..." : "Novo Fornecedor"}
               </Button>
             </div>
           </div>
@@ -331,7 +334,7 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {isLoading ? (
+                {isLoading || isLoadingSuppliers ? (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center py-8 text-gray-500">
                       Carregando fornecedores...
@@ -368,6 +371,7 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
                             size="icon"
                             onClick={() => handleEdit(supplier)}
                             title="Editar"
+                            disabled={isLoadingSuppliers}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -377,6 +381,7 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
                               size="icon"
                               onClick={() => handleUpdateSupplier(supplier.id, { ...supplier, status: "completed" })}
                               title="Marcar como concluído"
+                              disabled={isLoadingSuppliers}
                             >
                               <CheckSquare className="h-4 w-4 text-green-500" />
                             </Button>
@@ -386,6 +391,7 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
                             size="icon"
                             onClick={() => handleDeleteSupplier(supplier.id)}
                             title="Excluir"
+                            disabled={isLoadingSuppliers}
                           >
                             <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
