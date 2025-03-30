@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { EventTask, Task, DefaultTask } from "@/api/entities";
 import { Button } from "@/components/ui/button";
-import { Plus, Edit, Trash2, CheckCircle } from "lucide-react";
+import { Plus, Edit, Trash2, CheckCircle, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { 
@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-export default function EventTasksTab({ eventId, eventTypeId }) {
+export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
   const [tasks, setTasks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -42,9 +42,23 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
       // Carregar todas as tarefas de eventos com relacionamentos
       const eventTasks = await EventTask.list({
         populate: [
-          { path: 'task_id', select: 'name description category_id department_id' },
-          { path: 'category_id', select: 'name department_id' },
-          { path: 'team_member_id', select: 'name department_id' }
+          { path: 'task_id', select: 'name description category_id department_id days_before_event' },
+          { 
+            path: 'category_id', 
+            select: 'name department_id color',
+            populate: { 
+              path: 'department_id', 
+              select: 'name' 
+            }
+          },
+          { 
+            path: 'team_member_id', 
+            select: 'name role department_id',
+            populate: { 
+              path: 'department_id', 
+              select: 'name' 
+            }
+          }
         ]
       });
       
@@ -60,6 +74,41 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
           // Buscar detalhes da tarefa base
           const baseTask = allTasks.find(t => t.id === et.task_id?._id);
           
+          // Determinar o departamento
+          let departmentId = null;
+          let departmentName = null;
+          
+          if (et.category_id?.department_id) {
+            departmentId = et.category_id.department_id._id || et.category_id.department_id;
+            departmentName = et.category_id.department_id.name;
+          } else if (baseTask?.department_id) {
+            departmentId = baseTask.department_id;
+          }
+          
+          // Verificar se a data limite está próxima ou passou
+          let isUrgent = false;
+          let isLate = false;
+          
+          if (et.due_date && eventData?.start_date) {
+            const dueDate = new Date(et.due_date);
+            const today = new Date();
+            const eventDate = new Date(eventData.start_date);
+            
+            if (dueDate < today) {
+              isLate = true;
+              isUrgent = true;
+            } else if (dueDate > eventDate) {
+              isUrgent = true;
+            } else {
+              // 3 dias de antecedência é considerado urgente
+              const urgentLimit = new Date(dueDate);
+              urgentLimit.setDate(urgentLimit.getDate() + 3);
+              if (urgentLimit >= eventDate) {
+                isUrgent = true;
+              }
+            }
+          }
+          
           // Combinar dados da tarefa do evento com a tarefa base
           return {
             ...et,
@@ -67,8 +116,12 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
             description: et.description || baseTask?.description || "",
             category_id: et.category_id || baseTask?.category_id,
             team_member_id: et.team_member_id,
-            department_id: et.category_id?.department_id || baseTask?.department_id,
-            estimated_hours: baseTask?.estimated_hours || 0
+            department_id: departmentId,
+            department_name: departmentName,
+            days_before_event: et.task_id?.days_before_event || baseTask?.days_before_event || 0,
+            estimated_hours: baseTask?.estimated_hours || 0,
+            isUrgent: isUrgent,
+            isLate: isLate
           };
         });
       
@@ -335,6 +388,7 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
             setEditingTask(null);
           }}
           eventId={eventId}
+          eventDate={eventData?.start_date || null}
         />
       )}
       <div className="flex justify-between items-center">
@@ -368,10 +422,10 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
             <TableRow>
               <TableHead>Nome</TableHead>
               <TableHead>Setor</TableHead>  
+              <TableHead>Categoria</TableHead>
               <TableHead>Responsável</TableHead>
               <TableHead>Data Limite</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Categoria</TableHead>
               <TableHead>Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -386,19 +440,31 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
               tasks.map(task => (
                 <TableRow key={task.id}>
                   <TableCell>{task.name}</TableCell>
-                  <TableCell>{task.department_id?.name || "-"}</TableCell>
+                  <TableCell>{task.department_name || "-"}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">
+                      {task.category_id?.name || "-"}
+                    </Badge>
+                  </TableCell>
                   <TableCell>{task.team_member_id?.name || "-"}</TableCell>
                   <TableCell>
-                    {task.due_date ? format(new Date(task.due_date), "dd/MM/yyyy") : "-"}
+                    {task.due_date ? (
+                      <div className="flex items-center gap-1">
+                        <span className={task.isUrgent ? "text-red-600 font-medium" : ""}>
+                          {format(new Date(task.due_date), "dd/MM/yyyy")}
+                        </span>
+                        {task.isUrgent && (
+                          <Badge variant="destructive" className="ml-1 flex items-center gap-1 text-xs">
+                            <AlertTriangle className="h-3 w-3" />
+                            {task.isLate ? "ATRASADO" : "URGENTE"}
+                          </Badge>
+                        )}
+                      </div>
+                    ) : "-"}
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={getStatusColor(task.status)}>
                       {getStatusLabel(task.status)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">
-                      {task.category_id?.name || "-"}
                     </Badge>
                   </TableCell>
                   <TableCell>

@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { format, isBefore, addDays } from "date-fns";
 import { Link } from "@/components/ui/link";
-import { TaskCategory, TeamMember } from "@/api/entities";
+import { TaskCategory, TeamMember, Department } from "@/api/entities";
 import { createPageUrl } from "@/lib/utils";
 import { 
   Select, 
@@ -21,9 +21,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, Plus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { CalendarIcon, Plus, AlertTriangle } from "lucide-react";
 
-export default function EventTaskForm({ initialData, availableTasks, onSubmit, onCancel, eventId }) {
+export default function EventTaskForm({ initialData, availableTasks, onSubmit, onCancel, eventId, eventDate }) {
   const [formData, setFormData] = useState(initialData || {
     name: "",
     task_id: "",
@@ -31,6 +32,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
     responsible_role: "",
     team_member_id: "",
     due_date: "",
+    department_id: "",
     category_id: "",
     is_active: true,
     is_required: false,
@@ -44,14 +46,56 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
   });
 
   const [categories, setCategories] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [isLoadingDepartments, setIsLoadingDepartments] = useState(true);
   const [isLoadingMembers, setIsLoadingMembers] = useState(true);
+  const [isDateUrgent, setIsDateUrgent] = useState(false);
+  const [isDatePast, setIsDatePast] = useState(false);
+  const [filteredCategories, setFilteredCategories] = useState([]);
 
   useEffect(() => {
+    loadDepartments();
     loadCategories();
     loadTeamMembers();
   }, []);
+
+  useEffect(() => {
+    if (formData.department_id) {
+      filterCategoriesByDepartment(formData.department_id);
+    } else {
+      setFilteredCategories([]);
+    }
+  }, [formData.department_id, categories]);
+
+  useEffect(() => {
+    checkDateStatus();
+  }, [formData.due_date, eventDate]);
+
+  const loadDepartments = async () => {
+    setIsLoadingDepartments(true);
+    try {
+      const departmentList = await Department.list();
+      const activeDepartments = departmentList.filter(dept => dept.is_active);
+      console.log('Departamentos carregados:', activeDepartments);
+      setDepartments(activeDepartments);
+      
+      // Se tivermos dados iniciais, detectar o departamento da categoria
+      if (initialData?.category_id && categories.length > 0) {
+        const category = categories.find(cat => cat.id === initialData.category_id);
+        if (category?.department_id) {
+          const deptId = category.department_id._id || category.department_id;
+          setFormData(prev => ({ ...prev, department_id: deptId }));
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao carregar departamentos:", error);
+      setDepartments([]);
+    } finally {
+      setIsLoadingDepartments(false);
+    }
+  };
 
   const loadCategories = async () => {
     setIsLoadingCategories(true);
@@ -66,6 +110,11 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
       
       const activeCategories = taskCategories.filter(category => category.is_active);
       setCategories(activeCategories);
+      
+      // Se já temos departamento selecionado, filtrar categorias
+      if (formData.department_id) {
+        filterCategoriesByDepartment(formData.department_id);
+      }
     } catch (error) {
       console.error("Erro ao carregar categorias de tarefas:", error);
       setCategories([]);
@@ -96,21 +145,105 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
     }
   };
 
+  const filterCategoriesByDepartment = (departmentId) => {
+    if (!departmentId || categories.length === 0) {
+      setFilteredCategories([]);
+      return;
+    }
+    
+    const filtered = categories.filter(category => {
+      const catDeptId = category.department_id?._id || category.department_id;
+      return catDeptId === departmentId;
+    });
+    
+    console.log('Categorias filtradas por departamento:', filtered);
+    setFilteredCategories(filtered);
+  };
+
   const handleTaskSelect = (taskId) => {
     const selectedTask = availableTasks.find(task => task.id === taskId);
     if (selectedTask) {
+      // Encontrar o departamento da categoria selecionada
+      let departmentId = null;
+      if (selectedTask.category_id) {
+        const taskCategory = categories.find(cat => cat.id === selectedTask.category_id);
+        if (taskCategory?.department_id) {
+          departmentId = taskCategory.department_id._id || taskCategory.department_id;
+        }
+      }
+      
+      // Calcular data limite com base nos dias antes do evento
+      let dueDate = "";
+      if (eventDate && selectedTask.days_before_event) {
+        const eventDateObj = new Date(eventDate);
+        const dueDateObj = addDays(eventDateObj, -selectedTask.days_before_event);
+        dueDate = dueDateObj.toISOString().split('T')[0];
+      }
+      
       setFormData({
         ...formData,
         task_id: taskId,
         name: selectedTask.name,
         description: selectedTask.description || "",
         responsible_role: selectedTask.responsible_role || "",
+        department_id: departmentId,
         category_id: selectedTask.category_id || "",
+        days_before_event: selectedTask.days_before_event || 0,
+        due_date: dueDate,
         priority: selectedTask.priority || "medium",
         estimated_hours: selectedTask.estimated_hours || 0,
         notes: selectedTask.notes || ""
       });
     }
+  };
+
+  const handleDepartmentChange = (departmentId) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      department_id: departmentId,
+      category_id: "", // Limpar categoria quando departamento muda
+      team_member_id: "" // Limpar membro quando departamento muda
+    }));
+    
+    // Filtrar categorias pelo novo departamento
+    filterCategoriesByDepartment(departmentId);
+  };
+
+  const checkDateStatus = () => {
+    if (!formData.due_date || !eventDate) {
+      setIsDateUrgent(false);
+      setIsDatePast(false);
+      return;
+    }
+    
+    const today = new Date();
+    const dueDate = new Date(formData.due_date);
+    const eventDateObj = new Date(eventDate);
+    
+    // Verificar se a data está no passado
+    if (isBefore(dueDate, today)) {
+      setIsDatePast(true);
+      setIsDateUrgent(true);
+      return;
+    }
+    
+    // Verificar se a data está depois do evento
+    if (isBefore(eventDateObj, dueDate)) {
+      setIsDateUrgent(true);
+      setIsDatePast(false);
+      return;
+    }
+    
+    // Verificar se a data é muito próxima do evento (menos de 3 dias)
+    const urgentLimit = addDays(dueDate, 3);
+    if (isBefore(urgentLimit, eventDateObj)) {
+      setIsDateUrgent(true);
+      setIsDatePast(false);
+      return;
+    }
+    
+    setIsDateUrgent(false);
+    setIsDatePast(false);
   };
 
   const handleSubmit = (e) => {
@@ -138,21 +271,15 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
 
   // Filtra membros pelo departamento da tarefa
   const getFilteredMembers = () => {
-    if (!formData.category_id) return [];
+    if (!formData.department_id) return [];
     
-    const selectedCategory = categories.find(cat => cat.id === formData.category_id);
-    console.log('Categoria selecionada:', selectedCategory);
-    
-    if (!selectedCategory?.department_id) return [];
-    
-    const departmentId = selectedCategory.department_id._id || selectedCategory.department_id;
-    console.log('ID do departamento:', departmentId);
+    console.log('Filtrando membros para o departamento:', formData.department_id);
     console.log('Todos os membros:', teamMembers);
     
     const filteredMembers = teamMembers.filter(member => {
       const memberDeptId = member.department_id?._id || member.department_id;
-      const matches = memberDeptId === departmentId;
-      console.log(`Membro ${member.name}, dept ${memberDeptId} === ${departmentId}? ${matches}`);
+      const matches = memberDeptId === formData.department_id;
+      console.log(`Membro ${member.name}, dept ${memberDeptId} === ${formData.department_id}? ${matches}`);
       return matches;
     });
     
@@ -215,11 +342,47 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Seleção de Departamento */}
             <div>
               <div className="flex items-center justify-between">
-                <Label htmlFor="category_id">Categoria/Departamento</Label>
+                <Label htmlFor="department_id">Setor</Label>
                 <Link 
-                  to={createPageUrl("TaskCategories")} 
+                  to={createPageUrl("departments")} 
+                  className="text-xs text-blue-600 hover:underline flex items-center"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Gerenciar setores
+                </Link>
+              </div>
+              <Select
+                value={formData.department_id}
+                onValueChange={handleDepartmentChange}
+                disabled={initialData}
+              >
+                <SelectTrigger id="department_id">
+                  <SelectValue placeholder="Selecione um setor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map(department => (
+                    <SelectItem key={department.id} value={department.id}>
+                      {department.name}
+                    </SelectItem>
+                  ))}
+                  {departments.length === 0 && !isLoadingDepartments && (
+                    <SelectItem value="none" disabled>
+                      Cadastre departamentos primeiro
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Seleção de Categoria */}
+            <div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="category_id">Categoria</Label>
+                <Link 
+                  to={createPageUrl("task-categories")} 
                   className="text-xs text-blue-600 hover:underline flex items-center"
                 >
                   <Plus className="h-3 w-3 mr-1" />
@@ -229,13 +392,17 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
               <Select
                 value={formData.category_id}
                 onValueChange={value => setFormData(prev => ({ ...prev, category_id: value }))}
-                disabled={initialData}
+                disabled={initialData || !formData.department_id}
               >
                 <SelectTrigger id="category_id">
-                  <SelectValue placeholder="Selecione uma categoria" />
+                  <SelectValue placeholder={
+                    !formData.department_id 
+                      ? "Selecione um setor primeiro" 
+                      : "Selecione uma categoria"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map(category => (
+                  {filteredCategories.map(category => (
                     <SelectItem key={category.id} value={category.id}>
                       <div className="flex items-center gap-2">
                         <div 
@@ -246,15 +413,23 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                       </div>
                     </SelectItem>
                   ))}
-                  {categories.length === 0 && !isLoadingCategories && (
+                  {formData.department_id && filteredCategories.length === 0 && !isLoadingCategories && (
                     <SelectItem value="none" disabled>
-                      Cadastre categorias primeiro
+                      Cadastre categorias para este setor primeiro
+                    </SelectItem>
+                  )}
+                  {!formData.department_id && (
+                    <SelectItem value="none" disabled>
+                      Selecione um setor primeiro
                     </SelectItem>
                   )}
                 </SelectContent>
               </Select>
             </div>
+          </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Seleção de Membro da Equipe */}
             <div>
               <Label htmlFor="team_member_id">Responsável</Label>
               <Select
@@ -263,8 +438,8 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
               >
                 <SelectTrigger id="team_member_id">
                   <SelectValue placeholder={
-                    !formData.category_id 
-                      ? "Selecione uma categoria primeiro" 
+                    !formData.department_id 
+                      ? "Selecione um setor primeiro" 
                       : filteredMembers.length === 0 
                         ? "Nenhum membro disponível" 
                         : "Selecione um responsável"
@@ -276,37 +451,44 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                       {member.name} - {member.role}
                     </SelectItem>
                   ))}
-                  {formData.category_id && filteredMembers.length === 0 && (
+                  {formData.department_id && filteredMembers.length === 0 && (
                     <SelectItem value="none" disabled>
-                      Nenhum membro neste departamento
+                      Nenhum membro neste setor
                     </SelectItem>
                   )}
-                  {!formData.category_id && (
+                  {!formData.department_id && (
                     <SelectItem value="none" disabled>
-                      Selecione uma categoria primeiro
+                      Selecione um setor primeiro
                     </SelectItem>
                   )}
                 </SelectContent>
               </Select>
-              {formData.category_id && filteredMembers.length === 0 && (
+              {formData.department_id && filteredMembers.length === 0 && (
                 <p className="text-amber-600 text-xs mt-1">
-                  Cadastre membros para este departamento primeiro
+                  Cadastre membros para este setor primeiro
                 </p>
               )}
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Seleção de Data Limite */}
             <div>
-              <Label htmlFor="due_date">Data Limite</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="due_date">Data Limite</Label>
+                {isDateUrgent && (
+                  <Badge variant="destructive" className="flex items-center gap-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    {isDatePast ? "ATRASADO" : "URGENTE"}
+                  </Badge>
+                )}
+              </div>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     id="due_date"
-                    className="w-full justify-start text-left font-normal"
+                    className={`w-full justify-start text-left font-normal ${isDateUrgent ? 'border-red-500' : ''}`}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    <CalendarIcon className={`mr-2 h-4 w-4 ${isDateUrgent ? 'text-red-500' : ''}`} />
                     {formData.due_date ? (
                       format(new Date(formData.due_date), "dd/MM/yyyy")
                     ) : (
@@ -323,8 +505,15 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                   />
                 </PopoverContent>
               </Popover>
+              {formData.days_before_event > 0 && (
+                <p className="text-sm text-gray-500 mt-1">
+                  Prazo recomendado: {formData.days_before_event} dias antes do evento
+                </p>
+              )}
             </div>
+          </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="status">Status</Label>
               <Select
@@ -339,6 +528,24 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                   <SelectItem value="pending">Pendente</SelectItem>
                   <SelectItem value="in_progress">Em Andamento</SelectItem>
                   <SelectItem value="completed">Concluída</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="priority">Prioridade</Label>
+              <Select
+                id="priority"
+                value={formData.priority}
+                onValueChange={value => setFormData(prev => ({ ...prev, priority: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma prioridade" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Baixa</SelectItem>
+                  <SelectItem value="medium">Média</SelectItem>
+                  <SelectItem value="high">Alta</SelectItem>
                 </SelectContent>
               </Select>
             </div>
