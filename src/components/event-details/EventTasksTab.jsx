@@ -35,168 +35,156 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
   }, [eventId]);
 
   const loadTasks = async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      console.log('EventTasksTab - Iniciando carregamento de tarefas para o evento:', eventId);
-      
-      // Carregar todas as tarefas base com relacionamentos
-      const allTasks = await Task.list({
-        populate: [
-          { path: 'category_id', select: 'name department_id' },
-          { path: 'department_id', select: 'name' }
-        ]
-      });
-      console.log('EventTasksTab - Todas as tarefas base com relacionamentos:', allTasks);
-      setAvailableTasks(allTasks);
-      
-      // Carregar todas as tarefas de eventos com relacionamentos
+      console.log('EventTasksTab - Carregando tarefas do evento:', eventId);
       const eventTasks = await EventTask.list({
         populate: [
-          { 
-            path: 'task_id', 
-            select: 'name description category_id department_id days_before_event',
-            populate: [
-              { path: 'category_id', select: 'name department_id' },
-              { path: 'department_id', select: 'name' }
-            ]
-          },
-          { 
-            path: 'category_id', 
-            select: 'name department_id color',
-            populate: { 
-              path: 'department_id', 
-              select: 'name' 
-            }
-          },
-          { 
-            path: 'team_member_id', 
-            select: 'name role department_id',
-            populate: { 
-              path: 'department_id', 
-              select: 'name' 
-            }
-          }
+          { path: 'task_id', select: 'name description category_id department_id' },
+          { path: 'category_id', select: 'name color department_id' },
+          { path: 'department_id', select: 'name' },
+          { path: 'team_member_id', select: 'name role' }
         ]
       });
       
-      // Filtrar e enriquecer tarefas do evento atual
-      const tasksForEvent = eventTasks
-        .filter(et => et.event_id === eventId)
-        .map(et => {
-          // Buscar detalhes da tarefa base
-          const baseTask = allTasks.find(t => t.id === et.task_id?._id);
-          
-          // Determinar o departamento (prioridade: categoria atual > tarefa base categoria > tarefa base department)
-          let departmentId = null;
-          let departmentName = null;
-          
-          if (et.category_id?.department_id) {
-            // Opção 1: Usar o departamento da categoria atual
-            departmentId = et.category_id.department_id._id || et.category_id.department_id;
-            departmentName = et.category_id.department_id.name;
-            console.log(`Tarefa ${et.name || et.id}: Usando departamento da categoria atual:`, departmentName);
-          } else if (et.task_id?.category_id?.department_id) {
-            // Opção 2: Usar o departamento da categoria da tarefa base
-            departmentId = et.task_id.category_id.department_id._id || et.task_id.category_id.department_id;
-            departmentName = et.task_id.category_id.department_id.name;
-            console.log(`Tarefa ${et.name || et.id}: Usando departamento da categoria da tarefa base:`, departmentName);
-          } else if (et.task_id?.department_id) {
-            // Opção 3: Usar o departamento da tarefa base diretamente
-            departmentId = et.task_id.department_id._id || et.task_id.department_id;
-            departmentName = et.task_id.department_id.name;
-            console.log(`Tarefa ${et.name || et.id}: Usando departamento da tarefa base:`, departmentName);
-          } else if (baseTask?.department_id) {
-            // Opção 4: Último recurso - usar o departamento do baseTask (normalmente não deveria chegar aqui)
-            departmentId = baseTask.department_id._id || baseTask.department_id;
-            departmentName = baseTask.department_id.name;
-            console.log(`Tarefa ${et.name || et.id}: Usando departamento do baseTask:`, departmentName);
-          } else {
-            console.log(`Tarefa ${et.name || et.id}: ALERTA - Não foi possível encontrar um departamento!`);
+      const filteredTasks = eventTasks.filter(task => task.event_id === eventId);
+      console.log('EventTasksTab - Tarefas filtradas:', filteredTasks);
+      
+      // Carregar tarefas base disponíveis
+      await loadAvailableTasks();
+      
+      // Enriquecer dados das tarefas
+      const enrichedTasks = await Promise.all(filteredTasks.map(async task => {
+        // Logging das propriedades da tarefa para debug
+        console.log(`Tarefa ${task.name} - Dados originais:`, {
+          id: task.id || task._id,
+          task_id: typeof task.task_id === 'object' ? task.task_id._id : task.task_id,
+          department_id: typeof task.department_id === 'object' ? task.department_id._id : task.department_id,
+          category_id: typeof task.category_id === 'object' ? task.category_id._id : task.category_id
+        });
+        
+        let departmentName = null;
+        let categoryName = null;
+        let taskDept = null;
+        
+        // VERIFICAÇÃO DIRETA: departamento existe e está definido na tarefa?
+        if (task.department_id) {
+          taskDept = task.department_id;
+          if (typeof task.department_id === 'object') {
+            departmentName = task.department_id.name;
           }
-          
-          // Determinar a categoria (prioridade: categoria atual > tarefa base categoria)
-          let categoryId = null;
-          let categoryName = null;
-          
-          if (et.category_id) {
-            categoryId = et.category_id._id || et.category_id;
-            categoryName = et.category_id.name;
-            console.log(`Tarefa ${et.name || et.id}: Usando categoria atual:`, categoryName);
-          } else if (et.task_id?.category_id) {
-            categoryId = et.task_id.category_id._id || et.task_id.category_id;
-            categoryName = et.task_id.category_id.name;
-            console.log(`Tarefa ${et.name || et.id}: Usando categoria da tarefa base:`, categoryName);
-          } else if (baseTask?.category_id) {
-            categoryId = baseTask.category_id._id || baseTask.category_id;
-            categoryName = baseTask.category_id.name;
-            console.log(`Tarefa ${et.name || et.id}: Usando categoria do baseTask:`, categoryName);
-          } else {
-            console.log(`Tarefa ${et.name || et.id}: ALERTA - Não foi possível encontrar uma categoria!`);
-          }
-          
-          // Verificar se a data limite está próxima ou passou
-          let isUrgent = false;
-          let isLate = false;
-          
-          if (et.due_date && eventData?.start_date) {
-            const dueDate = new Date(et.due_date);
-            const today = new Date();
-            const eventDate = new Date(eventData.start_date);
+          console.log(`Tarefa ${task.name}: Departamento direto encontrado:`, departmentName || taskDept);
+        }
+        
+        // VERIFICAÇÃO CATEGORIA: categoria existe e tem departamento?
+        if ((!taskDept || !departmentName) && task.category_id) {
+          if (typeof task.category_id === 'object') {
+            categoryName = task.category_id.name;
             
-            if (dueDate < today) {
-              isLate = true;
-              isUrgent = true;
-            } else if (dueDate > eventDate) {
-              isUrgent = true;
-            } else {
-              // 2 dias de antecedência é considerado urgente
-              const urgentLimit = new Date(eventDate);
-              urgentLimit.setDate(urgentLimit.getDate() - 2);
-              if (dueDate > urgentLimit) {
-                isUrgent = true;
+            if (task.category_id.department_id) {
+              taskDept = task.category_id.department_id;
+              if (typeof task.category_id.department_id === 'object') {
+                departmentName = task.category_id.department_id.name;
+              }
+              console.log(`Tarefa ${task.name}: Departamento via categoria encontrado:`, departmentName || taskDept);
+            }
+          }
+        }
+        
+        // Se ainda não tem departamento definido, verificar na tarefa original
+        if ((!taskDept || !departmentName) && task.task_id) {
+          if (typeof task.task_id === 'object') {
+            // Verificar departamento direto na tarefa original
+            if (task.task_id.department_id) {
+              taskDept = task.task_id.department_id;
+              if (typeof task.task_id.department_id === 'object') {
+                departmentName = task.task_id.department_id.name;
+              }
+              console.log(`Tarefa ${task.name}: Departamento via tarefa original encontrado:`, departmentName || taskDept);
+            }
+            
+            // Verificar departamento via categoria na tarefa original
+            if ((!taskDept || !departmentName) && task.task_id.category_id) {
+              if (typeof task.task_id.category_id === 'object' && task.task_id.category_id.department_id) {
+                taskDept = task.task_id.category_id.department_id;
+                if (typeof task.task_id.category_id.department_id === 'object') {
+                  departmentName = task.task_id.category_id.department_id.name;
+                }
+                console.log(`Tarefa ${task.name}: Departamento via categoria da tarefa original:`, departmentName || taskDept);
               }
             }
           }
-          
-          console.log('Processando tarefa:', {
-            name: et.name || et.task_id?.name || "Tarefa não encontrada",
-            originalDepartment: et.task_id?.department_id?.name,
-            originalCategory: et.task_id?.category_id?.name,
-            resolvedDepartment: departmentName,
-            resolvedCategory: categoryName
-          });
-          
-          // Combinar dados da tarefa do evento com a tarefa base
-          return {
-            ...et,
-            name: et.name || et.task_id?.name || baseTask?.name || "Tarefa não encontrada",
-            description: et.description || et.task_id?.description || baseTask?.description || "",
-            category_id: et.category_id || et.task_id?.category_id || baseTask?.category_id,
-            category_name: categoryName,
-            team_member_id: et.team_member_id,
-            department_id: departmentId,
-            department_name: departmentName,
-            days_before_event: et.task_id?.days_before_event || baseTask?.days_before_event || 0,
-            estimated_hours: baseTask?.estimated_hours || 0,
-            isUrgent: isUrgent,
-            isLate: isLate
-          };
+        }
+        
+        // Aviso se realmente não encontrou departamento
+        if (!taskDept) {
+          console.warn(`Tarefa ${task.name}: ALERTA - Não foi possível encontrar um departamento!`);
+        } else if (!departmentName) {
+          console.log(`Tarefa ${task.name}: Departamento encontrado (ID sem nome): ${taskDept}`);
+        }
+        
+        // VERIFICAÇÃO DE CATEGORIA
+        // Verificar categoria diretamente
+        if (task.category_id) {
+          if (typeof task.category_id === 'object') {
+            categoryName = task.category_id.name;
+          }
+          console.log(`Tarefa ${task.name}: Usando categoria atual:`, categoryName || task.category_id);
+        }
+        
+        // Se não encontrou categoria, verificar na tarefa original
+        if (!categoryName && task.task_id) {
+          if (typeof task.task_id === 'object' && task.task_id.category_id) {
+            if (typeof task.task_id.category_id === 'object') {
+              categoryName = task.task_id.category_id.name;
+            }
+            console.log(`Tarefa ${task.name}: Usando categoria da tarefa original:`, categoryName || task.task_id.category_id);
+          }
+        }
+        
+        console.log(`Processando tarefa final:`, {
+          name: task.name,
+          originalDepartment: departmentName,
+          originalCategory: categoryName,
+          resolvedDepartment: taskDept,
+          resolvedCategory: task.category_id
         });
+        
+        const enriched = {
+          ...task,
+          department_name: departmentName,
+          category_name: categoryName,
+          department_id: taskDept || task.department_id,
+          isUrgent: false,
+          isLate: false
+        };
+        
+        // Verificar status de data limite
+        if (task.due_date) {
+          const now = new Date();
+          const dueDate = new Date(task.due_date);
+          
+          // Verificar se a data já passou
+          if (dueDate < now) {
+            enriched.isLate = true;
+            enriched.isUrgent = true;
+          } else {
+            // Verificar se está próximo do prazo (menos de 3 dias)
+            const threeDaysFromNow = new Date();
+            threeDaysFromNow.setDate(now.getDate() + 3);
+            if (dueDate <= threeDaysFromNow) {
+              enriched.isUrgent = true;
+            }
+          }
+        }
+        
+        return enriched;
+      }));
       
-      console.log('EventTasksTab - Tarefas enriquecidas:', tasksForEvent);
-      setTasks(tasksForEvent);
-
-      // Se tiver tipo de evento, carregar tarefas padrão
-      if (eventTypeId) {
-        const defaultTasks = await DefaultTask.list();
-        const filteredDefaultTasks = defaultTasks.filter(dt => dt.event_type_id === eventTypeId);
-        setTypeTasks(filteredDefaultTasks);
-      }
+      console.log('EventTasksTab - Tarefas enriquecidas:', enrichedTasks);
+      setTasks(enrichedTasks);
     } catch (error) {
       console.error('EventTasksTab - Erro ao carregar tarefas:', error);
-      setTasks([]);
-      setAvailableTasks([]);
-      setTypeTasks([]);
     } finally {
       setIsLoading(false);
     }
@@ -290,13 +278,10 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
   };
 
   const handleEdit = (task) => {
-    // Formatar dados para o formulário
-    console.log('EventTasksTab - Iniciando edição da tarefa:', task);
+    console.log('EventTasksTab - Editando tarefa:', task);
     
-    // Garantir que temos os IDs corretos, mesmo que estejam aninhados
     const formData = {
-      ...task,
-      id: task.id,
+      id: task.id || task._id,
       name: task.name,
       description: task.description,
       task_id: task.task_id?._id || task.task_id || null,
@@ -447,6 +432,22 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
       other: "Outros"
     };
     return categoryMap[category] || category;
+  };
+
+  const loadAvailableTasks = async () => {
+    try {
+      const allTasks = await Task.list({
+        populate: [
+          { path: 'category_id', select: 'name department_id' },
+          { path: 'department_id', select: 'name' }
+        ]
+      });
+      console.log('EventTasksTab - Tarefas base carregadas:', allTasks);
+      setAvailableTasks(allTasks);
+    } catch (error) {
+      console.error('EventTasksTab - Erro ao carregar tarefas base:', error);
+      setAvailableTasks([]);
+    }
   };
 
   return (

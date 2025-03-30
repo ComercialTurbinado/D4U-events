@@ -104,11 +104,108 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
         
         // Determinar o departamento da tarefa original
         let departmentId = null;
+        let categoryId = null;
+        let foundDepartment = false;
         
-        if (task.category_id?.department_id) {
-          departmentId = task.category_id.department_id._id || task.category_id.department_id;
-        } else if (task.department_id) {
-          departmentId = task.department_id._id || task.department_id;
+        // Verificar se temos categoria com departamento
+        if (task.category_id) {
+          console.log('Tarefa original - verificando categoria:', task.category_id);
+          
+          if (typeof task.category_id === 'object') {
+            categoryId = task.category_id._id;
+            console.log('Tarefa original - categoria encontrada (objeto):', categoryId);
+            
+            // Verificar se a categoria tem departamento
+            if (task.category_id.department_id) {
+              departmentId = typeof task.category_id.department_id === 'object' 
+                ? task.category_id.department_id._id 
+                : task.category_id.department_id;
+              console.log('Tarefa original - departamento via categoria:', departmentId);
+              foundDepartment = true;
+            }
+          } else {
+            // Se for apenas o ID da categoria
+            categoryId = task.category_id;
+            console.log('Tarefa original - categoria encontrada (id):', categoryId);
+          }
+        }
+        
+        // Se não encontrou departamento via categoria, verificar departamento direto
+        if (!foundDepartment && task.department_id) {
+          console.log('Tarefa original - verificando departamento direto:', task.department_id);
+          
+          departmentId = typeof task.department_id === 'object' 
+            ? task.department_id._id 
+            : task.department_id;
+            
+          console.log('Tarefa original - departamento direto:', departmentId);
+          foundDepartment = true;
+        }
+        
+        // Se ainda não encontrou, verificar se inicialmente já temos departamento/categoria
+        if (!foundDepartment && initialData) {
+          console.log('Verificando departamento nos dados iniciais:', initialData.department_id);
+          
+          if (initialData.department_id) {
+            departmentId = initialData.department_id;
+            foundDepartment = true;
+            console.log('Usando departamento dos dados iniciais:', departmentId);
+          }
+        }
+        
+        if (!categoryId && initialData) {
+          console.log('Verificando categoria nos dados iniciais:', initialData.category_id);
+          
+          if (initialData.category_id) {
+            categoryId = initialData.category_id;
+            console.log('Usando categoria dos dados iniciais:', categoryId);
+          }
+        }
+        
+        // Alerta se não encontrou departamento
+        if (!foundDepartment) {
+          console.warn(`Tarefa ${task.name}: ALERTA - Não foi possível encontrar um departamento!`);
+          // Se já temos departamento no formulário, mantemos
+          if (formData.department_id) {
+            departmentId = formData.department_id;
+            console.log('Usando departamento atual do formulário:', departmentId);
+          }
+        }
+        
+        // Alerta se não encontrou categoria
+        if (!categoryId) {
+          console.warn(`Tarefa ${task.name}: ALERTA - Não foi possível encontrar uma categoria!`);
+          // Se já temos categoria no formulário, mantemos
+          if (formData.category_id) {
+            categoryId = formData.category_id;
+            console.log('Usando categoria atual do formulário:', categoryId);
+          }
+        }
+        
+        console.log('Atualizando formulário com dados da tarefa original:', {
+          name: task.name,
+          departmentId: departmentId,
+          categoryId: categoryId,
+          foundDepartment: foundDepartment
+        });
+        
+        // Verificar se departamento e categoria estão coerentes com o formulário atual
+        if (formData.department_id && formData.category_id) {
+          // Se já temos valores no formulário, verificar se estão coerentes
+          const categoriaOk = await verificaCoerenciaDepartamentoCategoria(
+            formData.department_id, 
+            formData.category_id
+          );
+          
+          if (!categoriaOk) {
+            console.warn('Inconsistência detectada: categoria não pertence ao departamento');
+            
+            // Manter o departamento, mas limpar a categoria
+            if (departmentId !== formData.department_id) {
+              departmentId = formData.department_id;
+              categoryId = null;
+            }
+          }
         }
         
         // Atualizar os dados do formulário com base na tarefa original
@@ -117,7 +214,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
           name: task.name || prev.name,
           description: task.description || prev.description,
           department_id: departmentId || prev.department_id,
-          category_id: task.category_id?._id || task.category_id || prev.category_id,
+          category_id: categoryId || prev.category_id,
           days_before_event: task.days_before_event || prev.days_before_event,
           // Não sobrescreve campos editáveis
           team_member_id: prev.team_member_id,
@@ -125,11 +222,35 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
           priority: task.priority || prev.priority,
           estimated_hours: task.estimated_hours || prev.estimated_hours
         }));
+        
+        // Se temos departamento, filtrar categorias
+        if (departmentId) {
+          filterCategoriesByDepartment(departmentId);
+        }
       }
     } catch (error) {
       console.error("Erro ao carregar tarefa original:", error);
     } finally {
       setIsLoadingOriginalTask(false);
+    }
+  };
+
+  // Verifica se a categoria pertence ao departamento
+  const verificaCoerenciaDepartamentoCategoria = async (departmentId, categoryId) => {
+    // Se não temos departamento ou categoria, não há o que verificar
+    if (!departmentId || !categoryId) return true;
+    
+    try {
+      // Buscar a categoria
+      const categoria = categories.find(c => c.id === categoryId);
+      if (!categoria) return false;
+      
+      // Verificar se departamento da categoria corresponde ao departamento informado
+      const categoriaDeptId = categoria.department_id?._id || categoria.department_id;
+      return categoriaDeptId === departmentId;
+    } catch (error) {
+      console.error("Erro ao verificar coerência:", error);
+      return false;
     }
   };
 
@@ -425,6 +546,28 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
               <p className="text-sm text-blue-600">
                 Esta tarefa está vinculada a um modelo pré-definido. Alguns campos não podem ser modificados.
               </p>
+              {!formData.department_id && (
+                <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md">
+                  <div className="flex items-center gap-1 text-amber-700">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span className="font-medium">Atenção!</span>
+                  </div>
+                  <p className="text-xs text-amber-600">
+                    Esta tarefa não possui um setor definido no modelo original. Por favor, selecione um setor.
+                  </p>
+                </div>
+              )}
+              {!formData.category_id && formData.department_id && (
+                <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md">
+                  <div className="flex items-center gap-1 text-amber-700">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span className="font-medium">Atenção!</span>
+                  </div>
+                  <p className="text-xs text-amber-600">
+                    Esta tarefa não possui uma categoria definida no modelo original. Por favor, selecione uma categoria.
+                  </p>
+                </div>
+              )}
             </div>
           )}
         
@@ -489,7 +632,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
               <div className="flex items-center justify-between">
                 <Label htmlFor="department_id" className="flex items-center gap-1">
                   Setor
-                  {isEditingWithOriginalTask && <Lock className="h-3 w-3 text-gray-400" />}
+                  {isEditingWithOriginalTask && formData.department_id && <Lock className="h-3 w-3 text-gray-400" />}
                 </Label>
                 {!isEditingWithOriginalTask && (
                   <Link 
@@ -504,9 +647,12 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
               <Select
                 value={formData.department_id}
                 onValueChange={handleDepartmentChange}
-                disabled={isEditingWithOriginalTask}
+                disabled={isEditingWithOriginalTask && formData.department_id}
               >
-                <SelectTrigger id="department_id" className={isEditingWithOriginalTask ? "bg-gray-50" : ""}>
+                <SelectTrigger 
+                  id="department_id" 
+                  className={`${isEditingWithOriginalTask && formData.department_id ? "bg-gray-50" : ""} ${!formData.department_id && isEditingWithOriginalTask ? "border-amber-500" : ""}`}
+                >
                   <SelectValue placeholder="Selecione um setor" />
                 </SelectTrigger>
                 <SelectContent>
@@ -522,6 +668,11 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                   )}
                 </SelectContent>
               </Select>
+              {!formData.department_id && isEditingWithOriginalTask && (
+                <p className="text-amber-600 text-xs mt-1">
+                  É necessário selecionar um setor para esta tarefa
+                </p>
+              )}
             </div>
 
             {/* Seleção de Categoria */}
@@ -529,7 +680,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
               <div className="flex items-center justify-between">
                 <Label htmlFor="category_id" className="flex items-center gap-1">
                   Categoria
-                  {isEditingWithOriginalTask && <Lock className="h-3 w-3 text-gray-400" />}
+                  {isEditingWithOriginalTask && formData.category_id && <Lock className="h-3 w-3 text-gray-400" />}
                 </Label>
                 {!isEditingWithOriginalTask && (
                   <Link 
@@ -544,9 +695,12 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
               <Select
                 value={formData.category_id}
                 onValueChange={value => setFormData(prev => ({ ...prev, category_id: value }))}
-                disabled={!formData.department_id || isEditingWithOriginalTask}
+                disabled={!formData.department_id || (isEditingWithOriginalTask && formData.category_id)}
               >
-                <SelectTrigger id="category_id" className={isEditingWithOriginalTask ? "bg-gray-50" : ""}>
+                <SelectTrigger 
+                  id="category_id" 
+                  className={`${isEditingWithOriginalTask && formData.category_id ? "bg-gray-50" : ""} ${formData.department_id && !formData.category_id && isEditingWithOriginalTask ? "border-amber-500" : ""}`}
+                >
                   <SelectValue placeholder={
                     !formData.department_id 
                       ? "Selecione um setor primeiro" 
@@ -577,6 +731,11 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                   )}
                 </SelectContent>
               </Select>
+              {formData.department_id && !formData.category_id && isEditingWithOriginalTask && (
+                <p className="text-amber-600 text-xs mt-1">
+                  É necessário selecionar uma categoria para esta tarefa
+                </p>
+              )}
             </div>
           </div>
 
