@@ -39,10 +39,27 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
       setIsLoading(true);
       console.log('EventTasksTab - Iniciando carregamento de tarefas para o evento:', eventId);
       
+      // Carregar todas as tarefas base com relacionamentos
+      const allTasks = await Task.list({
+        populate: [
+          { path: 'category_id', select: 'name department_id' },
+          { path: 'department_id', select: 'name' }
+        ]
+      });
+      console.log('EventTasksTab - Todas as tarefas base com relacionamentos:', allTasks);
+      setAvailableTasks(allTasks);
+      
       // Carregar todas as tarefas de eventos com relacionamentos
       const eventTasks = await EventTask.list({
         populate: [
-          { path: 'task_id', select: 'name description category_id department_id days_before_event' },
+          { 
+            path: 'task_id', 
+            select: 'name description category_id department_id days_before_event',
+            populate: [
+              { path: 'category_id', select: 'name department_id' },
+              { path: 'department_id', select: 'name' }
+            ]
+          },
           { 
             path: 'category_id', 
             select: 'name department_id color',
@@ -62,11 +79,6 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
         ]
       });
       
-      // Carregar todas as tarefas base
-      const allTasks = await Task.list();
-      console.log('EventTasksTab - Todas as tarefas base:', allTasks);
-      setAvailableTasks(allTasks);
-      
       // Filtrar e enriquecer tarefas do evento atual
       const tasksForEvent = eventTasks
         .filter(et => et.event_id === eventId)
@@ -74,15 +86,41 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
           // Buscar detalhes da tarefa base
           const baseTask = allTasks.find(t => t.id === et.task_id?._id);
           
-          // Determinar o departamento
+          // Determinar o departamento (prioridade: categoria atual > tarefa base categoria > tarefa base department)
           let departmentId = null;
           let departmentName = null;
           
           if (et.category_id?.department_id) {
+            // Opção 1: Usar o departamento da categoria atual
             departmentId = et.category_id.department_id._id || et.category_id.department_id;
             departmentName = et.category_id.department_id.name;
+          } else if (et.task_id?.category_id?.department_id) {
+            // Opção 2: Usar o departamento da categoria da tarefa base
+            departmentId = et.task_id.category_id.department_id._id || et.task_id.category_id.department_id;
+            departmentName = et.task_id.category_id.department_id.name;
+          } else if (et.task_id?.department_id) {
+            // Opção 3: Usar o departamento da tarefa base diretamente
+            departmentId = et.task_id.department_id._id || et.task_id.department_id;
+            departmentName = et.task_id.department_id.name;
           } else if (baseTask?.department_id) {
-            departmentId = baseTask.department_id;
+            // Opção 4: Último recurso - usar o departamento do baseTask (normalmente não deveria chegar aqui)
+            departmentId = baseTask.department_id._id || baseTask.department_id;
+            departmentName = baseTask.department_id.name;
+          }
+          
+          // Determinar a categoria (prioridade: categoria atual > tarefa base categoria)
+          let categoryId = null;
+          let categoryName = null;
+          
+          if (et.category_id) {
+            categoryId = et.category_id._id || et.category_id;
+            categoryName = et.category_id.name;
+          } else if (et.task_id?.category_id) {
+            categoryId = et.task_id.category_id._id || et.task_id.category_id;
+            categoryName = et.task_id.category_id.name;
+          } else if (baseTask?.category_id) {
+            categoryId = baseTask.category_id._id || baseTask.category_id;
+            categoryName = baseTask.category_id.name;
           }
           
           // Verificar se a data limite está próxima ou passou
@@ -100,21 +138,30 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
             } else if (dueDate > eventDate) {
               isUrgent = true;
             } else {
-              // 3 dias de antecedência é considerado urgente
-              const urgentLimit = new Date(dueDate);
-              urgentLimit.setDate(urgentLimit.getDate() + 3);
-              if (urgentLimit >= eventDate) {
+              // 2 dias de antecedência é considerado urgente
+              const urgentLimit = new Date(eventDate);
+              urgentLimit.setDate(urgentLimit.getDate() - 2);
+              if (dueDate > urgentLimit) {
                 isUrgent = true;
               }
             }
           }
           
+          console.log('Processando tarefa:', {
+            name: et.name || et.task_id?.name || "Tarefa não encontrada",
+            originalDepartment: et.task_id?.department_id?.name,
+            originalCategory: et.task_id?.category_id?.name,
+            resolvedDepartment: departmentName,
+            resolvedCategory: categoryName
+          });
+          
           // Combinar dados da tarefa do evento com a tarefa base
           return {
             ...et,
             name: et.name || et.task_id?.name || baseTask?.name || "Tarefa não encontrada",
-            description: et.description || baseTask?.description || "",
-            category_id: et.category_id || baseTask?.category_id,
+            description: et.description || et.task_id?.description || baseTask?.description || "",
+            category_id: et.category_id || et.task_id?.category_id || baseTask?.category_id,
+            category_name: categoryName,
             team_member_id: et.team_member_id,
             department_id: departmentId,
             department_name: departmentName,
@@ -440,10 +487,14 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
               tasks.map(task => (
                 <TableRow key={task.id}>
                   <TableCell>{task.name}</TableCell>
-                  <TableCell>{task.department_name || "-"}</TableCell>
+                  <TableCell>{task.department_name || 
+                    (task.task_id?.department_id?.name ? task.task_id.department_id.name : "-")}
+                  </TableCell>
                   <TableCell>
                     <Badge variant="secondary">
-                      {task.category_id?.name || "-"}
+                      {task.category_name || 
+                       (task.category_id?.name ? task.category_id.name : 
+                        (task.task_id?.category_id?.name ? task.task_id.category_id.name : "-"))}
                     </Badge>
                   </TableCell>
                   <TableCell>{task.team_member_id?.name || "-"}</TableCell>

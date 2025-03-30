@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
-import { format, isBefore, addDays } from "date-fns";
+import { format, isBefore, addDays, isAfter, subDays } from "date-fns";
 import { Link } from "@/components/ui/link";
 import { TaskCategory, TeamMember, Department } from "@/api/entities";
 import { createPageUrl } from "@/lib/utils";
@@ -22,7 +22,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { CalendarIcon, Plus, AlertTriangle } from "lucide-react";
+import { CalendarIcon, Plus, AlertTriangle, Info } from "lucide-react";
 
 export default function EventTaskForm({ initialData, availableTasks, onSubmit, onCancel, eventId, eventDate }) {
   const [formData, setFormData] = useState(initialData || {
@@ -161,15 +161,50 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
   };
 
   const handleTaskSelect = (taskId) => {
+    console.log('Selecionando tarefa base:', taskId);
     const selectedTask = availableTasks.find(task => task.id === taskId);
+    
     if (selectedTask) {
-      // Encontrar o departamento da categoria selecionada
+      console.log('Tarefa base encontrada:', selectedTask);
+      
+      // Encontrar o departamento e categoria da tarefa selecionada
       let departmentId = null;
+      let categoryId = null;
+      
+      // Verificar se a tarefa base tem categoria com departamento aninhado
       if (selectedTask.category_id) {
-        const taskCategory = categories.find(cat => cat.id === selectedTask.category_id);
-        if (taskCategory?.department_id) {
-          departmentId = taskCategory.department_id._id || taskCategory.department_id;
+        console.log('Categoria da tarefa base:', selectedTask.category_id);
+        categoryId = selectedTask.category_id._id || selectedTask.category_id;
+        
+        // Verificar se temos departamento na categoria
+        if (selectedTask.category_id.department_id) {
+          departmentId = selectedTask.category_id.department_id._id || selectedTask.category_id.department_id;
+          console.log('Departamento encontrado via categoria:', departmentId);
         }
+      }
+      
+      // Se não encontrou departamento via categoria, verificar departamento direto
+      if (!departmentId && selectedTask.department_id) {
+        departmentId = selectedTask.department_id._id || selectedTask.department_id;
+        console.log('Departamento encontrado diretamente:', departmentId);
+      }
+      
+      // Buscar a categoria completa se tivermos apenas o ID
+      let categoryObj = null;
+      if (categoryId && categories.length > 0) {
+        categoryObj = categories.find(cat => cat.id === categoryId);
+        console.log('Objeto da categoria encontrado:', categoryObj);
+        
+        // Se encontrou a categoria e ela tem departamento, atualize o departmentId
+        if (categoryObj?.department_id && !departmentId) {
+          departmentId = categoryObj.department_id._id || categoryObj.department_id;
+          console.log('Departamento atualizado via objeto categoria:', departmentId);
+        }
+      }
+      
+      // Filtrar categorias para o departamento selecionado
+      if (departmentId) {
+        filterCategoriesByDepartment(departmentId);
       }
       
       // Calcular data limite com base nos dias antes do evento
@@ -177,8 +212,23 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
       if (eventDate && selectedTask.days_before_event) {
         const eventDateObj = new Date(eventDate);
         const dueDateObj = addDays(eventDateObj, -selectedTask.days_before_event);
-        dueDate = dueDateObj.toISOString().split('T')[0];
+        
+        // Garantir que a data não seja após o limite máximo (2 dias antes do evento)
+        const maxAllowedDate = subDays(eventDateObj, 2);
+        if (isAfter(dueDateObj, maxAllowedDate)) {
+          dueDate = maxAllowedDate.toISOString().split('T')[0];
+        } else {
+          dueDate = dueDateObj.toISOString().split('T')[0];
+        }
       }
+      
+      console.log('Atualizando formulário com dados da tarefa base:', {
+        taskId,
+        name: selectedTask.name,
+        departmentId,
+        categoryId,
+        dueDate
+      });
       
       setFormData({
         ...formData,
@@ -187,7 +237,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
         description: selectedTask.description || "",
         responsible_role: selectedTask.responsible_role || "",
         department_id: departmentId,
-        category_id: selectedTask.category_id || "",
+        category_id: categoryId,
         days_before_event: selectedTask.days_before_event || 0,
         due_date: dueDate,
         priority: selectedTask.priority || "medium",
@@ -220,6 +270,16 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
     const dueDate = new Date(formData.due_date);
     const eventDateObj = new Date(eventDate);
     
+    // Data máxima permitida = 2 dias antes do evento
+    const maxAllowedDate = subDays(eventDateObj, 2);
+    
+    console.log('Verificando status de data:', {
+      dataLimite: dueDate,
+      dataEvento: eventDateObj,
+      dataMaximaPermitida: maxAllowedDate,
+      hoje: today
+    });
+    
     // Verificar se a data está no passado
     if (isBefore(dueDate, today)) {
       setIsDatePast(true);
@@ -227,16 +287,16 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
       return;
     }
     
-    // Verificar se a data está depois do evento
-    if (isBefore(eventDateObj, dueDate)) {
+    // Verificar se a data é depois da data máxima permitida (2 dias antes do evento)
+    if (isAfter(dueDate, maxAllowedDate)) {
       setIsDateUrgent(true);
       setIsDatePast(false);
       return;
     }
     
-    // Verificar se a data é muito próxima do evento (menos de 3 dias)
-    const urgentLimit = addDays(dueDate, 3);
-    if (isBefore(urgentLimit, eventDateObj)) {
+    // Verificar se a data está próxima da data máxima (menos de 3 dias de folga)
+    const safeLimit = subDays(maxAllowedDate, 3);
+    if (isAfter(dueDate, safeLimit)) {
       setIsDateUrgent(true);
       setIsDatePast(false);
       return;
@@ -497,10 +557,44 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
+                  <div className="p-2 bg-amber-50 border-b border-amber-100 text-amber-800 text-xs flex items-center">
+                    <Info className="h-3 w-3 mr-1" />
+                    A data limite deve ser no máximo até 2 dias antes do evento.
+                  </div>
                   <Calendar
                     mode="single"
                     selected={formData.due_date ? new Date(formData.due_date) : undefined}
-                    onSelect={date => setFormData(prev => ({ ...prev, due_date: date ? date.toISOString().split('T')[0] : "" }))}
+                    onSelect={date => {
+                      // Verificar se a data selecionada é posterior a 2 dias antes do evento
+                      if (date && eventDate) {
+                        const eventDateObj = new Date(eventDate);
+                        const maxAllowedDate = subDays(eventDateObj, 2);
+                        
+                        // Se a data selecionada for posterior à data máxima permitida, use a data máxima
+                        if (isAfter(date, maxAllowedDate)) {
+                          console.log('Data selecionada após limite máximo, ajustando para:', maxAllowedDate);
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            due_date: maxAllowedDate.toISOString().split('T')[0] 
+                          }));
+                          return;
+                        }
+                      }
+                      
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        due_date: date ? date.toISOString().split('T')[0] : "" 
+                      }));
+                    }}
+                    disabled={(date) => {
+                      // Desabilitar datas após 2 dias antes do evento
+                      if (!eventDate) return false;
+                      
+                      const eventDateObj = new Date(eventDate);
+                      const maxAllowedDate = subDays(eventDateObj, 2);
+                      
+                      return isAfter(date, maxAllowedDate);
+                    }}
                     initialFocus
                   />
                 </PopoverContent>
@@ -508,6 +602,11 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
               {formData.days_before_event > 0 && (
                 <p className="text-sm text-gray-500 mt-1">
                   Prazo recomendado: {formData.days_before_event} dias antes do evento
+                </p>
+              )}
+              {eventDate && (
+                <p className="text-xs text-amber-600 mt-1">
+                  Data máxima permitida: {format(subDays(new Date(eventDate), 2), "dd/MM/yyyy")}
                 </p>
               )}
             </div>
