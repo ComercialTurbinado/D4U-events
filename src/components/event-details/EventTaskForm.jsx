@@ -807,7 +807,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                   <SelectItem value="completed">Concluída</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </div> 
 
             <div>
               <Label htmlFor="priority">Prioridade</Label>
