@@ -276,9 +276,7 @@ export default function EventDetailsPage() {
           <TabsTrigger value="materials" className="flex items-center gap-2">
             <ShoppingCart className="h-4 w-4" /> Materiais
           </TabsTrigger>
-          <TabsTrigger value="suppliers" className="flex items-center gap-2">
-            <Briefcase className="h-4 w-4" /> Fornecedores
-          </TabsTrigger>
+           
         </TabsList>
         
         <TabsContent value="tasks">
