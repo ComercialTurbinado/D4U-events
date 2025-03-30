@@ -56,7 +56,7 @@ export default function TaskForm({ initialData, onSubmit, onCancel }) {
     setIsLoadingDepartments(true);
     try {
       const depts = await Department.list();
-      // Filtra os departamentos ativos no lado do cliente
+      // Filtra os Setores ativos no lado do cliente
       const activeDepts = depts.filter(dept => dept.is_active);
       setDepartments(activeDepts);
     } catch (error) {

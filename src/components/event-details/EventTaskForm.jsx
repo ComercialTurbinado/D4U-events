@@ -537,40 +537,6 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
     <form onSubmit={handleSubmit} className="space-y-6">
       <Card className="p-6">
         <div className="space-y-4">
-          {isEditingWithOriginalTask && (
-            <div className="bg-blue-50 p-3 rounded-md border border-blue-200 mb-4">
-              <div className="flex items-center gap-2 text-blue-700 mb-1">
-                <Info className="h-4 w-4" />
-                <span className="font-medium">Tarefa vinculada a modelo</span>
-              </div>
-              <p className="text-sm text-blue-600">
-                Esta tarefa está vinculada a um modelo pré-definido. Alguns campos não podem ser modificados.
-              </p>
-              {!formData.department_id && (
-                <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md">
-                  <div className="flex items-center gap-1 text-amber-700">
-                    <AlertTriangle className="h-4 w-4" />
-                    <span className="font-medium">Atenção!</span>
-                  </div>
-                  <p className="text-xs text-amber-600">
-                    Esta tarefa não possui um setor definido no modelo original. Por favor, selecione um setor.
-                  </p>
-                </div>
-              )}
-              {!formData.category_id && formData.department_id && (
-                <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md">
-                  <div className="flex items-center gap-1 text-amber-700">
-                    <AlertTriangle className="h-4 w-4" />
-                    <span className="font-medium">Atenção!</span>
-                  </div>
-                  <p className="text-xs text-amber-600">
-                    Esta tarefa não possui uma categoria definida no modelo original. Por favor, selecione uma categoria.
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-        
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {!initialData && availableTasks && availableTasks.length > 0 && (
               <div>
@@ -634,7 +600,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                   Setor
                   {isEditingWithOriginalTask && formData.department_id && <Lock className="h-3 w-3 text-gray-400" />}
                 </Label>
-                {!isEditingWithOriginalTask && (
+                {(formData.department_id && isEditingWithOriginalTask) ? null : (
                   <Link 
                     to={createPageUrl("departments")} 
                     className="text-xs text-blue-600 hover:underline flex items-center"
@@ -682,7 +648,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                   Categoria
                   {isEditingWithOriginalTask && formData.category_id && <Lock className="h-3 w-3 text-gray-400" />}
                 </Label>
-                {!isEditingWithOriginalTask && (
+                {(formData.category_id && isEditingWithOriginalTask) ? null : (
                   <Link 
                     to={createPageUrl("task-categories")} 
                     className="text-xs text-blue-600 hover:underline flex items-center"
@@ -780,7 +746,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                 </p>
               )}
             </div>
-
+            
             {/* Seleção de Data Limite */}
             <div>
               <div className="flex items-center justify-between">
