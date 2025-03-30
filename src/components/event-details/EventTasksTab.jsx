@@ -182,8 +182,9 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
     // Formatar dados para o formulário
     const formData = {
       ...task,
-      responsible_role: task.assigned_to || task.responsible_role || "",
-      task_id: task.task_id || null
+      task_id: task.task_id?._id || task.task_id || null,
+      team_member_id: task.team_member_id?._id || task.team_member_id || null,
+      category_id: task.category_id?._id || task.category_id || null
     };
     console.log('EventTasksTab - Dados formatados para edição:', formData);
     setEditingTask(formData);
@@ -238,10 +239,16 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
           const taskData = {
             event_id: eventId,
             task_id: defaultTask.task_id,
+            name: taskDetails.name || "Tarefa sem nome",
+            description: taskDetails.description || "",
+            category_id: taskDetails.category_id || null,
+            team_member_id: null, // Campo atualizado de assigned_to para team_member_id
             status: "pending",
-            assigned_to: taskDetails.responsible_role || "",
             due_date: null,
             notes: taskDetails.notes || "",
+            priority: taskDetails.priority || "medium",
+            estimated_hours: taskDetails.estimated_hours || 0,
+            actual_hours: 0,
             is_active: true
           };
           
@@ -275,9 +282,11 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
   const handleStatusChange = async (taskId, newStatus) => {
     try {
       console.log('EventTasksTab - Alterando status da tarefa:', taskId, newStatus);
-      // Converter o status para o formato do MongoDB
-      const status = newStatus === "completed" ? "completed" : "pending";
-      await EventTask.update(taskId, { status });
+      
+      await EventTask.update(taskId, { 
+        status: newStatus 
+      });
+      
       console.log('EventTasksTab - Status atualizado com sucesso');
       await loadTasks();
     } catch (error) {
