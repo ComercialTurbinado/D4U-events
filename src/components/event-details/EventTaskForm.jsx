@@ -59,6 +59,11 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
     loadDepartments();
     loadCategories();
     loadTeamMembers();
+    
+    // Log de dados iniciais ao montar componente
+    if (initialData) {
+      console.log('EventTaskForm - Dados iniciais recebidos:', initialData);
+    }
   }, []);
 
   useEffect(() => {
@@ -384,7 +389,6 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                 onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="Nome da tarefa"
                 required
-                disabled={initialData}
               />
             </div>
           </div>
@@ -417,7 +421,6 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
               <Select
                 value={formData.department_id}
                 onValueChange={handleDepartmentChange}
-                disabled={initialData}
               >
                 <SelectTrigger id="department_id">
                   <SelectValue placeholder="Selecione um setor" />
@@ -452,7 +455,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
               <Select
                 value={formData.category_id}
                 onValueChange={value => setFormData(prev => ({ ...prev, category_id: value }))}
-                disabled={initialData || !formData.department_id}
+                disabled={!formData.department_id}
               >
                 <SelectTrigger id="category_id">
                   <SelectValue placeholder={

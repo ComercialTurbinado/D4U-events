@@ -94,18 +94,24 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
             // Opção 1: Usar o departamento da categoria atual
             departmentId = et.category_id.department_id._id || et.category_id.department_id;
             departmentName = et.category_id.department_id.name;
+            console.log(`Tarefa ${et.name || et.id}: Usando departamento da categoria atual:`, departmentName);
           } else if (et.task_id?.category_id?.department_id) {
             // Opção 2: Usar o departamento da categoria da tarefa base
             departmentId = et.task_id.category_id.department_id._id || et.task_id.category_id.department_id;
             departmentName = et.task_id.category_id.department_id.name;
+            console.log(`Tarefa ${et.name || et.id}: Usando departamento da categoria da tarefa base:`, departmentName);
           } else if (et.task_id?.department_id) {
             // Opção 3: Usar o departamento da tarefa base diretamente
             departmentId = et.task_id.department_id._id || et.task_id.department_id;
             departmentName = et.task_id.department_id.name;
+            console.log(`Tarefa ${et.name || et.id}: Usando departamento da tarefa base:`, departmentName);
           } else if (baseTask?.department_id) {
             // Opção 4: Último recurso - usar o departamento do baseTask (normalmente não deveria chegar aqui)
             departmentId = baseTask.department_id._id || baseTask.department_id;
             departmentName = baseTask.department_id.name;
+            console.log(`Tarefa ${et.name || et.id}: Usando departamento do baseTask:`, departmentName);
+          } else {
+            console.log(`Tarefa ${et.name || et.id}: ALERTA - Não foi possível encontrar um departamento!`);
           }
           
           // Determinar a categoria (prioridade: categoria atual > tarefa base categoria)
@@ -115,12 +121,17 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
           if (et.category_id) {
             categoryId = et.category_id._id || et.category_id;
             categoryName = et.category_id.name;
+            console.log(`Tarefa ${et.name || et.id}: Usando categoria atual:`, categoryName);
           } else if (et.task_id?.category_id) {
             categoryId = et.task_id.category_id._id || et.task_id.category_id;
             categoryName = et.task_id.category_id.name;
+            console.log(`Tarefa ${et.name || et.id}: Usando categoria da tarefa base:`, categoryName);
           } else if (baseTask?.category_id) {
             categoryId = baseTask.category_id._id || baseTask.category_id;
             categoryName = baseTask.category_id.name;
+            console.log(`Tarefa ${et.name || et.id}: Usando categoria do baseTask:`, categoryName);
+          } else {
+            console.log(`Tarefa ${et.name || et.id}: ALERTA - Não foi possível encontrar uma categoria!`);
           }
           
           // Verificar se a data limite está próxima ou passou
@@ -280,12 +291,27 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
 
   const handleEdit = (task) => {
     // Formatar dados para o formulário
+    console.log('EventTasksTab - Iniciando edição da tarefa:', task);
+    
+    // Garantir que temos os IDs corretos, mesmo que estejam aninhados
     const formData = {
       ...task,
+      id: task.id,
+      name: task.name,
+      description: task.description,
       task_id: task.task_id?._id || task.task_id || null,
+      department_id: task.department_id?._id || task.department_id || null,
+      category_id: task.category_id?._id || task.category_id || null,
       team_member_id: task.team_member_id?._id || task.team_member_id || null,
-      category_id: task.category_id?._id || task.category_id || null
+      due_date: task.due_date || null,
+      status: task.status || "pending",
+      priority: task.priority || "medium",
+      notes: task.notes || "",
+      estimated_hours: task.estimated_hours || 0,
+      actual_hours: task.actual_hours || 0,
+      days_before_event: task.days_before_event || 0
     };
+    
     console.log('EventTasksTab - Dados formatados para edição:', formData);
     setEditingTask(formData);
     setShowForm(true);
