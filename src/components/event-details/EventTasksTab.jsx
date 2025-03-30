@@ -39,16 +39,14 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
       setIsLoading(true);
       console.log('EventTasksTab - Iniciando carregamento de tarefas para o evento:', eventId);
       
-      // Carregar todas as tarefas de eventos com os relacionamentos
+      // Carregar todas as tarefas de eventos com relacionamentos
       const eventTasks = await EventTask.list({
         populate: [
-          { path: 'team_member', select: 'name' },
-          { path: 'category_id', select: 'name' },
-          { path: 'task_id', select: 'department_id', populate: { path: 'department_id', select: 'name' } }
+          { path: 'task_id', select: 'name description category_id department_id' },
+          { path: 'category_id', select: 'name department_id' },
+          { path: 'team_member_id', select: 'name department_id' }
         ]
       });
-      
-      console.log('EventTasksTab - Todas as tarefas:', eventTasks);
       
       // Carregar todas as tarefas base
       const allTasks = await Task.list();
@@ -65,28 +63,29 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
           // Combinar dados da tarefa do evento com a tarefa base
           return {
             ...et,
-            name: et.name || baseTask?.name || "Tarefa não encontrada",
+            name: et.name || et.task_id?.name || baseTask?.name || "Tarefa não encontrada",
             description: et.description || baseTask?.description || "",
-            category: et.category_id,
-            team_member: et.team_member,
-            department: et.task_id?.department_id,
+            category_id: et.category_id || baseTask?.category_id,
+            team_member_id: et.team_member_id,
+            department_id: et.category_id?.department_id || baseTask?.department_id,
             estimated_hours: baseTask?.estimated_hours || 0
           };
         });
       
       console.log('EventTasksTab - Tarefas enriquecidas:', tasksForEvent);
-      
+      setTasks(tasksForEvent);
+
       // Se tiver tipo de evento, carregar tarefas padrão
       if (eventTypeId) {
         const defaultTasks = await DefaultTask.list();
         const filteredDefaultTasks = defaultTasks.filter(dt => dt.event_type_id === eventTypeId);
         setTypeTasks(filteredDefaultTasks);
       }
-      
-      // Atualizar estado com as tarefas do evento
-      setTasks(tasksForEvent);
     } catch (error) {
       console.error('EventTasksTab - Erro ao carregar tarefas:', error);
+      setTasks([]);
+      setAvailableTasks([]);
+      setTypeTasks([]);
     } finally {
       setIsLoading(false);
     }
@@ -119,8 +118,11 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
       const newTaskData = {
         event_id: eventId,
         task_id: taskData.task_id || null,
+        name: taskData.name,
+        description: taskData.description || "",
         status: "pending",
-        assigned_to: taskData.responsible_role || "",
+        team_member_id: taskData.team_member_id || null,
+        category_id: taskData.category_id || null,
         due_date: taskData.due_date || null,
         notes: taskData.notes || "",
         is_active: true
@@ -145,8 +147,11 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
       const updateData = {
         event_id: eventId,
         task_id: taskData.task_id || null,
+        name: taskData.name,
+        description: taskData.description || "",
         status: taskData.status || "pending",
-        assigned_to: taskData.responsible_role || "",
+        team_member_id: taskData.team_member_id || null,
+        category_id: taskData.category_id || null,
         due_date: taskData.due_date || null,
         notes: taskData.notes || "",
         is_active: true
@@ -368,8 +373,8 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
               tasks.map(task => (
                 <TableRow key={task.id}>
                   <TableCell>{task.name}</TableCell>
-                  <TableCell>{task.department?.name || "-"}</TableCell>
-                  <TableCell>{task.team_member?.name || "-"}</TableCell>
+                  <TableCell>{task.department_id?.name || "-"}</TableCell>
+                  <TableCell>{task.team_member_id?.name || "-"}</TableCell>
                   <TableCell>
                     {task.due_date ? format(new Date(task.due_date), "dd/MM/yyyy") : "-"}
                   </TableCell>
@@ -380,7 +385,7 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
                   </TableCell>
                   <TableCell>
                     <Badge variant="secondary">
-                      {task.category?.name || "-"}
+                      {task.category_id?.name || "-"}
                     </Badge>
                   </TableCell>
                   <TableCell>

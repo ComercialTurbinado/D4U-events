@@ -71,7 +71,7 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
           
           return {
             ...em,
-            name: em.name || baseMaterial?.name || 'Material sem nome',
+            name: em.name || em.material_id?.name || baseMaterial?.name || 'Material sem nome',
             description: em.description || baseMaterial?.description || '',
             unit: em.unit || baseMaterial?.unit || 'un',
             category: em.category || baseMaterial?.category || 'other',
@@ -433,14 +433,14 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
                       </TableCell>
                       <TableCell>
                         <Select
-                          value={material.supplier_id?._id || ""}
-                          onValueChange={(value) => handleSupplierChange(material.id, value)}
+                          value={material.supplier_id?._id || "none"}
+                          onValueChange={(value) => handleSupplierChange(material.id, value === "none" ? null : value)}
                         >
                           <SelectTrigger className="w-[200px]">
                             <SelectValue placeholder="Selecione um fornecedor" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">Nenhum</SelectItem>
+                            <SelectItem value="none">Nenhum fornecedor</SelectItem>
                             {Object.values(suppliers).map(supplier => (
                               <SelectItem key={supplier.id} value={supplier.id}>
                                 {supplier.name}
