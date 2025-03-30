@@ -328,27 +328,6 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
     try {
       console.log('EventTasksTab - Atualizando tarefa:', id, taskData);
       
-      // Garantir que o departamento está definido
-      if (taskData.category_id && !taskData.department_id) {
-        // Carregar categorias para obter o departamento
-        const allCategories = await TaskCategory.list({
-          populate: [{ path: 'department_id', select: 'name' }]
-        });
-        
-        // Buscar a categoria selecionada
-        const selectedCategory = allCategories.find(
-          c => c.id === taskData.category_id || c._id === taskData.category_id
-        );
-        
-        // Extrair o departamento da categoria
-        if (selectedCategory && selectedCategory.department_id) {
-          taskData.department_id = typeof selectedCategory.department_id === 'object' ?
-                                  selectedCategory.department_id._id :
-                                  selectedCategory.department_id;
-          console.log('EventTasksTab - Definindo departamento a partir da categoria:', taskData.department_id);
-        }
-      }
-      
       // Dados básicos da tarefa - formato MongoDB
       const updateData = {
         name: taskData.name || "",
