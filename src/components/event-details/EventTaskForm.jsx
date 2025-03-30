@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { format, isBefore, addDays, isAfter, subDays } from "date-fns";
 import { Link } from "@/components/ui/link";
-import { TaskCategory, TeamMember, Department, Task } from "@/api/entities";
+import { TaskCategory, TeamMember, Department, Task, Event } from "@/api/entities";
 import { createPageUrl } from "@/lib/utils";
 import { 
   Select, 
@@ -57,6 +57,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
   const [isLoadingOriginalTask, setIsLoadingOriginalTask] = useState(false);
   const [originalTask, setOriginalTask] = useState(null);
   const [hasOriginalTask, setHasOriginalTask] = useState(false);
+  const [eventData, setEventData] = useState(null);
 
   useEffect(() => {
     loadDepartments();
@@ -75,6 +76,22 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
   useEffect(() => {
     checkDateStatus();
   }, [formData.due_date, eventDate]);
+
+  useEffect(() => {
+    // Carregar dados do evento para obter a data de início
+    const loadEventData = async () => {
+      try {
+        const event = await Event.get(eventId); // Supondo que exista uma função para obter o evento
+        if (event) {
+          setEventData(event);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados do evento:', error);
+      }
+    };
+
+    loadEventData();
+  }, [eventId]);
 
   const loadOriginalTask = async (taskId) => {
     setIsLoadingOriginalTask(true);
@@ -501,6 +518,29 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
   // Verifica se está editando uma tarefa com task_id
   const isEditingWithOriginalTask = initialData && (initialData.task_id || hasOriginalTask);
 
+  const handleDateSelect = (date) => {
+    if (date) {
+      const today = new Date();
+      const eventDateObj = new Date(eventDate);
+
+      // Calcular o tempo de execução da tarefa
+      const executionTime = addDays(today, formData.days_before_event);
+
+      // Se o tempo de execução ultrapassar a data do evento, marque como urgente
+      if (isAfter(executionTime, eventDateObj)) {
+        console.log('Tempo de execução ultrapassa a data do evento, marcando como urgente.');
+        setIsDateUrgent(true);
+      } else {
+        setIsDateUrgent(false);
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        due_date: date.toISOString().split('T')[0]
+      }));
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <Card className="p-6">
@@ -745,34 +785,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                   <Calendar
                     mode="single"
                     selected={formData.due_date ? new Date(formData.due_date) : undefined}
-                    onSelect={date => {
-                      if (date) {
-                        // Verificar se a data selecionada é posterior à data do evento
-                        const eventDateObj = new Date(eventDate);
-                        
-                        // Se a data selecionada for posterior à data do evento, use a data do evento
-                        if (isAfter(date, eventDateObj)) {
-                          console.log('Data selecionada após data do evento, ajustando para:', eventDateObj);
-                          setFormData(prev => ({ 
-                            ...prev, 
-                            due_date: eventDateObj.toISOString().split('T')[0] 
-                          }));
-                          return;
-                        }
-                      }
-                      
-                      setFormData(prev => ({ 
-                        ...prev, 
-                        due_date: date ? date.toISOString().split('T')[0] : "" 
-                      }));
-                    }}
-                    disabled={(date) => {
-                      // Desabilitar datas após a data do evento
-                      if (!eventDate) return false;
-                      
-                      const eventDateObj = new Date(eventDate);
-                      return isAfter(date, eventDateObj);
-                    }}
+                    onSelect={handleDateSelect}
                     initialFocus
                   />
                 </PopoverContent>
