@@ -30,9 +30,13 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
   const [availableTypeTasks, setAvailableTypeTasks] = useState([]);
   const [typeTasks, setTypeTasks] = useState([]);
   const [departmentMap, setDepartmentMap] = useState({});
+  const [categories, setCategories] = useState([]);
+  const [departments, setDepartments] = useState([]);
 
   useEffect(() => {
     loadTasks();
+    loadCategories();
+    loadDepartments();
   }, [eventId]);
 
   const loadTasks = async () => {
@@ -276,6 +280,7 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
     try {
       const allDepartments = await Department.list();
       console.log('EventTasksTab - Departamentos carregados:', allDepartments);
+      setDepartments(allDepartments);
       
       // Criar mapa de ID para nome do departamento
       const deptMap = {};
@@ -696,16 +701,58 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
       return task.category_id.name;
     }
     
-    // Se só temos o ID, buscar nos dados disponíveis
-    const category = availableTasks.find(c => c.id === task.category_id);
-    return category ? category.name : "Categoria não encontrada";
+    // Se só temos o ID, buscar nas categorias carregadas
+    const category = categories.find(c => c.id === task.category_id);
+    if (category) {
+      return category.name;
+    }
+    
+    // Se não encontrar nas categorias, buscar nas tarefas disponíveis
+    const taskWithCategory = availableTasks.find(t => 
+      t.category_id && (
+        (typeof t.category_id === 'object' && t.category_id._id === task.category_id) ||
+        t.category_id === task.category_id
+      )
+    );
+    
+    if (taskWithCategory && typeof taskWithCategory.category_id === 'object') {
+      return taskWithCategory.category_id.name;
+    }
+    
+    return "Categoria não encontrada";
   };
 
   const getDepartmentName = (task) => {
     if (!task.department_id) return "Não definido";
     
+    // Se já temos o objeto completo
+    if (typeof task.department_id === 'object' && task.department_id?.name) {
+      return task.department_id.name;
+    }
+    
     // Usar o mapa de departamentos para buscar o nome
-    return departmentMap[task.department_id] || "Setor não encontrado";
+    if (departmentMap[task.department_id]) {
+      return departmentMap[task.department_id];
+    }
+    
+    // Se não encontrar no mapa, buscar nos departamentos carregados
+    const department = departments.find(d => d.id === task.department_id);
+    if (department) {
+      return department.name;
+    }
+    
+    return "Setor não encontrado";
+  };
+
+  const loadCategories = async () => {
+    try {
+      const allCategories = await TaskCategory.list();
+      console.log('EventTasksTab - Categorias carregadas:', allCategories);
+      setCategories(allCategories);
+    } catch (error) {
+      console.error('Erro ao carregar categorias:', error);
+      setCategories([]);
+    }
   };
 
   return (
@@ -772,8 +819,8 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
               tasks.map(task => (
                 <TableRow key={task.id}>
                   <TableCell>{task.name}</TableCell>
-                  <TableCell>{getDepartmentName(task)}</TableCell>
-                  <TableCell>{getCategoryName(task)}</TableCell>
+                  <TableCell>{task.department_name || getDepartmentName(task)}</TableCell>
+                  <TableCell>{task.category_name || getCategoryName(task)}</TableCell>
                   <TableCell>{task.team_member_id?.name || "-"}</TableCell>
                   <TableCell>
                     {task.due_date ? (

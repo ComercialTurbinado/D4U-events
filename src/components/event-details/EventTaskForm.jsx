@@ -486,27 +486,28 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
     setIsDatePast(false);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    const submittedData = {
-      ...formData,
-      estimated_hours: parseFloat(formData.estimated_hours) || 0,
-      actual_hours: parseFloat(formData.actual_hours) || 0,
-      cost: parseFloat(formData.cost) || 0,
-      days_before_event: parseInt(formData.days_before_event) || 0,
-      is_required: Boolean(formData.is_required),
-      is_active: true
-    };
-
-    if (initialData) {
-      onSubmit(initialData.id, submittedData);
-    } else {
-      onSubmit({
-        ...submittedData,
-        event_id: eventId
-      });
+    // Criar cópia dos dados para enviar
+    const dataToSubmit = { ...formData };
+    
+    // Se não tiver departamento ou categoria, enviar null ou undefined
+    if (!dataToSubmit.department_id) dataToSubmit.department_id = undefined;
+    if (!dataToSubmit.category_id) dataToSubmit.category_id = undefined;
+    
+    // Verificar se o membro selecionado tem departamento associado
+    if (dataToSubmit.team_member_id) {
+      const selectedMember = teamMembers.find(m => m.id === dataToSubmit.team_member_id);
+      if (!selectedMember?.department_id) {
+        // Se o membro não tiver departamento, remover o team_member_id
+        dataToSubmit.team_member_id = undefined;
+        console.warn('Membro selecionado não possui departamento associado. Removendo associação.');
+      }
     }
+
+    console.log('EventTaskForm - Enviando dados do formulário:', dataToSubmit);
+    onSubmit(dataToSubmit);
   };
 
   // Filtra membros pelo departamento da tarefa
@@ -574,6 +575,9 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                 className={isEditingWithOriginalTask ? "bg-gray-50" : ""}
               />
             </div>
+
+
+            
           </div>
 
           <div>
