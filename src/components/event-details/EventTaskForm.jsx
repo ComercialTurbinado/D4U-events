@@ -63,24 +63,14 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
     loadCategories();
     loadTeamMembers();
     
-    // Log de dados iniciais ao montar componente
     if (initialData) {
       console.log('EventTaskForm - Dados iniciais recebidos:', initialData);
       
-      // Se tiver task_id, carregar dados da tarefa original
       if (initialData.task_id) {
         loadOriginalTask(initialData.task_id);
       }
     }
   }, []);
-
-  useEffect(() => {
-    if (formData.department_id) {
-      filterCategoriesByDepartment(formData.department_id);
-    } else {
-      setFilteredCategories([]);
-    }
-  }, [formData.department_id, categories]);
 
   useEffect(() => {
     checkDateStatus();
@@ -281,21 +271,11 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
   const loadCategories = async () => {
     setIsLoadingCategories(true);
     try {
-      const taskCategories = await TaskCategory.list({
-        populate: [
-          { path: 'department_id', select: 'name' }
-        ]
-      });
-      
+      const taskCategories = await TaskCategory.list();
       console.log('Categorias carregadas:', taskCategories);
       
       const activeCategories = taskCategories.filter(category => category.is_active);
       setCategories(activeCategories);
-      
-      // Se já temos departamento selecionado, filtrar categorias
-      if (formData.department_id) {
-        filterCategoriesByDepartment(formData.department_id);
-      }
     } catch (error) {
       console.error("Erro ao carregar categorias de tarefas:", error);
       setCategories([]);
@@ -431,12 +411,8 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
     setFormData(prev => ({ 
       ...prev, 
       department_id: departmentId,
-      category_id: "", // Limpar categoria quando departamento muda
       team_member_id: "" // Limpar membro quando departamento muda
     }));
-    
-    // Filtrar categorias pelo novo departamento
-    filterCategoriesByDepartment(departmentId);
   };
 
   const checkDateStatus = () => {
@@ -450,15 +426,14 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
     const dueDate = new Date(formData.due_date);
     const eventDateObj = new Date(eventDate);
     
-    // Data máxima permitida = 2 dias antes do evento
-    const maxAllowedDate = subDays(eventDateObj, 2);
-    
-    console.log('Verificando status de data:', {
-      dataLimite: dueDate,
-      dataEvento: eventDateObj,
-      dataMaximaPermitida: maxAllowedDate,
-      hoje: today
-    });
+    // Verificar se a data limite é após a data do evento
+    if (dueDate > eventDateObj) {
+      setFormData(prev => ({
+        ...prev,
+        due_date: eventDateObj.toISOString().split('T')[0]
+      }));
+      return;
+    }
     
     // Verificar se a data está no passado
     if (isBefore(dueDate, today)) {
@@ -467,15 +442,8 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
       return;
     }
     
-    // Verificar se a data é depois da data máxima permitida (2 dias antes do evento)
-    if (isAfter(dueDate, maxAllowedDate)) {
-      setIsDateUrgent(true);
-      setIsDatePast(false);
-      return;
-    }
-    
     // Verificar se a data está próxima da data máxima (menos de 3 dias de folga)
-    const safeLimit = subDays(maxAllowedDate, 3);
+    const safeLimit = subDays(eventDateObj, 3);
     if (isAfter(dueDate, safeLimit)) {
       setIsDateUrgent(true);
       setIsDatePast(false);
@@ -649,35 +617,24 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
               <div className="flex items-center justify-between">
                 <Label htmlFor="category_id" className="flex items-center gap-1">
                   Categoria
-                  {isEditingWithOriginalTask && formData.category_id && <Lock className="h-3 w-3 text-gray-400" />}
                 </Label>
-                {(formData.category_id && isEditingWithOriginalTask) ? null : (
-                  <Link 
-                    to={createPageUrl("task-categories")} 
-                    className="text-xs text-blue-600 hover:underline flex items-center"
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    Gerenciar categorias
-                  </Link>
-                )}
+                <Link 
+                  to={createPageUrl("task-categories")} 
+                  className="text-xs text-blue-600 hover:underline flex items-center"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Gerenciar categorias
+                </Link>
               </div>
               <Select
                 value={formData.category_id}
                 onValueChange={value => setFormData(prev => ({ ...prev, category_id: value }))}
-                disabled={!formData.department_id || (isEditingWithOriginalTask && formData.category_id)}
               >
-                <SelectTrigger 
-                  id="category_id" 
-                  className={`${isEditingWithOriginalTask && formData.category_id ? "bg-gray-50" : ""} ${formData.department_id && !formData.category_id && isEditingWithOriginalTask ? "border-amber-500" : ""}`}
-                >
-                  <SelectValue placeholder={
-                    !formData.department_id 
-                      ? "Selecione um setor primeiro" 
-                      : "Selecione uma categoria"
-                  } />
+                <SelectTrigger id="category_id">
+                  <SelectValue placeholder="Selecione uma categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  {filteredCategories.map(category => (
+                  {categories.map(category => (
                     <SelectItem key={category.id} value={category.id}>
                       <div className="flex items-center gap-2">
                         <div 
@@ -688,23 +645,13 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                       </div>
                     </SelectItem>
                   ))}
-                  {formData.department_id && filteredCategories.length === 0 && !isLoadingCategories && (
+                  {categories.length === 0 && !isLoadingCategories && (
                     <SelectItem value="none" disabled>
-                      Cadastre categorias para este setor primeiro
-                    </SelectItem>
-                  )}
-                  {!formData.department_id && (
-                    <SelectItem value="none" disabled>
-                      Selecione um setor primeiro
+                      Cadastre categorias primeiro
                     </SelectItem>
                   )}
                 </SelectContent>
               </Select>
-              {formData.department_id && !formData.category_id && isEditingWithOriginalTask && (
-                <p className="text-amber-600 text-xs mt-1">
-                  É necessário selecionar uma categoria para esta tarefa
-                </p>
-              )}
             </div>
           </div>
 
@@ -755,7 +702,6 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
               <div className="flex items-center justify-between">
                 <Label htmlFor="due_date" className="flex items-center gap-1">
                   Data Limite
-                  {isEditingWithOriginalTask && <Lock className="h-3 w-3 text-gray-400" />}
                 </Label>
                 {isDateUrgent && (
                   <Badge variant="destructive" className="flex items-center gap-1">
@@ -769,8 +715,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                   <Button
                     variant="outline"
                     id="due_date"
-                    className={`w-full justify-start text-left font-normal ${isDateUrgent ? 'border-red-500' : ''} ${isEditingWithOriginalTask ? 'bg-gray-50' : ''}`}
-                    disabled={isEditingWithOriginalTask}
+                    className={`w-full justify-start text-left font-normal ${isDateUrgent ? 'border-red-500' : ''}`}
                   >
                     <CalendarIcon className={`mr-2 h-4 w-4 ${isDateUrgent ? 'text-red-500' : ''}`} />
                     {formData.due_date ? (
@@ -783,23 +728,22 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                 <PopoverContent className="w-auto p-0">
                   <div className="p-2 bg-amber-50 border-b border-amber-100 text-amber-800 text-xs flex items-center">
                     <Info className="h-3 w-3 mr-1" />
-                    A data limite deve ser no máximo até 2 dias antes do evento.
+                    A data limite não pode ser posterior à data do evento.
                   </div>
                   <Calendar
                     mode="single"
                     selected={formData.due_date ? new Date(formData.due_date) : undefined}
                     onSelect={date => {
-                      // Verificar se a data selecionada é posterior a 2 dias antes do evento
-                      if (date && eventDate) {
+                      if (date) {
+                        // Verificar se a data selecionada é posterior à data do evento
                         const eventDateObj = new Date(eventDate);
-                        const maxAllowedDate = subDays(eventDateObj, 2);
                         
-                        // Se a data selecionada for posterior à data máxima permitida, use a data máxima
-                        if (isAfter(date, maxAllowedDate)) {
-                          console.log('Data selecionada após limite máximo, ajustando para:', maxAllowedDate);
+                        // Se a data selecionada for posterior à data do evento, use a data do evento
+                        if (isAfter(date, eventDateObj)) {
+                          console.log('Data selecionada após data do evento, ajustando para:', eventDateObj);
                           setFormData(prev => ({ 
                             ...prev, 
-                            due_date: maxAllowedDate.toISOString().split('T')[0] 
+                            due_date: eventDateObj.toISOString().split('T')[0] 
                           }));
                           return;
                         }
@@ -811,13 +755,11 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                       }));
                     }}
                     disabled={(date) => {
-                      // Desabilitar datas após 2 dias antes do evento
+                      // Desabilitar datas após a data do evento
                       if (!eventDate) return false;
                       
                       const eventDateObj = new Date(eventDate);
-                      const maxAllowedDate = subDays(eventDateObj, 2);
-                      
-                      return isAfter(date, maxAllowedDate);
+                      return isAfter(date, eventDateObj);
                     }}
                     initialFocus
                   />
