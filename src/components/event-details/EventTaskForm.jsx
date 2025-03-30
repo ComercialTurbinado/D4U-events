@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { format, isBefore, addDays, isAfter, subDays } from "date-fns";
 import { Link } from "@/components/ui/link";
-import { TaskCategory, TeamMember, Department } from "@/api/entities";
+import { TaskCategory, TeamMember, Department, Task } from "@/api/entities";
 import { createPageUrl } from "@/lib/utils";
 import { 
   Select, 
@@ -22,7 +22,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { CalendarIcon, Plus, AlertTriangle, Info } from "lucide-react";
+import { CalendarIcon, Plus, AlertTriangle, Info, Lock } from "lucide-react";
 
 export default function EventTaskForm({ initialData, availableTasks, onSubmit, onCancel, eventId, eventDate }) {
   const [formData, setFormData] = useState(initialData || {
@@ -54,6 +54,9 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
   const [isDateUrgent, setIsDateUrgent] = useState(false);
   const [isDatePast, setIsDatePast] = useState(false);
   const [filteredCategories, setFilteredCategories] = useState([]);
+  const [isLoadingOriginalTask, setIsLoadingOriginalTask] = useState(false);
+  const [originalTask, setOriginalTask] = useState(null);
+  const [hasOriginalTask, setHasOriginalTask] = useState(false);
 
   useEffect(() => {
     loadDepartments();
@@ -63,6 +66,11 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
     // Log de dados iniciais ao montar componente
     if (initialData) {
       console.log('EventTaskForm - Dados iniciais recebidos:', initialData);
+      
+      // Se tiver task_id, carregar dados da tarefa original
+      if (initialData.task_id) {
+        loadOriginalTask(initialData.task_id);
+      }
     }
   }, []);
 
@@ -77,6 +85,53 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
   useEffect(() => {
     checkDateStatus();
   }, [formData.due_date, eventDate]);
+
+  const loadOriginalTask = async (taskId) => {
+    setIsLoadingOriginalTask(true);
+    try {
+      console.log('Carregando detalhes da tarefa original:', taskId);
+      const task = await Task.get(taskId, {
+        populate: [
+          { path: 'category_id', select: 'name department_id' },
+          { path: 'department_id', select: 'name' }
+        ]
+      });
+      
+      if (task) {
+        console.log('Tarefa original encontrada:', task);
+        setOriginalTask(task);
+        setHasOriginalTask(true);
+        
+        // Determinar o departamento da tarefa original
+        let departmentId = null;
+        
+        if (task.category_id?.department_id) {
+          departmentId = task.category_id.department_id._id || task.category_id.department_id;
+        } else if (task.department_id) {
+          departmentId = task.department_id._id || task.department_id;
+        }
+        
+        // Atualizar os dados do formulário com base na tarefa original
+        setFormData(prev => ({
+          ...prev,
+          name: task.name || prev.name,
+          description: task.description || prev.description,
+          department_id: departmentId || prev.department_id,
+          category_id: task.category_id?._id || task.category_id || prev.category_id,
+          days_before_event: task.days_before_event || prev.days_before_event,
+          // Não sobrescreve campos editáveis
+          team_member_id: prev.team_member_id,
+          status: prev.status,
+          priority: task.priority || prev.priority,
+          estimated_hours: task.estimated_hours || prev.estimated_hours
+        }));
+      }
+    } catch (error) {
+      console.error("Erro ao carregar tarefa original:", error);
+    } finally {
+      setIsLoadingOriginalTask(false);
+    }
+  };
 
   const loadDepartments = async () => {
     setIsLoadingDepartments(true);
@@ -353,11 +408,26 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
   };
 
   const filteredMembers = getFilteredMembers();
+  
+  // Verifica se está editando uma tarefa com task_id
+  const isEditingWithOriginalTask = initialData && (initialData.task_id || hasOriginalTask);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <Card className="p-6">
         <div className="space-y-4">
+          {isEditingWithOriginalTask && (
+            <div className="bg-blue-50 p-3 rounded-md border border-blue-200 mb-4">
+              <div className="flex items-center gap-2 text-blue-700 mb-1">
+                <Info className="h-4 w-4" />
+                <span className="font-medium">Tarefa vinculada a modelo</span>
+              </div>
+              <p className="text-sm text-blue-600">
+                Esta tarefa está vinculada a um modelo pré-definido. Alguns campos não podem ser modificados.
+              </p>
+            </div>
+          )}
+        
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {!initialData && availableTasks && availableTasks.length > 0 && (
               <div>
@@ -382,26 +452,34 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
             )}
             
             <div>
-              <Label htmlFor="name">Nome da Tarefa</Label>
+              <Label htmlFor="name" className="flex items-center gap-1">
+                Nome da Tarefa 
+                {isEditingWithOriginalTask && <Lock className="h-3 w-3 text-gray-400" />}
+              </Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="Nome da tarefa"
                 required
+                disabled={isEditingWithOriginalTask}
+                className={isEditingWithOriginalTask ? "bg-gray-50" : ""}
               />
             </div>
           </div>
 
           <div>
-            <Label htmlFor="description">Descrição</Label>
+            <Label htmlFor="description" className="flex items-center gap-1">
+              Descrição
+              {isEditingWithOriginalTask && <Lock className="h-3 w-3 text-gray-400" />}
+            </Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
               placeholder="Descreva a tarefa..."
-              className="h-24"
-              disabled={initialData}
+              className={`h-24 ${isEditingWithOriginalTask ? "bg-gray-50" : ""}`}
+              disabled={isEditingWithOriginalTask}
             />
           </div>
 
@@ -409,20 +487,26 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
             {/* Seleção de Departamento */}
             <div>
               <div className="flex items-center justify-between">
-                <Label htmlFor="department_id">Setor</Label>
-                <Link 
-                  to={createPageUrl("departments")} 
-                  className="text-xs text-blue-600 hover:underline flex items-center"
-                >
-                  <Plus className="h-3 w-3 mr-1" />
-                  Gerenciar setores
-                </Link>
+                <Label htmlFor="department_id" className="flex items-center gap-1">
+                  Setor
+                  {isEditingWithOriginalTask && <Lock className="h-3 w-3 text-gray-400" />}
+                </Label>
+                {!isEditingWithOriginalTask && (
+                  <Link 
+                    to={createPageUrl("departments")} 
+                    className="text-xs text-blue-600 hover:underline flex items-center"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Gerenciar setores
+                  </Link>
+                )}
               </div>
               <Select
                 value={formData.department_id}
                 onValueChange={handleDepartmentChange}
+                disabled={isEditingWithOriginalTask}
               >
-                <SelectTrigger id="department_id">
+                <SelectTrigger id="department_id" className={isEditingWithOriginalTask ? "bg-gray-50" : ""}>
                   <SelectValue placeholder="Selecione um setor" />
                 </SelectTrigger>
                 <SelectContent>
@@ -443,21 +527,26 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
             {/* Seleção de Categoria */}
             <div>
               <div className="flex items-center justify-between">
-                <Label htmlFor="category_id">Categoria</Label>
-                <Link 
-                  to={createPageUrl("task-categories")} 
-                  className="text-xs text-blue-600 hover:underline flex items-center"
-                >
-                  <Plus className="h-3 w-3 mr-1" />
-                  Gerenciar categorias
-                </Link>
+                <Label htmlFor="category_id" className="flex items-center gap-1">
+                  Categoria
+                  {isEditingWithOriginalTask && <Lock className="h-3 w-3 text-gray-400" />}
+                </Label>
+                {!isEditingWithOriginalTask && (
+                  <Link 
+                    to={createPageUrl("task-categories")} 
+                    className="text-xs text-blue-600 hover:underline flex items-center"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Gerenciar categorias
+                  </Link>
+                )}
               </div>
               <Select
                 value={formData.category_id}
                 onValueChange={value => setFormData(prev => ({ ...prev, category_id: value }))}
-                disabled={!formData.department_id}
+                disabled={!formData.department_id || isEditingWithOriginalTask}
               >
-                <SelectTrigger id="category_id">
+                <SelectTrigger id="category_id" className={isEditingWithOriginalTask ? "bg-gray-50" : ""}>
                   <SelectValue placeholder={
                     !formData.department_id 
                       ? "Selecione um setor primeiro" 
@@ -536,7 +625,10 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
             {/* Seleção de Data Limite */}
             <div>
               <div className="flex items-center justify-between">
-                <Label htmlFor="due_date">Data Limite</Label>
+                <Label htmlFor="due_date" className="flex items-center gap-1">
+                  Data Limite
+                  {isEditingWithOriginalTask && <Lock className="h-3 w-3 text-gray-400" />}
+                </Label>
                 {isDateUrgent && (
                   <Badge variant="destructive" className="flex items-center gap-1">
                     <AlertTriangle className="h-3 w-3" />
@@ -549,7 +641,8 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                   <Button
                     variant="outline"
                     id="due_date"
-                    className={`w-full justify-start text-left font-normal ${isDateUrgent ? 'border-red-500' : ''}`}
+                    className={`w-full justify-start text-left font-normal ${isDateUrgent ? 'border-red-500' : ''} ${isEditingWithOriginalTask ? 'bg-gray-50' : ''}`}
+                    disabled={isEditingWithOriginalTask}
                   >
                     <CalendarIcon className={`mr-2 h-4 w-4 ${isDateUrgent ? 'text-red-500' : ''}`} />
                     {formData.due_date ? (
