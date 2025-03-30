@@ -2,12 +2,31 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.
 
 // Função auxiliar para limpar os dados antes de enviar para a API
 const cleanDataForApi = (data) => {
+  if (!data) return {};
+  
+  console.log('Dados originais antes de limpar:', data);
+  
   const cleanData = { ...data };
   // Remove campos internos do MongoDB
   delete cleanData._id;
   delete cleanData.__v;
   delete cleanData.createdAt;
   delete cleanData.updatedAt;
+  
+  // Se unit_cost ou total_cost forem 0, mantenha-os (não os apague)
+  if (cleanData.unit_cost === 0 || cleanData.unit_cost) {
+    cleanData.unit_cost = Number(cleanData.unit_cost);
+  }
+  
+  if (cleanData.total_cost === 0 || cleanData.total_cost) {
+    cleanData.total_cost = Number(cleanData.total_cost);
+  }
+  
+  if (cleanData.quantity === 0 || cleanData.quantity) {
+    cleanData.quantity = Number(cleanData.quantity);
+  }
+  
+  console.log('Dados limpos para enviar à API:', cleanData);
   // Mantém os campos event_id e task_id
   return cleanData;
 };
@@ -52,6 +71,8 @@ const createEntityOperations = (collection) => ({
 
   update: async (id, data) => {
     const cleanData = cleanDataForApi(data);
+    console.log(`Atualizando ${collection}/${id} com dados:`, cleanData);
+    
     const response = await fetch(`${API_URL}/${collection}/${id}`, {
       method: 'PUT',
       headers: {
@@ -59,8 +80,15 @@ const createEntityOperations = (collection) => ({
       },
       body: JSON.stringify(cleanData),
     });
-    if (!response.ok) throw new Error('Erro ao atualizar documento');
-    return response.json();
+    
+    if (!response.ok) {
+      console.error(`Erro ao atualizar ${collection}/${id}:`, response.status, response.statusText);
+      throw new Error('Erro ao atualizar documento');
+    }
+    
+    const result = await response.json();
+    console.log(`Resposta da atualização ${collection}/${id}:`, result);
+    return result;
   },
 
   delete: async (id) => {

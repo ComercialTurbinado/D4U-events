@@ -115,7 +115,7 @@ const eventSchema = new mongoose.Schema({
 
 const eventTaskSchema = new mongoose.Schema({
   event_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
-   status: { 
+  status: { 
     type: String, 
     enum: ['pending', 'in_progress', 'completed'],
     default: 'pending'
@@ -127,21 +127,33 @@ const eventTaskSchema = new mongoose.Schema({
   team_member_id: { type: mongoose.Schema.Types.ObjectId, ref: 'TeamMember' },
   due_date: Date,
   notes: String,
+  estimated_hours: { type: Number, default: 0 },
+  actual_hours: { type: Number, default: 0 },
+  priority: { 
+    type: String, 
+    enum: ['low', 'medium', 'high'],
+    default: 'medium'
+  },
   is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
 
 const eventMaterialSchema = new mongoose.Schema({
   event_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
-  material_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Material', required: true },
-  quantity: Number,
-  unit: String,
-  price: Number,
+  material_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Material' },
+  name: { type: String, required: true },
+  description: String,
+  quantity: { type: Number, default: 1 },
+  unit: { type: String, default: 'un' },
+  unit_cost: { type: Number, default: 0 },
+  total_cost: { type: Number, default: 0 },
+  supplier_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier' },
   status: { 
     type: String, 
-    enum: ['pending', 'ordered', 'received'],
+    enum: ['pending', 'ordered', 'received', 'cancelled'],
     default: 'pending'
   },
+  delivery_date: Date,
   notes: String,
   is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }

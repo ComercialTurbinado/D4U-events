@@ -47,6 +47,8 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
   const loadMaterials = async () => {
     setIsLoading(true);
     try {
+      console.log('Iniciando carregamento de materiais...');
+      
       // Carregar materiais do evento com relacionamentos
       const eventMaterials = await EventMaterial.list({
         populate: [
@@ -55,31 +57,48 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
         ]
       });
       
+      console.log('Materiais carregados da API:', eventMaterials);
+      
       // Carregar todos os materiais disponíveis
       const allMaterials = await Material.list();
       
-      // Enriquecer os materiais do evento com informações do material base
-      const materialsForEvent = eventMaterials
-        .filter(em => em.event_id === eventId)
-        .map(em => {
-          const baseMaterial = allMaterials.find(m => m.id === em.material_id?._id);
-          const totalCost = (em.unit_cost || 0) * (em.quantity || 0);
-          
-          // Inicializar os estados de edição com os valores atuais
-          setEditableQuantities(prev => ({ ...prev, [em.id]: em.quantity }));
-          setEditableCosts(prev => ({ ...prev, [em.id]: totalCost }));
-          
-          return {
-            ...em,
-            name: em.name || em.material_id?.name || baseMaterial?.name || 'Material sem nome',
-            description: em.description || baseMaterial?.description || '',
-            unit: em.unit || baseMaterial?.unit || 'un',
-            category: em.category || baseMaterial?.category || 'other',
-            supplier: em.supplier_id,
-            total_cost: totalCost
-          };
-        });
+      // Filtrar materiais para o evento atual
+      const materialsForThisEvent = eventMaterials.filter(em => em.event_id === eventId);
+      console.log('Materiais filtrados para este evento:', materialsForThisEvent);
       
+      // Enriquecer os materiais do evento com informações do material base
+      const materialsForEvent = materialsForThisEvent.map(em => {
+        const baseMaterial = allMaterials.find(m => m.id === em.material_id?._id);
+        console.log('Material base encontrado:', baseMaterial);
+        
+        // Verificar os valores recebidos
+        console.log('Valores do material:', {
+          id: em.id,
+          name: em.name,
+          quantity: em.quantity,
+          unit_cost: em.unit_cost,
+          total_cost: em.total_cost,
+          calculatedTotal: (em.unit_cost || 0) * (em.quantity || 0)
+        });
+        
+        const totalCost = em.total_cost || (em.unit_cost || 0) * (em.quantity || 0);
+        
+        // Inicializar os estados de edição com os valores atuais
+        setEditableQuantities(prev => ({ ...prev, [em.id]: em.quantity }));
+        setEditableCosts(prev => ({ ...prev, [em.id]: totalCost }));
+        
+        return {
+          ...em,
+          name: em.name || em.material_id?.name || baseMaterial?.name || 'Material sem nome',
+          description: em.description || baseMaterial?.description || '',
+          unit: em.unit || baseMaterial?.unit || 'un',
+          category: em.category || baseMaterial?.category || 'other',
+          supplier: em.supplier_id,
+          total_cost: totalCost
+        };
+      });
+      
+      console.log('Materiais enriquecidos:', materialsForEvent);
       setMaterials(materialsForEvent);
       setAvailableMaterials(allMaterials);
 
@@ -128,19 +147,35 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
   };
 
   const handleCreateMaterial = async (materialData) => {
-    await EventMaterial.create({
-      ...materialData,
-      event_id: eventId
-    });
-    setShowForm(false);
-    loadMaterials();
+    try {
+      const newMaterial = {
+        ...materialData,
+        event_id: eventId,
+        total_cost: materialData.total_cost || (materialData.unit_cost * materialData.quantity) || 0
+      };
+      
+      await EventMaterial.create(newMaterial);
+      setShowForm(false);
+      await loadMaterials();
+    } catch (error) {
+      console.error("Erro ao criar material:", error);
+    }
   };
 
   const handleUpdateMaterial = async (id, materialData) => {
-    await EventMaterial.update(id, materialData);
-    setShowForm(false);
-    setEditingMaterial(null);
-    loadMaterials();
+    try {
+      const updatedMaterial = {
+        ...materialData,
+        total_cost: materialData.total_cost || (materialData.unit_cost * materialData.quantity) || 0
+      };
+      
+      await EventMaterial.update(id, updatedMaterial);
+      setShowForm(false);
+      setEditingMaterial(null);
+      await loadMaterials();
+    } catch (error) {
+      console.error("Erro ao atualizar material:", error);
+    }
   };
 
   const handleDeleteMaterial = async (id) => {
@@ -251,11 +286,20 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
     const unitCost = newQuantity > 0 ? totalCost / newQuantity : 0;
     
     try {
-      await EventMaterial.update(id, {
+      console.log('Salvando quantidade:', {
+        id,
         quantity: newQuantity,
-        unit_cost: unitCost
+        unit_cost: unitCost,
+        total_cost: totalCost
       });
       
+      const updatedMaterial = await EventMaterial.update(id, {
+        quantity: newQuantity,
+        unit_cost: unitCost,
+        total_cost: totalCost
+      });
+      
+      console.log('Material atualizado após salvar quantidade:', updatedMaterial);
       await loadMaterials();
     } catch (error) {
       console.error("Erro ao salvar quantidade:", error);
@@ -271,10 +315,19 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
     const unitCost = quantity > 0 ? totalCost / quantity : 0;
     
     try {
-      await EventMaterial.update(id, {
-        unit_cost: unitCost
+      console.log('Salvando custo:', {
+        id,
+        unit_cost: unitCost,
+        total_cost: totalCost,
+        quantity
       });
       
+      const updatedMaterial = await EventMaterial.update(id, {
+        unit_cost: unitCost,
+        total_cost: totalCost
+      });
+      
+      console.log('Material atualizado após salvar custo:', updatedMaterial);
       await loadMaterials();
     } catch (error) {
       console.error("Erro ao salvar custo:", error);

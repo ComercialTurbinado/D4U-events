@@ -118,13 +118,16 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
       const newTaskData = {
         event_id: eventId,
         task_id: taskData.task_id || null,
-        name: taskData.name,
+        name: taskData.name || "",
         description: taskData.description || "",
-        status: "pending",
-        team_member_id: taskData.team_member_id || null,
         category_id: taskData.category_id || null,
+        team_member_id: taskData.team_member_id || null,
         due_date: taskData.due_date || null,
         notes: taskData.notes || "",
+        status: "pending",
+        priority: taskData.priority || "medium",
+        estimated_hours: taskData.estimated_hours || 0,
+        actual_hours: 0,
         is_active: true
       };
       
@@ -145,15 +148,16 @@ export default function EventTasksTab({ eventId, eventTypeId }) {
       
       // Dados básicos da tarefa - formato MongoDB
       const updateData = {
-        event_id: eventId,
-        task_id: taskData.task_id || null,
-        name: taskData.name,
+        name: taskData.name || "",
         description: taskData.description || "",
-        status: taskData.status || "pending",
-        team_member_id: taskData.team_member_id || null,
+        task_id: taskData.task_id || null,
         category_id: taskData.category_id || null,
+        team_member_id: taskData.team_member_id || null,
+        status: taskData.status || "pending",
         due_date: taskData.due_date || null,
         notes: taskData.notes || "",
+        priority: taskData.priority || "medium",
+        estimated_hours: taskData.estimated_hours || 0,
         is_active: true
       };
       

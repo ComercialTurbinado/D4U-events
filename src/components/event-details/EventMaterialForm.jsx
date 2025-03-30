@@ -81,7 +81,8 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
     
     const updatedFormData = {
       ...formData,
-      unit_cost: unitCost
+      unit_cost: unitCost,
+      total_cost: totalCost
     };
 
     if (!initialData && !formData.material_id) {
@@ -152,7 +153,7 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
           quantity: quantity,
           notes: material.notes || "",
           unit_cost: unitCost,
-          supplier_id: material.supplier_id || ""
+          supplier_id: material.supplier_id || "none"
         });
         
         setTotalCost(calculatedTotalCost);
@@ -264,14 +265,17 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
             <div>
               <Label htmlFor="supplier_id">Fornecedor</Label>
               <Select
-                value={formData.supplier_id}
-                onValueChange={value => setFormData(prev => ({ ...prev, supplier_id: value }))}
+                value={formData.supplier_id || "none"}
+                onValueChange={value => setFormData(prev => ({ 
+                  ...prev, 
+                  supplier_id: value === "none" ? null : value 
+                }))}
               >
                 <SelectTrigger id="supplier_id">
                   <SelectValue placeholder="Selecione um fornecedor" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={null}>Nenhum</SelectItem>
+                  <SelectItem value="none">Nenhum fornecedor</SelectItem>
                   {suppliers.map(supplier => (
                     <SelectItem key={supplier.id} value={supplier.id}>
                       {supplier.name}
