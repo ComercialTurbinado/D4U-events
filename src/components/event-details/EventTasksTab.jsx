@@ -32,7 +32,6 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
   const [departmentMap, setDepartmentMap] = useState({});
   const [categories, setCategories] = useState([]);
   const [departments, setDepartments] = useState([]);
-  const [eventData, setEventData] = useState(null);
 
   useEffect(() => {
     loadTasks();
