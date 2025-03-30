@@ -56,7 +56,14 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
   const loadCategories = async () => {
     setIsLoadingCategories(true);
     try {
-      const taskCategories = await TaskCategory.list();
+      const taskCategories = await TaskCategory.list({
+        populate: [
+          { path: 'department_id', select: 'name' }
+        ]
+      });
+      
+      console.log('Categorias carregadas:', taskCategories);
+      
       const activeCategories = taskCategories.filter(category => category.is_active);
       setCategories(activeCategories);
     } catch (error) {
@@ -70,7 +77,14 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
   const loadTeamMembers = async () => {
     setIsLoadingMembers(true);
     try {
-      const members = await TeamMember.list();
+      const members = await TeamMember.list({
+        populate: [
+          { path: 'department_id', select: 'name' }
+        ]
+      });
+      
+      console.log('Membros carregados:', members);
+      
       // Filtra apenas membros ativos
       const activeMembers = members.filter(member => member.is_active);
       setTeamMembers(activeMembers);
@@ -125,9 +139,25 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
   // Filtra membros pelo departamento da tarefa
   const getFilteredMembers = () => {
     if (!formData.category_id) return [];
+    
     const selectedCategory = categories.find(cat => cat.id === formData.category_id);
+    console.log('Categoria selecionada:', selectedCategory);
+    
     if (!selectedCategory?.department_id) return [];
-    return teamMembers.filter(member => member.department_id === selectedCategory.department_id);
+    
+    const departmentId = selectedCategory.department_id._id || selectedCategory.department_id;
+    console.log('ID do departamento:', departmentId);
+    console.log('Todos os membros:', teamMembers);
+    
+    const filteredMembers = teamMembers.filter(member => {
+      const memberDeptId = member.department_id?._id || member.department_id;
+      const matches = memberDeptId === departmentId;
+      console.log(`Membro ${member.name}, dept ${memberDeptId} === ${departmentId}? ${matches}`);
+      return matches;
+    });
+    
+    console.log('Membros filtrados:', filteredMembers);
+    return filteredMembers;
   };
 
   const filteredMembers = getFilteredMembers();
@@ -217,7 +247,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                     </SelectItem>
                   ))}
                   {categories.length === 0 && !isLoadingCategories && (
-                    <SelectItem value={null} disabled>
+                    <SelectItem value="none" disabled>
                       Cadastre categorias primeiro
                     </SelectItem>
                   )}
@@ -247,8 +277,13 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                     </SelectItem>
                   ))}
                   {formData.category_id && filteredMembers.length === 0 && (
-                    <SelectItem value="" disabled>
-                      Nenhum membro disponível neste departamento
+                    <SelectItem value="none" disabled>
+                      Nenhum membro neste departamento
+                    </SelectItem>
+                  )}
+                  {!formData.category_id && (
+                    <SelectItem value="none" disabled>
+                      Selecione uma categoria primeiro
                     </SelectItem>
                   )}
                 </SelectContent>
