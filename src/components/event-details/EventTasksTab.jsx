@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { EventTask, Task, DefaultTask, TaskCategory, Department } from "@/api/entities";
+import { EventTask, Task, DefaultTask, TaskCategory, Department, Event } from "@/api/entities";
 import { Button } from "@/components/ui/button";
 import { Plus, Edit, Trash2, CheckCircle, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -32,11 +32,13 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
   const [departmentMap, setDepartmentMap] = useState({});
   const [categories, setCategories] = useState([]);
   const [departments, setDepartments] = useState([]);
+  const [eventData, setEventData] = useState(null);
 
   useEffect(() => {
     loadTasks();
     loadCategories();
     loadDepartments();
+    loadEventData();
   }, [eventId]);
 
   const loadTasks = async () => {
@@ -371,8 +373,8 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
     
     const formData = {
       id: task.id || task._id,
-      name: task.name,
-      description: task.description,
+      name: task.name || "" ,
+      description: task.description || "",
       task_id: task.task_id?._id || task.task_id || null,
       department_id: task.department_id?._id || task.department_id || null,
       category_id: task.category_id?._id || task.category_id || null,
@@ -736,6 +738,17 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
     } catch (error) {
       console.error('Erro ao carregar categorias:', error);
       setCategories([]);
+    }
+  };
+
+  const loadEventData = async () => {
+    try {
+      const event = await Event.get(eventId);
+      if (event) {
+        setEventData(event);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados do evento:', error);
     }
   };
 
