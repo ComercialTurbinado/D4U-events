@@ -220,7 +220,7 @@ const taskCategorySchema = new mongoose.Schema({
 const teamMemberSchema = new mongoose.Schema({
   name: { type: String, required: true },
   role: String,
-  department_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Department', required: true },
+  department_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' },
   email: { type: String, required: true },
   whatsapp: String,
   is_active: { type: Boolean, default: true },

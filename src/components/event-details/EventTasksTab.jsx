@@ -29,6 +29,7 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
   const [availableTasks, setAvailableTasks] = useState([]);
   const [availableTypeTasks, setAvailableTypeTasks] = useState([]);
   const [typeTasks, setTypeTasks] = useState([]);
+  const [departmentMap, setDepartmentMap] = useState({});
 
   useEffect(() => {
     loadTasks();
@@ -271,34 +272,50 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
     }
   };
 
-  const handleCreateTask = async (taskData) => {
+  const loadDepartments = async () => {
     try {
-      console.log('EventTasksTab - Criando nova tarefa, dados recebidos:', taskData);
+      const allDepartments = await Department.list();
+      console.log('EventTasksTab - Departamentos carregados:', allDepartments);
       
-      // Garantir que temos o department_id
-      let departmentId = taskData.department_id;
-      
-      // Se não temos, tentar obter de alguma forma
-      if (!departmentId) {
-        // Lógica para determinar department_id
-        // ...
-        
-        // Atribuir ao taskData
-        taskData.department_id = departmentId;
-      }
-      
-      // Criar a tarefa com o department_id incluído
-      const newTask = await EventTask.create({
-        ...taskData,
-        department_id: departmentId
+      // Criar mapa de ID para nome do departamento
+      const deptMap = {};
+      allDepartments.forEach(dept => {
+        deptMap[dept.id] = dept.name;
       });
+      setDepartmentMap(deptMap);
       
-      console.log('Nova tarefa criada com department_id:', newTask);
+      return allDepartments;
+    } catch (error) {
+      console.error('Erro ao carregar departamentos:', error);
+      return [];
+    }
+  };
+
+  const handleCreateTask = async (taskData) => {
+    console.log('EventTasksTab - Criando nova tarefa, dados recebidos:', taskData);
+    
+    try {
+      // Limpar os dados antes de enviar para a API
+      const cleanedData = { ...taskData, event_id: eventId };
       
-      setShowForm(false);
+      // Se não tiver departamento ou categoria, enviar null em vez de string vazia
+      if (!cleanedData.department_id) cleanedData.department_id = null;
+      if (!cleanedData.category_id) cleanedData.category_id = null;
+      
+      console.log('Dados originais antes de limpar:', taskData);
+      console.log('Dados limpos para enviar à API:', cleanedData);
+      
+      // Criar a tarefa
+      const result = await EventTask.create(cleanedData);
+      console.log('EventTasksTab - Tarefa criada com sucesso:', result);
+      
+      // Recarregar tarefas
       await loadTasks();
+      
+      return result;
     } catch (error) {
       console.error('EventTasksTab - Erro ao criar tarefa:', error);
+      throw error;
     }
   };
 
@@ -671,6 +688,26 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
     }
   };
 
+  const getCategoryName = (task) => {
+    if (!task.category_id) return "Não definida";
+    
+    // Se já temos o objeto completo
+    if (typeof task.category_id === 'object' && task.category_id?.name) {
+      return task.category_id.name;
+    }
+    
+    // Se só temos o ID, buscar nos dados disponíveis
+    const category = availableTasks.find(c => c.id === task.category_id);
+    return category ? category.name : "Categoria não encontrada";
+  };
+
+  const getDepartmentName = (task) => {
+    if (!task.department_id) return "Não definido";
+    
+    // Usar o mapa de departamentos para buscar o nome
+    return departmentMap[task.department_id] || "Setor não encontrado";
+  };
+
   return (
     <div className="space-y-4">
       {showForm && (
@@ -735,16 +772,8 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
               tasks.map(task => (
                 <TableRow key={task.id}>
                   <TableCell>{task.name}</TableCell>
-                  <TableCell>{task.department_name || 
-                    (task.task_id?.department_id?.name ? task.task_id.department_id.name : "-")}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">
-                      {task.category_name || 
-                       (task.category_id?.name ? task.category_id.name : 
-                        (task.task_id?.category_id?.name ? task.task_id.category_id.name : "-"))}
-                    </Badge>
-                  </TableCell>
+                  <TableCell>{getDepartmentName(task)}</TableCell>
+                  <TableCell>{getCategoryName(task)}</TableCell>
                   <TableCell>{task.team_member_id?.name || "-"}</TableCell>
                   <TableCell>
                     {task.due_date ? (
