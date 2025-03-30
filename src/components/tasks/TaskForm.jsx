@@ -21,7 +21,7 @@ export default function TaskForm({ initialData, onSubmit, onCancel }) {
   const [formData, setFormData] = useState(initialData || {
     name: "",
     description: "",
-    responsible_role: "",
+    department_id: "",
     days_before_event: 7,
     category_id: "",
     is_required: true
@@ -104,7 +104,7 @@ export default function TaskForm({ initialData, onSubmit, onCancel }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <div className="flex items-center justify-between">
-                <Label htmlFor="responsible_role">Setor Responsável</Label>
+                <Label htmlFor="department_id">Setor Responsável</Label>
                 <Link 
                   to={createPageUrl("Departments")} 
                   className="text-xs text-blue-600 hover:underline flex items-center"
@@ -114,15 +114,15 @@ export default function TaskForm({ initialData, onSubmit, onCancel }) {
                 </Link>
               </div>
               <Select
-                value={formData.responsible_role}
-                onValueChange={value => setFormData(prev => ({ ...prev, responsible_role: value }))}
+                value={formData.department_id}
+                onValueChange={value => setFormData(prev => ({ ...prev, department_id: value }))}
               >
-                <SelectTrigger id="responsible_role">
+                <SelectTrigger id="department_id">
                   <SelectValue placeholder="Selecione um setor" />
                 </SelectTrigger>
                 <SelectContent>
                   {departments.map(dept => (
-                    <SelectItem key={dept.id} value={dept.name}>
+                    <SelectItem key={dept.id} value={dept.id}>
                       {dept.name}
                     </SelectItem>
                   ))}

@@ -416,7 +416,6 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
         task_id: taskId,
         name: selectedTask.name,
         description: selectedTask.description || "",
-        responsible_role: selectedTask.responsible_role || "",
         department_id: departmentId,
         category_id: categoryId,
         days_before_event: selectedTask.days_before_event || 0,
