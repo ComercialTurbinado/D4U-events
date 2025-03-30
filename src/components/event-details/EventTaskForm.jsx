@@ -617,20 +617,27 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
               <div className="flex items-center justify-between">
                 <Label htmlFor="category_id" className="flex items-center gap-1">
                   Categoria
+                  {isEditingWithOriginalTask && formData.category_id && <Lock className="h-3 w-3 text-gray-400" />}
                 </Label>
-                <Link 
-                  to={createPageUrl("task-categories")} 
-                  className="text-xs text-blue-600 hover:underline flex items-center"
-                >
-                  <Plus className="h-3 w-3 mr-1" />
-                  Gerenciar categorias
-                </Link>
+                {(formData.category_id && isEditingWithOriginalTask) ? null : (
+                  <Link 
+                    to={createPageUrl("task-categories")} 
+                    className="text-xs text-blue-600 hover:underline flex items-center"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Gerenciar categorias
+                  </Link>
+                )}
               </div>
               <Select
                 value={formData.category_id}
                 onValueChange={value => setFormData(prev => ({ ...prev, category_id: value }))}
+                disabled={(isEditingWithOriginalTask && formData.category_id)}
               >
-                <SelectTrigger id="category_id">
+                <SelectTrigger 
+                  id="category_id" 
+                  className={`${isEditingWithOriginalTask && formData.category_id ? "bg-gray-50" : ""} ${!formData.category_id && isEditingWithOriginalTask ? "border-amber-500" : ""}`}
+                >
                   <SelectValue placeholder="Selecione uma categoria" />
                 </SelectTrigger>
                 <SelectContent>
@@ -652,6 +659,11 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                   )}
                 </SelectContent>
               </Select>
+              {!formData.category_id && isEditingWithOriginalTask && (
+                <p className="text-amber-600 text-xs mt-1">
+                  É necessário selecionar uma categoria para esta tarefa
+                </p>
+              )}
             </div>
           </div>
 

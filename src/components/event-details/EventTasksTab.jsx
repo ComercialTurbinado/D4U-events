@@ -328,6 +328,11 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
     try {
       console.log('EventTasksTab - Atualizando tarefa:', id, taskData);
       
+      // Verifique se taskData não é undefined
+      if (!taskData) {
+        throw new Error('Dados da tarefa estão indefinidos');
+      }
+      
       // Dados básicos da tarefa - formato MongoDB
       const updateData = {
         name: taskData.name || "",
