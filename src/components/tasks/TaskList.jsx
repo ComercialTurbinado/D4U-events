@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import {
   Table,
@@ -12,13 +11,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TaskCategory } from "@/api/entities";
+import { TaskCategory, Department } from "@/api/entities";
 
 export default function TaskList({ tasks, isLoading, onEdit, onDelete }) {
   const [categoriesMap, setCategoriesMap] = useState({});
+  const [departments, setDepartments] = useState([]);
+  const [departmentMap, setDepartmentMap] = useState({});
+  const [isLoadingDepartments, setIsLoadingDepartments] = useState(true);
   
   useEffect(() => {
     loadCategories();
+    loadDepartments();
   }, []);
   
   const loadCategories = async () => {
@@ -31,6 +34,26 @@ export default function TaskList({ tasks, isLoading, onEdit, onDelete }) {
       setCategoriesMap(categoriesObj);
     } catch (error) {
       console.error("Error loading categories:", error);
+    }
+  };
+
+  const loadDepartments = async () => {
+    setIsLoadingDepartments(true);
+    try {
+      const departmentList = await Department.list();
+      console.log('Departamentos carregados:', departmentList);
+      setDepartments(departmentList);
+      
+      // Criar mapa de ID para nome do departamento
+      const deptMap = {};
+      departmentList.forEach(dept => {
+        deptMap[dept.id] = dept.name;
+      });
+      setDepartmentMap(deptMap);
+    } catch (error) {
+      console.error('Erro ao carregar departamentos:', error);
+    } finally {
+      setIsLoadingDepartments(false);
     }
   };
 
@@ -65,7 +88,11 @@ export default function TaskList({ tasks, isLoading, onEdit, onDelete }) {
           {tasks.map((task) => (
             <TableRow key={task.id}>
               <TableCell className="font-medium">{task.name}</TableCell>
-              <TableCell>{task.responsible_role || "-"}</TableCell>
+              <TableCell>
+                {task.department_id 
+                  ? departmentMap[task.department_id] || "Carregando..." 
+                  : task.responsible_role || "-"}
+              </TableCell>
               <TableCell>{task.days_before_event} dias antes</TableCell>
               <TableCell>
                 {task.category_id ? (
