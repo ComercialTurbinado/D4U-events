@@ -124,6 +124,7 @@ const eventTaskSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: String,
   category_id: { type: mongoose.Schema.Types.ObjectId, ref: 'TaskCategory' },
+  department_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' },
   team_member_id: { type: mongoose.Schema.Types.ObjectId, ref: 'TeamMember' },
   due_date: Date,
   notes: String,
@@ -134,6 +135,7 @@ const eventTaskSchema = new mongoose.Schema({
     enum: ['low', 'medium', 'high'],
     default: 'medium'
   },
+  days_before_event: { type: Number, default: 0 },
   is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });

@@ -329,14 +329,23 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
     try {
       console.log('EventTasksTab - Atualizando tarefa:', id, taskData);
       
-      // Verifique se taskData não é undefined
+      // Verificar se id e taskData estão presentes
+      if (!id) {
+        console.error('EventTasksTab - ID da tarefa não fornecido');
+        throw new Error('ID da tarefa não fornecido');
+      }
+      
       if (!taskData) {
+        console.error('EventTasksTab - Dados da tarefa estão indefinidos');
         throw new Error('Dados da tarefa estão indefinidos');
       }
       
+      // Garantir que o event_id seja incluído
+      const taskId = taskData.id || id;
+      
       // Dados básicos da tarefa - formato MongoDB
       const updateData = {
-        event_id: taskData.event_id || null,
+        event_id: eventId, // Usar o eventId definido no escopo do componente
         name: taskData.name || "",
         description: taskData.description || "",
         task_id: taskData.task_id || null,
@@ -353,7 +362,9 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
       };
       
       console.log('EventTasksTab - Dados formatados para atualizar tarefa:', updateData);
-      const updatedTask = await EventTask.update(id, updateData);
+      console.log('EventTasksTab - ID para atualização:', taskId);
+      
+      const updatedTask = await EventTask.update(taskId, updateData);
       console.log('EventTasksTab - Tarefa atualizada:', updatedTask);
       
       setShowForm(false);
@@ -372,9 +383,11 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
   const handleEdit = (task) => {
     console.log('EventTasksTab - Editando tarefa:', task);
     
+    // Garantir que todos os campos necessários estejam presentes, especialmente o event_id
     const formData = {
       id: task.id || task._id,
-      name: task.name || "" ,
+      event_id: eventId, // Garantir que event_id esteja sempre presente
+      name: task.name || "",
       description: task.description || "",
       task_id: task.task_id?._id || task.task_id || null,
       department_id: task.department_id?._id || task.department_id || null,

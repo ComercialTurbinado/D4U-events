@@ -28,6 +28,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
   const [formData, setFormData] = useState(initialData || {
     name: "",
     task_id: "",
+    event_id: "",
     description: "",
     responsible_role: "",
     team_member_id: "",
@@ -53,8 +54,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
   const [isLoadingMembers, setIsLoadingMembers] = useState(true);
   const [isDateUrgent, setIsDateUrgent] = useState(false);
   const [isDatePast, setIsDatePast] = useState(false);
-  const [filteredCategories, setFilteredCategories] = useState([]);
-  const [isLoadingOriginalTask, setIsLoadingOriginalTask] = useState(false);
+   const [isLoadingOriginalTask, setIsLoadingOriginalTask] = useState(false);
   const [originalTask, setOriginalTask] = useState(null);
   const [hasOriginalTask, setHasOriginalTask] = useState(false);
   const [eventData, setEventData] = useState(null);
@@ -196,24 +196,6 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
           foundDepartment: foundDepartment
         });
         
-        // Verificar se departamento e categoria estão coerentes com o formulário atual
-        if (formData.department_id && formData.category_id) {
-          // Se já temos valores no formulário, verificar se estão coerentes
-          const categoriaOk = await verificaCoerenciaDepartamentoCategoria(
-            formData.department_id, 
-            formData.category_id
-          );
-          
-          if (!categoriaOk) {
-            console.warn('Inconsistência detectada: categoria não pertence ao departamento');
-            
-            // Manter o departamento, mas limpar a categoria
-            if (departmentId !== formData.department_id) {
-              departmentId = formData.department_id;
-              categoryId = null;
-            }
-          }
-        }
         
         // Atualizar os dados do formulário com base na tarefa original
         setFormData(prev => ({
@@ -230,10 +212,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
           estimated_hours: task.estimated_hours || prev.estimated_hours
         }));
         
-        // Se temos departamento, filtrar categorias
-        if (departmentId) {
-          filterCategoriesByDepartment(departmentId);
-        }
+        
       }
     } catch (error) {
       console.error("Erro ao carregar tarefa original:", error);
@@ -242,24 +221,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
     }
   };
 
-  // Verifica se a categoria pertence ao departamento
-  const verificaCoerenciaDepartamentoCategoria = async (departmentId, categoryId) => {
-    // Se não temos departamento ou categoria, não há o que verificar
-    if (!departmentId || !categoryId) return true;
-    
-    try {
-      // Buscar a categoria
-      const categoria = categories.find(c => c.id === categoryId);
-      if (!categoria) return false;
-      
-      // Verificar se departamento da categoria corresponde ao departamento informado
-      const categoriaDeptId = categoria.department_id?._id || categoria.department_id;
-      return categoriaDeptId === departmentId;
-    } catch (error) {
-      console.error("Erro ao verificar coerência:", error);
-      return false;
-    }
-  };
+   
 
   const loadDepartments = async () => {
     setIsLoadingDepartments(true);
@@ -323,21 +285,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
     }
   };
 
-  const filterCategoriesByDepartment = (departmentId) => {
-    if (!departmentId || categories.length === 0) {
-      setFilteredCategories([]);
-      return;
-    }
-    
-    const filtered = categories.filter(category => {
-      const catDeptId = category.department_id?._id || category.department_id;
-      return catDeptId === departmentId;
-    });
-    
-    console.log('Categorias filtradas por departamento:', filtered);
-    setFilteredCategories(filtered);
-  };
-
+ 
   const handleTaskSelect = (taskId) => {
     console.log('Selecionando tarefa base:', taskId);
     const selectedTask = availableTasks.find(task => task.id === taskId);
@@ -380,10 +328,6 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
         }
       }
       
-      // Filtrar categorias para o departamento selecionado
-      if (departmentId) {
-        filterCategoriesByDepartment(departmentId);
-      }
       
       // Calcular data limite com base nos dias antes do evento
       let dueDate = "";
@@ -411,6 +355,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
       setFormData({
         ...formData,
         task_id: taskId,
+        event_id: eventId,
         name: selectedTask.name,
         description: selectedTask.description || "",
         department_id: departmentId,
@@ -478,21 +423,32 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
     const dataToSubmit = { ...formData };
     
     // Se não tiver departamento ou categoria, enviar null ou undefined
-    if (!dataToSubmit.department_id) dataToSubmit.department_id = undefined;
-    if (!dataToSubmit.category_id) dataToSubmit.category_id = undefined;
+    if (!dataToSubmit.department_id) dataToSubmit.department_id = null;
+    if (!dataToSubmit.category_id) dataToSubmit.category_id = null;
     
     // Verificar se o membro selecionado tem departamento associado
     if (dataToSubmit.team_member_id) {
       const selectedMember = teamMembers.find(m => m.id === dataToSubmit.team_member_id);
       if (!selectedMember?.department_id) {
         // Se o membro não tiver departamento, remover o team_member_id
-        dataToSubmit.team_member_id = undefined;
+        dataToSubmit.team_member_id = null;
         console.warn('Membro selecionado não possui departamento associado. Removendo associação.');
       }
     }
 
+    // Garantir que o event_id está presente
+    dataToSubmit.event_id = eventId;
+
     console.log('EventTaskForm - Enviando dados do formulário:', dataToSubmit);
-    onSubmit(dataToSubmit);
+    
+    // Se estiver editando, passar o ID e os dados para a função onSubmit
+    if (initialData && initialData.id) {
+      console.log('EventTaskForm - Atualizando tarefa com ID:', initialData.id);
+      onSubmit(initialData.id, dataToSubmit);
+    } else {
+      // Se estiver criando, passar apenas os dados
+      onSubmit(dataToSubmit);
+    }
   };
 
   // Filtra membros pelo departamento da tarefa
@@ -788,10 +744,7 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
-                  <div className="p-2 bg-amber-50 border-b border-amber-100 text-amber-800 text-xs flex items-center">
-                    <Info className="h-3 w-3 mr-1" />
-                    A data limite não pode ser posterior à data do evento.
-                  </div>
+                  
                   <Calendar
                     mode="single"
                     selected={formData.due_date ? new Date(formData.due_date) : undefined}
