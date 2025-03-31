@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { TeamMember } from "@/api/entities";
+import { TeamMember, Department } from "@/api/entities";
 import { Button } from "@/components/ui/button";
 import { Plus, Edit, Trash2, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -27,9 +27,11 @@ export default function TeamMembersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
+  const [departments, setDepartments] = useState([]);
 
   useEffect(() => {
     loadMembers();
+    loadDepartments();
   }, []);
 
   const loadMembers = async () => {
@@ -41,6 +43,15 @@ export default function TeamMembersPage() {
       console.error("Error loading team members:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadDepartments = async () => {
+    try {
+      const data = await Department.list();
+      setDepartments(data);
+    } catch (error) {
+      console.error("Error loading departments:", error);
     }
   };
 
@@ -140,7 +151,11 @@ export default function TeamMembersPage() {
                     <TableRow key={member.id}>
                       <TableCell>{member.name}</TableCell>
                       <TableCell>{member.role}</TableCell>
-                      <TableCell>{member.department?.name || "Não definido"}</TableCell>
+                      <TableCell>
+                        {member.department_id 
+                          ? departments.find(dept => dept.id === member.department_id)?.name || "Não definido"
+                          : "Não definido"}
+                      </TableCell>
                       <TableCell>{member.email}</TableCell>
                       <TableCell>{member.whatsapp}</TableCell>
                       <TableCell>
