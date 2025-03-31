@@ -376,16 +376,19 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
   };
 
   const getSupplierInfo = (material) => {
-    if (material.supplier_id) {
-      const supplier = suppliers[material.supplier_id];
-      return supplier ? (
-        <div className="flex items-center gap-1">
-          <Briefcase className="h-3 w-3" />
-          <span>{supplier.name}</span>
-        </div>
-      ) : null;
+    // Se o supplier_id já é um objeto com propriedade name
+    if (material.supplier_id && typeof material.supplier_id === 'object' && material.supplier_id.name) {
+      return material.supplier_id.name;
     }
-    return null;
+    
+    // Buscar no mapa de fornecedores pelo ID
+    if (material.supplier_id) {
+      const supplierId = typeof material.supplier_id === 'object' ? material.supplier_id._id : material.supplier_id;
+      const supplier = suppliers[supplierId];
+      return supplier ? supplier.name : "Fornecedor não encontrado";
+    }
+    
+    return "Nenhum fornecedor";
   };
 
   return (
@@ -485,25 +488,10 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
                         </div>
                       </TableCell>
                       <TableCell>
-                      
-                        <Select
-                          value={material.supplier_id?._id || "none"}
-                          onValueChange={(value) => handleSupplierChange(material.id, value === "none" ? null : value)}
-                        >
-                          <SelectTrigger className="w-[200px]">
-                            <SelectValue placeholder="Selecione um fornecedor" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {!material.supplier_id && (
-                              <SelectItem value="none">Nenhum fornecedor</SelectItem>
-                            )}
-                            {Object.values(suppliers).map(supplier => (
-                              <SelectItem key={supplier.id} value={supplier.id}>
-                                {supplier.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="flex items-center gap-1">
+                          <Briefcase className="h-4 w-4 text-gray-500" />
+                          <span>{getSupplierInfo(material)}</span>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Select
