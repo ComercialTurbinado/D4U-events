@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { CalendarIcon, Plus, AlertTriangle, Info, Lock } from "lucide-react";
+import { EventTask, DefaultTask } from "@/api/entities";
 
 export default function EventTaskForm({ initialData, availableTasks, onSubmit, onCancel, eventId, eventDate }) {
   const [formData, setFormData] = useState(initialData || {
@@ -266,16 +267,11 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
   const loadTeamMembers = async () => {
     setIsLoadingMembers(true);
     try {
-      const members = await TeamMember.list({
-        populate: [
-          { path: 'department_id', select: 'name' }
-        ]
-      });
-      
-      console.log('Membros carregados:', members);
+      const allTeamMembers = await TeamMember.list();
+      console.log('EventTasksTab - Membros da equipe carregados:', allTeamMembers);
       
       // Filtra apenas membros ativos
-      const activeMembers = members.filter(member => member.is_active);
+      const activeMembers = allTeamMembers.filter(member => member.is_active);
       setTeamMembers(activeMembers);
     } catch (error) {
       console.error("Erro ao carregar membros da equipe:", error);
@@ -507,6 +503,22 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
     }
   };
 
+  const getTeamMemberName = (task) => {
+    if (!task.team_member_id) return "-";
+    
+    // Se já temos o nome do responsável na tarefa enriquecida
+    if (task.team_member_name) {
+      return task.team_member_name;
+    }
+    
+    // Se o team_member_id é um objeto com propriedade name
+    if (typeof task.team_member_id === 'object' && task.team_member_id?.name) {
+      return task.team_member_id.name;
+    }
+    
+    return "-";
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <Card className="p-6">
@@ -535,37 +547,25 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
             )}
             
             <div>
-              <Label htmlFor="name" className="flex items-center gap-1">
-                Nome da Tarefa 
-                {isEditingWithOriginalTask && <Lock className="h-3 w-3 text-gray-400" />}
-              </Label>
+              <Label htmlFor="name">Nome da Tarefa</Label>
               <Input
                 id="name"
                 value={formData.name}
                 onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="Nome da tarefa"
                 required
-                disabled={isEditingWithOriginalTask}
-                className={isEditingWithOriginalTask ? "bg-gray-50" : ""}
               />
             </div>
-
-
-            
           </div>
 
           <div>
-            <Label htmlFor="description" className="flex items-center gap-1">
-              Descrição
-              {isEditingWithOriginalTask && <Lock className="h-3 w-3 text-gray-400" />}
-            </Label>
+            <Label htmlFor="description">Descrição</Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
               placeholder="Descreva a tarefa..."
-              className={`h-24 ${isEditingWithOriginalTask ? "bg-gray-50" : ""}`}
-              disabled={isEditingWithOriginalTask}
+              className="h-24"
             />
           </div>
 
@@ -573,29 +573,20 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
             {/* Seleção de Departamento */}
             <div>
               <div className="flex items-center justify-between">
-                <Label htmlFor="department_id" className="flex items-center gap-1">
-                  Setor
-                  {isEditingWithOriginalTask && formData.department_id && <Lock className="h-3 w-3 text-gray-400" />}
-                </Label>
-                {(formData.department_id && isEditingWithOriginalTask) ? null : (
-                  <Link 
-                    to={createPageUrl("departments")} 
-                    className="text-xs text-blue-600 hover:underline flex items-center"
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    Gerenciar setores
-                  </Link>
-                )}
+                <Label htmlFor="department_id">Setor</Label>
+                <Link 
+                  to={createPageUrl("departments")} 
+                  className="text-xs text-blue-600 hover:underline flex items-center"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Gerenciar setores
+                </Link>
               </div>
               <Select
                 value={formData.department_id}
                 onValueChange={handleDepartmentChange}
-                disabled={isEditingWithOriginalTask && formData.department_id}
               >
-                <SelectTrigger 
-                  id="department_id" 
-                  className={`${isEditingWithOriginalTask && formData.department_id ? "bg-gray-50" : ""} ${!formData.department_id && isEditingWithOriginalTask ? "border-amber-500" : ""}`}
-                >
+                <SelectTrigger id="department_id">
                   <SelectValue placeholder="Selecione um setor" />
                 </SelectTrigger>
                 <SelectContent>
@@ -611,39 +602,25 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                   )}
                 </SelectContent>
               </Select>
-              {!formData.department_id && isEditingWithOriginalTask && (
-                <p className="text-amber-600 text-xs mt-1">
-                  É necessário selecionar um setor para esta tarefa
-                </p>
-              )}
             </div>
 
             {/* Seleção de Categoria */}
             <div>
               <div className="flex items-center justify-between">
-                <Label htmlFor="category_id" className="flex items-center gap-1">
-                  Categoria
-                  {isEditingWithOriginalTask && formData.category_id && <Lock className="h-3 w-3 text-gray-400" />}
-                </Label>
-                {(formData.category_id && isEditingWithOriginalTask) ? null : (
-                  <Link 
-                    to={createPageUrl("task-categories")} 
-                    className="text-xs text-blue-600 hover:underline flex items-center"
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    Gerenciar categorias
-                  </Link>
-                )}
+                <Label htmlFor="category_id">Categoria</Label>
+                <Link 
+                  to={createPageUrl("task-categories")} 
+                  className="text-xs text-blue-600 hover:underline flex items-center"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Gerenciar categorias
+                </Link>
               </div>
               <Select
                 value={formData.category_id}
                 onValueChange={value => setFormData(prev => ({ ...prev, category_id: value }))}
-                disabled={(isEditingWithOriginalTask && formData.category_id)}
               >
-                <SelectTrigger 
-                  id="category_id" 
-                  className={`${isEditingWithOriginalTask && formData.category_id ? "bg-gray-50" : ""} ${!formData.category_id && isEditingWithOriginalTask ? "border-amber-500" : ""}`}
-                >
+                <SelectTrigger id="category_id">
                   <SelectValue placeholder="Selecione uma categoria" />
                 </SelectTrigger>
                 <SelectContent>
@@ -665,11 +642,6 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
                   )}
                 </SelectContent>
               </Select>
-              {!formData.category_id && isEditingWithOriginalTask && (
-                <p className="text-amber-600 text-xs mt-1">
-                  É necessário selecionar uma categoria para esta tarefa
-                </p>
-              )}
             </div>
           </div>
 

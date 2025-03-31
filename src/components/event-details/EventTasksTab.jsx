@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { EventTask, Task, DefaultTask, TaskCategory, Department, Event } from "@/api/entities";
+import { EventTask, Task, DefaultTask, TaskCategory, Department, Event, TeamMember } from "@/api/entities";
 import { Button } from "@/components/ui/button";
 import { Plus, Edit, Trash2, CheckCircle, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -65,7 +65,11 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
       const allDepartments = await Department.list();
       console.log('EventTasksTab - Departamentos carregados:', allDepartments);
       
-      // 4. Carregar as tarefas do evento
+      // 4. Carregar todos os membros da equipe
+      const allTeamMembers = await TeamMember.list();
+      console.log('EventTasksTab - Membros da equipe carregados:', allTeamMembers);
+      
+      // 5. Carregar as tarefas do evento
       const eventTasks = await EventTask.list({
         populate: [
           { path: 'task_id', select: 'name description category_id department_id' },
@@ -75,21 +79,22 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
         ]
       });
       
-      // 5. Filtrar tarefas para o evento atual
+      // 6. Filtrar tarefas para o evento atual
       const filteredTasks = eventTasks.filter(task => task.event_id === eventId);
       console.log('EventTasksTab - Tarefas filtradas para o evento:', filteredTasks);
       
-      // 6. Enriquecer dados das tarefas
+      // 7. Enriquecer dados das tarefas
       const enrichedTasks = filteredTasks.map(task => {
         console.log(`\n---- Processando tarefa: ${task.name} ----`);
         console.log('Dados originais da tarefa:', {
           id: task.id || task._id,
           task_id: task.task_id,
           department_id: task.department_id,
-          category_id: task.category_id
+          category_id: task.category_id,
+          team_member_id: task.team_member_id
         });
         
-        // 6.1 Buscar informações da tarefa original e categoria
+        // 7.1 Buscar informações da tarefa original e categoria
         let originalTask = null;
         let category = null;
         let categoryName = null;
@@ -133,7 +138,7 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
           }
         }
         
-        // 6.2 Determinar o departamento - prioridade para o ID
+        // 7.2 Determinar o departamento - prioridade para o ID
         let department = null;
         let departmentName = null;
         let departmentId = null;
@@ -175,7 +180,29 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
           console.log(`Tarefa ${task.name}: Usando primeiro departamento disponível:`, departmentName);
         }
         
-        // 6.4 Verificar urgência da tarefa
+        // 7.3 Buscar informações do membro da equipe
+        let teamMember = null;
+        let teamMemberName = null;
+        let teamMemberId = null;
+        
+        if (task.team_member_id) {
+          teamMemberId = typeof task.team_member_id === 'object' ? task.team_member_id._id : task.team_member_id;
+          
+          // Se o team_member_id já é um objeto com o nome, usamos diretamente
+          if (typeof task.team_member_id === 'object' && task.team_member_id.name) {
+            teamMemberName = task.team_member_id.name;
+            console.log(`Tarefa ${task.name}: Nome do responsável encontrado diretamente:`, teamMemberName);
+          } else {
+            // Caso contrário, buscamos na lista de membros
+            teamMember = allTeamMembers.find(tm => tm.id === teamMemberId || tm._id === teamMemberId);
+            if (teamMember) {
+              teamMemberName = teamMember.name;
+              console.log(`Tarefa ${task.name}: Nome do responsável encontrado na lista:`, teamMemberName);
+            }
+          }
+        }
+        
+        // 7.4 Verificar urgência da tarefa
         let isUrgent = false;
         let isLate = false;
         
@@ -197,7 +224,7 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
           }
         }
         
-        // 6.5 Se não encontrou departamento ou categoria, registrar aviso
+        // 7.5 Se não encontrou departamento ou categoria, registrar aviso
         if (!departmentId) {
           console.warn(`Tarefa ${task.name}: ALERTA - Não foi possível encontrar um departamento!`);
           
@@ -234,16 +261,20 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
           departmentId,
           departmentName,
           categoryId,
-          categoryName
+          categoryName,
+          teamMemberId,
+          teamMemberName
         });
         
-        // 6.6 Retornar tarefa enriquecida
+        // 7.6 Retornar tarefa enriquecida
         return {
           ...task,
           department_id: departmentId,
           department_name: departmentName,
           category_id: categoryId,
           category_name: categoryName,
+          team_member_id: teamMemberId,
+          team_member_name: teamMemberName,
           isUrgent,
           isLate
         };
@@ -766,6 +797,23 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
     }
   };
 
+  // Função para obter o nome do responsável
+  const getTeamMemberName = (task) => {
+    if (!task.team_member_id) return "-";
+    
+    // Se já temos o nome do responsável na tarefa enriquecida
+    if (task.team_member_name) {
+      return task.team_member_name;
+    }
+    
+    // Se o team_member_id é um objeto com propriedade name
+    if (typeof task.team_member_id === 'object' && task.team_member_id?.name) {
+      return task.team_member_id.name;
+    }
+    
+    return "-";
+  };
+
   return (
     <div className="space-y-4">
       {showForm && (
@@ -832,7 +880,7 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
                   <TableCell>{task.name}</TableCell>
                   <TableCell>{task.department_name || getDepartmentName(task)}</TableCell>
                   <TableCell>{task.category_name || getCategoryName(task)}</TableCell>
-                  <TableCell>{task.team_member_id?.name || "-"}</TableCell>
+                  <TableCell>{getTeamMemberName(task)}</TableCell>
                   <TableCell>
                     {task.due_date ? (
                       <div className="flex items-center gap-1">
