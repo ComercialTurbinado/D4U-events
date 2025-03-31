@@ -336,6 +336,7 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
       
       // Dados básicos da tarefa - formato MongoDB
       const updateData = {
+        event_id: taskData.event_id || null,
         name: taskData.name || "",
         description: taskData.description || "",
         task_id: taskData.task_id || null,
@@ -347,6 +348,7 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
         notes: taskData.notes || "",
         priority: taskData.priority || "medium",
         estimated_hours: taskData.estimated_hours || 0,
+        actual_hours: taskData.actual_hours || 0,
         is_active: true
       };
       

@@ -530,8 +530,18 @@ export default function EventTaskForm({ initialData, availableTasks, onSubmit, o
       if (isAfter(executionTime, eventDateObj)) {
         console.log('Tempo de execução ultrapassa a data do evento, marcando como urgente.');
         setIsDateUrgent(true);
+        setFormData(prev => ({
+          ...prev,
+          priority: 'high' // Marcar como alta prioridade
+        }));
       } else {
         setIsDateUrgent(false);
+      }
+
+      // Impedir seleção de datas passadas
+      if (isBefore(date, today)) {
+        console.warn('Data selecionada já passou, ajustando para hoje.');
+        date = today;
       }
 
       setFormData(prev => ({
