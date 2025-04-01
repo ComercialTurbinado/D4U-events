@@ -40,7 +40,7 @@ export default function TeamMembersPage() {
       const data = await TeamMember.list();
       setMembers(data);
     } catch (error) {
-      console.error("Error loading team members:", error);
+      // console.error("Error loading team members:", error);
     } finally {
       setIsLoading(false);
     }
@@ -51,7 +51,7 @@ export default function TeamMembersPage() {
       const data = await Department.list();
       setDepartments(data);
     } catch (error) {
-      console.error("Error loading departments:", error);
+      // console.error("Error loading departments:", error);
     }
   };
 

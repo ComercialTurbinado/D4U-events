@@ -1,8 +1,8 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 let cachedDb = null;
 
-const connectToDatabase = async () => {
+export const connectToDatabase = async () => {
   if (cachedDb) {
     return cachedDb;
   }
@@ -219,19 +219,21 @@ const taskCategorySchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// Schema de Membros da Equipe
 const teamMemberSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  role: String,
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  role: { type: String, required: true, enum: ['admin', 'user'] },
   department_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' },
-  email: { type: String, required: true },
+  position: { type: String, required: true },
   whatsapp: String,
   is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
 
-
 // Models
-const models = {
+export const models = {
   'event-types': mongoose.model('EventType', eventTypeSchema),
   'tasks': mongoose.model('Task', taskSchema),
   'materials': mongoose.model('Material', materialSchema),
@@ -247,9 +249,4 @@ const models = {
   'default-tasks': mongoose.model('DefaultTask', defaultTaskSchema),
   'default-materials': mongoose.model('DefaultMaterial', defaultMaterialSchema),
   'team-members': mongoose.model('TeamMember', teamMemberSchema)
-};
-
-module.exports = {
-  connectToDatabase,
-  models
 }; 
