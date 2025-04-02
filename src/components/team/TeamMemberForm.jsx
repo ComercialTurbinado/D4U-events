@@ -156,32 +156,50 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
           </div>
 
           {isAdmin && (
-            <div className="space-y-2">
-              <Label>Permissões</Label>
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="view"
-                    checked={formData.position.includes('view')}
-                    onCheckedChange={() => handlePermissionChange('view')}
-                  />
-                  <Label htmlFor="view">Visualizar</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="edit"
-                    checked={formData.position.includes('edit')}
-                    onCheckedChange={() => handlePermissionChange('edit')}
-                  />
-                  <Label htmlFor="edit">Editar</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="admin"
-                    checked={formData.position.includes('admin')}
-                    onCheckedChange={() => handlePermissionChange('admin')}
-                  />
-                  <Label htmlFor="admin">Administrar</Label>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="password">Senha</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={formData?.password}
+                  onChange={e => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                  placeholder="Digite a senha"
+                  required={!initialData}
+                />
+                {initialData && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Deixe em branco para manter a senha atual
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label>Permissões</Label>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="view"
+                      checked={formData?.position?.includes('view')}
+                      onCheckedChange={() => handlePermissionChange('view')}
+                    />
+                    <Label htmlFor="view">Visualizar</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="edit"
+                      checked={formData?.position?.includes('edit')}
+                      onCheckedChange={() => handlePermissionChange('edit')}
+                    />
+                    <Label htmlFor="edit">Editar</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="admin"
+                      checked={formData?.position?.includes('admin')}
+                      onCheckedChange={() => handlePermissionChange('admin')}
+                    />
+                    <Label htmlFor="admin">Administrar</Label>
+                  </div>
                 </div>
               </div>
             </div>
