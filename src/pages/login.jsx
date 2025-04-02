@@ -6,8 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-const REACT_APP_API_URL = import.meta.env.REACT_APP_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod';
-
+const API_URL = import.meta.env.VITE_REACT_APP_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -24,19 +23,23 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      console.log('Ambiente:', import.meta.env.MODE);
-      console.log('API URL:', REACT_APP_API_URL);
-      console.log('Full URL:', `${REACT_APP_API_URL}/auth`);
-      console.log('Request body:', { email: formData.email, password: formData.password });
-      const response = await fetch(`${REACT_APP_API_URL}/auth`, {
+      const response = await fetch(`${API_URL}/auth`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
-        }, 
-        body: JSON.stringify({ email: formData.email, password: formData.password })
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password
+        })
       });
 
-      const data = await response.json();
+      let data = {};
+      try {
+        data = await response.json();
+      } catch (err) {
+        console.error("❌ Erro ao converter resposta em JSON:", err);
+      }
 
       if (response.ok) {
         localStorage.setItem("token", data.token);
@@ -45,8 +48,10 @@ export default function LoginPage() {
       } else {
         setError(data.message || "Erro ao fazer login");
       }
-    } catch (error) { 
-      setError("Erro ao conectar com o servidor");
+
+    } catch (error) {
+      console.error("❌ Erro na requisição de login:", error);
+      setError("Erro de conexão com o servidor");
     } finally {
       setIsLoading(false);
     }
@@ -61,16 +66,14 @@ export default function LoginPage() {
   };
 
   return (
-    
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
-       <Card className="w-[400px] custom-card">
+      <Card className="w-[400px] custom-card">
         <CardHeader className="flex items-center justify-center">
-          <img src="https://iili.io/3R5bk1R.png" alt="logo" className="text-center mb-5 " width="100px" />
+          <img src="https://iili.io/3R5bk1R.png" alt="logo" className="text-center mb-5" width="100px" />
           <CardTitle className="text-2xl text-center">Login</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-          
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -110,4 +113,4 @@ export default function LoginPage() {
       </Card>
     </div>
   );
-} 
+}
