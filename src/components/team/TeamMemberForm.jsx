@@ -11,6 +11,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
   const [formData, setFormData] = useState(initialData || {
@@ -19,11 +20,15 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
     department_id: "",
     email: "",
     whatsapp: "",
-    is_active: true
+    is_active: true,
+    position: [] // Array para armazenar as permissões selecionadas
   });
 
   const [departments, setDepartments] = useState([]);
   const [isLoadingDepartments, setIsLoadingDepartments] = useState(true);
+
+  // Verifica se o usuário atual é admin verificando o array position
+  const isAdmin = JSON.parse(localStorage.getItem('user'))?.position?.includes('admin');
 
   useEffect(() => {
     loadDepartments();
@@ -40,6 +45,15 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
     } finally {
       setIsLoadingDepartments(false);
     }
+  };
+
+  const handlePermissionChange = (permission) => {
+    setFormData(prev => {
+      const newPosition = prev.position.includes(permission)
+        ? prev.position.filter(p => p !== permission)
+        : [...prev.position, permission];
+      return { ...prev, position: newPosition };
+    });
   };
 
   const handleSubmit = (e) => {
@@ -140,6 +154,38 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
               required
             />
           </div>
+
+          {isAdmin && (
+            <div className="space-y-2">
+              <Label>Permissões</Label>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="view"
+                    checked={formData.position.includes('view')}
+                    onCheckedChange={() => handlePermissionChange('view')}
+                  />
+                  <Label htmlFor="view">Visualizar</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="edit"
+                    checked={formData.position.includes('edit')}
+                    onCheckedChange={() => handlePermissionChange('edit')}
+                  />
+                  <Label htmlFor="edit">Editar</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="admin"
+                    checked={formData.position.includes('admin')}
+                    onCheckedChange={() => handlePermissionChange('admin')}
+                  />
+                  <Label htmlFor="admin">Administrar</Label>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </Card>
 
