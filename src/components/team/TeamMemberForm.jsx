@@ -14,14 +14,15 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 
 export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
-  const [formData, setFormData] = useState(initialData || {
-    name: "",
-    role: "",
-    department_id: "",
-    email: "",
-    whatsapp: "",
-    is_active: true,
-    position: [] // Array para armazenar as permissões selecionadas
+  const [formData, setFormData] = useState({
+    name: initialData?.name || "",
+    role: initialData?.role || "",
+    department_id: initialData?.department_id || "",
+    email: initialData?.email || "",
+    whatsapp: initialData?.whatsapp || "",
+    is_active: initialData?.is_active ?? true,
+    password: initialData?.password || "",
+    position: initialData?.position || [] // Inicializa com as permissões existentes
   });
 
   const [departments, setDepartments] = useState([]);
@@ -162,7 +163,7 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
                 <Input
                   id="password"
                   type="password"
-                  value={formData?.password}
+                  value={formData.password}
                   onChange={e => setFormData(prev => ({ ...prev, password: e.target.value }))}
                   placeholder="Digite a senha"
                   required={!initialData}
@@ -180,7 +181,7 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
                     <Checkbox
                       id="view"
                       checked={formData?.position?.includes('view')}
-                     // onCheckedChange={() => handlePermissionChange('view')}
+                      onCheckedChange={() => handlePermissionChange('view')}
                     />
                     <Label htmlFor="view">Visualizar</Label>
                   </div>
@@ -188,7 +189,7 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
                     <Checkbox
                       id="edit"
                       checked={formData?.position?.includes('edit')}
-                      //onCheckedChange={() => handlePermissionChange('edit')}
+                      onCheckedChange={() => handlePermissionChange('edit')}
                     />
                     <Label htmlFor="edit">Editar</Label>
                   </div>
@@ -196,7 +197,7 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
                     <Checkbox
                       id="admin"
                       checked={formData?.position?.includes('admin')}
-                      //onCheckedChange={() => handlePermissionChange('admin')}
+                      onCheckedChange={() => handlePermissionChange('admin')}
                     />
                     <Label htmlFor="admin">Administrar</Label>
                   </div>
