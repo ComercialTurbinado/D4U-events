@@ -23,136 +23,28 @@ function App() {
     <>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route
-          path="/"
+        <Route 
+          path="/" 
           element={
             <PrivateRoute>
-              <Layout>
-                <Dashboard />
-              </Layout>
+              <Layout />
             </PrivateRoute>
           }
-        />
-        <Route
-          path="/departments"
-          element={
-            <PrivateRoute>
-              <Layout>
-                <Departments />
-              </Layout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/departments/members"
-          element={
-            <PrivateRoute>
-              <Layout>
-                <TeamMembers />
-              </Layout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/events"
-          element={
-            <PrivateRoute>
-              <Layout>
-                <Events />
-              </Layout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/events/:id"
-          element={
-            <PrivateRoute>
-              <Layout>
-                <EventDetails />
-              </Layout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/event-types"
-          element={
-            <PrivateRoute>
-              <Layout>
-                <EventTypes />
-              </Layout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/tasks"
-          element={
-            <PrivateRoute>
-              <Layout>
-                <Tasks />
-              </Layout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/task-categories"
-          element={
-            <PrivateRoute>
-              <Layout>
-                <TaskCategories />
-              </Layout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/materials"
-          element={
-            <PrivateRoute>
-              <Layout>
-                <Materials />
-              </Layout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/material-categories"
-          element={
-            <PrivateRoute>
-              <Layout>
-                <MaterialCategories />
-              </Layout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/suppliers"
-          element={
-            <PrivateRoute>
-              <Layout>
-                <Suppliers />
-              </Layout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/supplier-categories"
-          element={
-            <PrivateRoute>
-              <Layout>
-                <SupplierCategories />
-              </Layout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <PrivateRoute>
-              <Layout>
-                <Settings />
-              </Layout>
-            </PrivateRoute>
-          }
-        />
+        >
+          <Route index element={<Dashboard />} />
+          <Route path="departments" element={<Departments />} />
+          <Route path="departments/members" element={<TeamMembers />} />
+          <Route path="events" element={<Events />} />
+          <Route path="events/:id" element={<EventDetails />} />
+          <Route path="event-types" element={<EventTypes />} />
+          <Route path="tasks" element={<Tasks />} />
+          <Route path="task-categories" element={<TaskCategories />} />
+          <Route path="materials" element={<Materials />} />
+          <Route path="material-categories" element={<MaterialCategories />} />
+          <Route path="suppliers" element={<Suppliers />} />
+          <Route path="supplier-categories" element={<SupplierCategories />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
       </Routes>
       <Toaster />
     </>
