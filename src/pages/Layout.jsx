@@ -76,7 +76,7 @@ export default function Layout() {
       ]
     }
     //,{ name: "Configurações", icon: Settings, path: "/settings" },
-  ];
+  ]; 
 
   return (
     <div className="min-h-screen bg-background">

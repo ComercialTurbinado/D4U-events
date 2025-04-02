@@ -22,14 +22,14 @@ export default function LoginPage() {
 
     try {
       console.log('Ambiente:', import.meta.env.MODE);
-      console.log('API URL:', import.meta.env.VITE_API_URL);
-      console.log('Full URL:', `${import.meta.env.VITE_API_URL}/auth`);
+      console.log('API URL:', import.meta.env.REACT_APP_API_URLL);
+      console.log('Full URL:', `${import.meta.env.REACT_APP_API_URLL}/auth`);
       console.log('Request body:', { email: formData.email, password: formData.password });
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth`, {
+      const response = await fetch(`${import.meta.env.REACT_APP_API_URLL}/auth`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
-        },
+        }, 
         body: JSON.stringify({ email: formData.email, password: formData.password })
       });
 
