@@ -52,7 +52,6 @@ export default function LoginPage() {
         localStorage.setItem("user", JSON.stringify(data.user));
         navigate("/");
       } else {
-       // setError(data.message || "Erro ao fazer login");
         console.error("Resposta com erro:", data);
         setError(`${data.message || "Erro"}\n\n${data.error || ""}`); 
       }

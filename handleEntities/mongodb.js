@@ -248,7 +248,7 @@ const models = {
   'supplier-categories': mongoose.model('SupplierCategory', supplierCategorySchema),
   'default-tasks': mongoose.model('DefaultTask', defaultTaskSchema),
   'default-materials': mongoose.model('DefaultMaterial', defaultMaterialSchema),
-  'team-members': mongoose.model('TeamMember', teamMemberSchema)
+  'teammembers': mongoose.model('TeamMember', teamMemberSchema)
 };
 
 module.exports = {
