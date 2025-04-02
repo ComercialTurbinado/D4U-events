@@ -28,8 +28,10 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
   const [departments, setDepartments] = useState([]);
   const [isLoadingDepartments, setIsLoadingDepartments] = useState(true);
 
-  // Verifica se o usuário atual é admin verificando o array position
-  const isAdmin = JSON.parse(localStorage.getItem('user'))?.position?.includes('admin');
+  // Verifica se o usuário atual é admin ou o dono do perfil
+  const currentUser = JSON.parse(localStorage.getItem('user'));
+  const isAdmin = currentUser?.position?.includes('admin');
+  const isOwner = currentUser?.id === initialData?.id;
 
   useEffect(() => {
     loadDepartments();
@@ -155,9 +157,8 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
               required
             />
           </div>
-
-          {isAdmin && (
-            <div className="space-y-4">
+          <div className="space-y-4">
+            {(isAdmin || isOwner) && (
               <div>
                 <Label htmlFor="password">Senha</Label>
                 <Input
@@ -174,37 +175,39 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
                   </p>
                 )}
               </div>
+            )}
+             {(isAdmin) && (
               <div className="space-y-2">
-                <Label>Permissões</Label>
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="view"
-                      checked={formData?.position?.includes('view')}
-                      onCheckedChange={() => handlePermissionChange('view')}
-                    />
-                    <Label htmlFor="view">Visualizar</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="edit"
-                      checked={formData?.position?.includes('edit')}
-                      onCheckedChange={() => handlePermissionChange('edit')}
-                    />
-                    <Label htmlFor="edit">Editar</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="admin"
-                      checked={formData?.position?.includes('admin')}
-                      onCheckedChange={() => handlePermissionChange('admin')}
-                    />
-                    <Label htmlFor="admin">Administrar</Label>
-                  </div>
-                </div>
+                      <Label>Permissões</Label>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="view"
+                            checked={formData?.position?.includes('view')}
+                            onCheckedChange={() => handlePermissionChange('view')}
+                          />
+                          <Label htmlFor="view">Visualizar</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="edit"
+                            checked={formData?.position?.includes('edit')}
+                            onCheckedChange={() => handlePermissionChange('edit')}
+                          />
+                          <Label htmlFor="edit">Editar</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="admin"
+                            checked={formData?.position?.includes('admin')}
+                            onCheckedChange={() => handlePermissionChange('admin')}
+                          />
+                          <Label htmlFor="admin">Administrar</Label>
+                        </div>
+                      </div>
               </div>
-            </div>
-          )}
+             )}
+              </div>
         </div>
       </Card>
 
