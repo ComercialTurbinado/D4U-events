@@ -180,7 +180,7 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
                     <Checkbox
                       id="view"
                       checked={formData?.position?.includes('view')}
-                      onCheckedChange={() => handlePermissionChange('view')}
+                     // onCheckedChange={() => handlePermissionChange('view')}
                     />
                     <Label htmlFor="view">Visualizar</Label>
                   </div>
@@ -188,7 +188,7 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
                     <Checkbox
                       id="edit"
                       checked={formData?.position?.includes('edit')}
-                      onCheckedChange={() => handlePermissionChange('edit')}
+                      //onCheckedChange={() => handlePermissionChange('edit')}
                     />
                     <Label htmlFor="edit">Editar</Label>
                   </div>
@@ -196,7 +196,7 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
                     <Checkbox
                       id="admin"
                       checked={formData?.position?.includes('admin')}
-                      onCheckedChange={() => handlePermissionChange('admin')}
+                      //onCheckedChange={() => handlePermissionChange('admin')}
                     />
                     <Label htmlFor="admin">Administrar</Label>
                   </div>
