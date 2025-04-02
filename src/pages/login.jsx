@@ -21,13 +21,16 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // Aqui você deve implementar a chamada para sua API de autenticação
-      const response = await fetch("/api/auth/login", {
+      console.log('Ambiente:', import.meta.env.MODE);
+      console.log('API URL:', import.meta.env.VITE_API_URL);
+      console.log('Full URL:', `${import.meta.env.VITE_API_URL}/auth`);
+      console.log('Request body:', { email: formData.email, password: formData.password });
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ email: formData.email, password: formData.password })
       });
 
       const data = await response.json();
@@ -39,7 +42,7 @@ export default function LoginPage() {
       } else {
         setError(data.message || "Erro ao fazer login");
       }
-    } catch (error) {
+    } catch (error) { 
       setError("Erro ao conectar com o servidor");
     } finally {
       setIsLoading(false);
