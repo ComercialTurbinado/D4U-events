@@ -6,7 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-const API_URL = import.meta.env.VITE_REACT_APP_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod';
+// Adicionar console.log para depuração
+console.log('VITE_API_URL no login:', import.meta.env.VITE_API_URL);
+
+const API_URL = import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -23,6 +26,9 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
+      console.log('Enviando requisição para:', `${API_URL}/auth`);
+      console.log('Dados:', { email: formData.email, password: formData.password });
+      
       const response = await fetch(`${API_URL}/auth`, {
         method: "POST",
         headers: {
@@ -48,7 +54,7 @@ export default function LoginPage() {
       } else {
        // setError(data.message || "Erro ao fazer login");
         console.error("Resposta com erro:", data);
-setError(`${data.message || "Erro"}\n\n${data.error || ""}`); 
+        setError(`${data.message || "Erro"}\n\n${data.error || ""}`); 
       }
 
     } catch (error) {

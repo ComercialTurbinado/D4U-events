@@ -1,7 +1,10 @@
-const API_URL = import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod/entities';
+// Adicionar console.log para depuração da URL
+console.log('Variável de ambiente VITE_API_URL:', import.meta.env.VITE_API_URL);
+
+export const API_URL = import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod/entities';
 
 // Função auxiliar para limpar os dados antes de enviar para a API
-const cleanDataForApi = (data) => {
+export const cleanDataForApi = (data) => {
   if (!data) return {};
   
   console.log('Dados originais antes de limpar:', data);
@@ -133,6 +136,4 @@ export const SupplierCategoryOps = createEntityOperations('supplier-categories')
 export const DefaultTaskOps = createEntityOperations('default-tasks');
 export const DefaultMaterialOps = createEntityOperations('default-materials');
 export const DefaultSupplierOps = createEntityOperations('default-suppliers');
-export const TeamMemberOps = createEntityOperations('team-members');
-
-export { API_URL, cleanDataForApi }; 
+export const TeamMemberOps = createEntityOperations('team-members'); 
