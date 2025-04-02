@@ -22,6 +22,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import LogoutButton from "@/components/team/LogoutButton";
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -160,6 +161,7 @@ export default function Layout() {
             >
               <Menu className="h-5 w-5" />
             </Button>
+            <LogoutButton />
           </div>
         </header>
         <main className="p-4">
