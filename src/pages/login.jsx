@@ -6,6 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
+const REACT_APP_API_URL = import.meta.env.REACT_APP_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod';
+
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -22,10 +25,10 @@ export default function LoginPage() {
 
     try {
       console.log('Ambiente:', import.meta.env.MODE);
-      console.log('API URL:', import.meta.env.REACT_APP_API_URLL);
-      console.log('Full URL:', `${import.meta.env.REACT_APP_API_URLL}/auth`);
+      console.log('API URL:', REACT_APP_API_URL);
+      console.log('Full URL:', `${REACT_APP_API_URL}/auth`);
       console.log('Request body:', { email: formData.email, password: formData.password });
-      const response = await fetch(`${import.meta.env.REACT_APP_API_URLL}/auth`, {
+      const response = await fetch(`${REACT_APP_API_URL}/auth`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
