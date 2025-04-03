@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { DepartmentOps } from "@/api/entities";
+import { DepartmentOps } from "@/api/mongodb";
 import PermissionAlert from "@/components/PermissionAlert";
 
 export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
