@@ -2,36 +2,29 @@ import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Department } from "@/api/entities";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { DepartmentOps } from "@/api/entities";
+import PermissionAlert from "@/components/PermissionAlert";
 
 export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
-    name: initialData?.name || "",
-    role: initialData?.role || "",
-    department_id: initialData?.department_id || "",
-    email: initialData?.email || "",
-    whatsapp: initialData?.whatsapp || "",
-    is_active: initialData?.is_active ?? true,
-    password: initialData?.password || "",
-    position: initialData?.position || [] // Inicializa com as permissões existentes
+    name: "",
+    role: "",
+    department_id: "",
+    email: "",
+    whatsapp: "",
+    position: [],
+    ...initialData
   });
-
+  
   const [departments, setDepartments] = useState([]);
-  const [isLoadingDepartments, setIsLoadingDepartments] = useState(true);
-
-  // Verifica se o usuário atual é admin ou o dono do perfil
-  const currentUser = JSON.parse(localStorage.getItem('user'));
-  const isAdmin = currentUser?.position?.includes('admin');
-  const isOwner = currentUser?.id === initialData?.id;
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [permissionAlert, setPermissionAlert] = useState(null);
 
   useEffect(() => {
     loadDepartments();
@@ -39,193 +32,161 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
 
   const loadDepartments = async () => {
     try {
-      const departmentList = await Department.list();
-      console.log('TeamMemberForm - Departamentos carregados:', departmentList);
-      setDepartments(departmentList);
+      setLoading(true);
+      const data = await DepartmentOps.list();
+      setDepartments(data);
     } catch (error) {
-      console.error('Erro ao carregar departamentos:', error);
-      setDepartments([]);
+      if (error.type === 'permission') {
+        setPermissionAlert(error);
+      } else {
+        setError("Erro ao carregar departamentos");
+      }
     } finally {
-      setIsLoadingDepartments(false);
+      setLoading(false);
     }
   };
 
-  const handlePermissionChange = (permission) => {
-    setFormData(prev => {
-      const newPosition = prev.position.includes(permission)
-        ? prev.position.filter(p => p !== permission)
-        : [...prev.position, permission];
-      return { ...prev, position: newPosition };
-    });
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
     
-    const submittedData = {
-      ...formData,
-      is_active: true
-    };
-    
-    if (initialData) {
-      onSubmit(initialData.id, submittedData);
-    } else {
-      onSubmit(submittedData);
+    try {
+      await onSubmit(formData);
+    } catch (error) {
+      if (error.type === 'permission') {
+        setPermissionAlert(error);
+      } else {
+        setError("Erro ao salvar membro da equipe");
+      }
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {permissionAlert && (
+        <PermissionAlert
+          open={true}
+          onClose={() => setPermissionAlert(null)}
+          title={permissionAlert.title}
+          description={permissionAlert.description}
+        />
+      )}
+      
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Erro</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      
       <Card className="p-6">
         <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="name">Nome</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Nome completo"
-                required
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="role">Cargo</Label>
-              <Input
-                id="role"
-                value={formData.role}
-                onChange={e => setFormData(prev => ({ ...prev, role: e.target.value }))}
-                placeholder="Ex: Coordenador, Produtor, etc."
-                required
-              />
-            </div>
+          <div>
+            <Label htmlFor="name">Nome</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              required
+            />
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="department_id">Setor</Label>
-              <Select
-                value={formData.department_id}
-                onValueChange={value => setFormData(prev => ({ ...prev, department_id: value }))}
-                required
-                disabled={isLoadingDepartments}
-              >
-                <SelectTrigger id="department_id">
-                  <SelectValue placeholder={isLoadingDepartments ? "Carregando..." : "Selecione um setor"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {departments.map(dept => (
-                    <SelectItem key={dept.id} value={dept.id}>
-                      {dept.name}
-                    </SelectItem>
-                  ))}
-                  {departments.length === 0 && !isLoadingDepartments && (
-                    <SelectItem value="" disabled>
-                      Nenhum Setor cadastrado
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-              {departments.length === 0 && !isLoadingDepartments && (
-                <p className="text-amber-600 text-xs mt-1">
-                  Cadastre Setores primeiro
-                </p>
-              )}
-            </div>
-
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                placeholder="email@exemplo.com"
-                required
-              />
-            </div>
+          
+          <div>
+            <Label htmlFor="role">Cargo</Label>
+            <Input
+              id="role"
+              value={formData.role}
+              onChange={e => setFormData(prev => ({ ...prev, role: e.target.value }))}
+              required
+            />
           </div>
-
+          
+          <div>
+            <Label htmlFor="department_id">Departamento</Label>
+            <select
+              id="department_id"
+              value={formData.department_id}
+              onChange={e => setFormData(prev => ({ ...prev, department_id: e.target.value }))}
+              className="w-full rounded-md border border-input bg-background px-3 py-2"
+              required
+            >
+              <option value="">Selecione um departamento</option>
+              {departments.map(dept => (
+                <option key={dept._id} value={dept._id}>
+                  {dept.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
+              required
+            />
+          </div>
+          
           <div>
             <Label htmlFor="whatsapp">WhatsApp</Label>
             <Input
               id="whatsapp"
               value={formData.whatsapp}
               onChange={e => setFormData(prev => ({ ...prev, whatsapp: e.target.value }))}
-              placeholder="(11) 99999-9999"
               required
             />
           </div>
-          <div className="space-y-4">
-            {(isAdmin || isOwner) && (
-              <div>
-                <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={e => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                  placeholder="Digite a senha"
-                  required={!initialData}
+          
+          <div>
+            <Label>Permissões</Label>
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="edit"
+                  checked={formData.position.includes('edit')}
+                  onCheckedChange={checked => {
+                    setFormData(prev => ({
+                      ...prev,
+                      position: checked
+                        ? [...prev.position, 'edit']
+                        : prev.position.filter(p => p !== 'edit')
+                    }));
+                  }}
                 />
-                {initialData && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Deixe em branco para manter a senha atual
-                  </p>
-                )}
+                <Label htmlFor="edit">Editar</Label>
               </div>
-            )}
-             {(isAdmin) && (
-              <div className="space-y-2">
-                      <Label>Permissões</Label>
-                      <div className="flex flex-col gap-2">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="view"
-                            checked={formData?.position?.includes('view')}
-                            onCheckedChange={() => handlePermissionChange('view')}
-                          />
-                          <Label htmlFor="view">Visualizar</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="edit"
-                            checked={formData?.position?.includes('edit')}
-                            onCheckedChange={() => handlePermissionChange('edit')}
-                          />
-                          <Label htmlFor="edit">Editar</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="admin"
-                            checked={formData?.position?.includes('admin')}
-                            onCheckedChange={() => handlePermissionChange('admin')}
-                          />
-                          <Label htmlFor="admin">Administrar</Label>
-                        </div>
-                      </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="admin"
+                  checked={formData.position.includes('admin')}
+                  onCheckedChange={checked => {
+                    setFormData(prev => ({
+                      ...prev,
+                      position: checked
+                        ? [...prev.position, 'admin']
+                        : prev.position.filter(p => p !== 'admin')
+                    }));
+                  }}
+                />
+                <Label htmlFor="admin">Administrador</Label>
               </div>
-             )}
-              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex justify-end space-x-2 mt-6">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancelar
+          </Button>
+          <Button type="submit">
+            {initialData ? "Atualizar" : "Criar"}
+          </Button>
         </div>
       </Card>
-
-      <div className="flex justify-end gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-        >
-          Cancelar
-        </Button>
-        <Button 
-          type="submit"
-          disabled={departments.length === 0}
-        >
-          {initialData ? "Atualizar" : "Criar"} Membro
-        </Button>
-      </div>
     </form>
   );
 } 

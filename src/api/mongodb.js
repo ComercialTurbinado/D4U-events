@@ -3,47 +3,74 @@ console.log('Variável de ambiente VITE_API_URL:', import.meta.env.VITE_API_URL)
 
 export const API_URL = import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod/entities';
 
+import { useState } from "react";
+import PermissionAlert from "@/components/PermissionAlert";
+
 // Função para verificar se o usuário tem permissão para modificar dados
 const hasPermission = (data, operation) => {
   const usuarioLogado = JSON.parse(localStorage.getItem('user'));
   
   // Se não há usuário logado, não tem permissão
   if (!usuarioLogado) {
-    console.error('Operação negada: usuário não autenticado');
-    throw new Error('Você precisa estar autenticado para realizar esta operação');
+    return {
+      hasPermission: false,
+      alert: {
+        type: 'permission',
+        title: 'Acesso Negado',
+        description: 'Você precisa estar autenticado para realizar esta operação'
+      }
+    };
   }
   
   // Se o usuário tem permissão de admin, pode fazer qualquer operação
   if (usuarioLogado.position && usuarioLogado.position.includes('admin')) {
-    return true;
+    return { hasPermission: true };
   }
   
   // Se a operação é apenas leitura, verifica se tem permissão de visualização
   if (operation === 'read' && usuarioLogado.position) {
-    return true;
+    return { hasPermission: true };
   }
   
   // Para operações de escrita, verifica se tem permissão de edição
   if (['create', 'update', 'delete'].includes(operation)) {
     // Verifica se tem permissão de edição
     if (!usuarioLogado.position || !usuarioLogado.position.includes('edit')) {
-      console.error('Operação negada: usuário sem permissão para editar');
-      throw new Error('Você não tem permissão para editar dados');
+      return {
+        hasPermission: false,
+        alert: {
+          type: 'permission',
+          title: 'Permissão Negada',
+          description: 'Você não tem permissão para editar dados'
+        }
+      };
     }
     
     // Se tem permissão de edição, verifica se está editando dentro do seu departamento
     if (data && data.department_id && usuarioLogado.department_id && 
         data.department_id !== usuarioLogado.department_id) {
-      console.error('Operação negada: usuário tentando editar fora do seu departamento');
-      throw new Error('Você só pode editar dados do seu próprio departamento');
+      return {
+        hasPermission: false,
+        alert: {
+          type: 'permission',
+          title: 'Acesso Restrito',
+          description: 'Você só pode editar dados do seu próprio departamento'
+        }
+      };
     }
     
-    return true;
+    return { hasPermission: true };
   }
   
   // Por padrão, nega a permissão
-  console.error('Operação negada: verificação de permissão falhou');
-  throw new Error('Você não tem permissão para realizar esta operação');
+  return {
+    hasPermission: false,
+    alert: {
+      type: 'permission',
+      title: 'Operação Negada',
+      description: 'Você não tem permissão para realizar esta operação'
+    }
+  };
 };
 
 // Função auxiliar para adicionar o usuário ao body das requisições
@@ -143,7 +170,11 @@ const createEntityOperations = (collection) => ({
     const cleanData = cleanDataForApi(data);
     
     // Verifica se o usuário tem permissão para criar
-    hasPermission(cleanData, 'create');
+    const { hasPermission: permissionResult, alert } = hasPermission(cleanData, 'create');
+    
+    if (!permissionResult) {
+      throw alert;
+    }
     
     // Adiciona o usuário ao body
     const dataWithUser = addUserToRequest(cleanData);
@@ -163,7 +194,11 @@ const createEntityOperations = (collection) => ({
     const cleanData = cleanDataForApi(data);
     
     // Verifica se o usuário tem permissão para atualizar
-    hasPermission(cleanData, 'update');
+    const { hasPermission: permissionResult, alert } = hasPermission(cleanData, 'update');
+    
+    if (!permissionResult) {
+      throw alert;
+    }
     
     // Adiciona o usuário ao body
     const dataWithUser = addUserToRequest(cleanData);
@@ -199,7 +234,10 @@ const createEntityOperations = (collection) => ({
         throw new Error('Item não encontrado ou você não tem permissão para acessá-lo');
       }
       const item = await response.json();
-      hasPermission(item, 'delete');
+      const { hasPermission: permissionResult, alert } = hasPermission(item, 'delete');
+      if (!permissionResult) {
+        throw alert;
+      }
     } catch (error) {
       console.error(`Erro ao verificar permissão para deletar ${collection}/${id}:`, error);
       throw new Error('Você não tem permissão para deletar este item');
@@ -225,7 +263,11 @@ const createEntityOperations = (collection) => ({
       const cleanData = cleanDataForApi(item);
       
       // Verifica se o usuário tem permissão para criar cada item
-      hasPermission(cleanData, 'create');
+      const { hasPermission: permissionResult, alert } = hasPermission(cleanData, 'create');
+      
+      if (!permissionResult) {
+        throw alert;
+      }
       
       // Adiciona o usuário ao body
       const dataWithUser = addUserToRequest(cleanData);
@@ -261,4 +303,4 @@ export const SupplierCategoryOps = createEntityOperations('supplier-categories')
 export const DefaultTaskOps = createEntityOperations('default-tasks');
 export const DefaultMaterialOps = createEntityOperations('default-materials');
 export const DefaultSupplierOps = createEntityOperations('default-suppliers');
-export const TeamMemberOps = createEntityOperations('teammembers'); 
+export const TeamMemberOps = createEntityOperations('teammembers');
