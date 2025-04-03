@@ -18,8 +18,7 @@ export async function fetchWithUser(url, options = {}) {
   // Faz a requisição com os headers atualizados
   const response = await fetch(url, {
     ...options,
-    headers,
-    credentials: 'include'  // Isso permite enviar cookies com a requisição
+    headers
   });
 
   return response;
