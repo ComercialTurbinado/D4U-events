@@ -3,6 +3,68 @@ console.log('Variável de ambiente VITE_API_URL:', import.meta.env.VITE_API_URL)
 
 export const API_URL = import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod/entities';
 
+// Função para verificar se o usuário tem permissão para modificar dados
+const hasPermission = (data, operation) => {
+  const usuarioLogado = JSON.parse(localStorage.getItem('user'));
+  
+  // Se não há usuário logado, não tem permissão
+  if (!usuarioLogado) {
+    console.error('Operação negada: usuário não autenticado');
+    throw new Error('Você precisa estar autenticado para realizar esta operação');
+  }
+  
+  // Se o usuário tem permissão de admin, pode fazer qualquer operação
+  if (usuarioLogado.position && usuarioLogado.position.includes('admin')) {
+    return true;
+  }
+  
+  // Se a operação é apenas leitura, verifica se tem permissão de visualização
+  if (operation === 'read' && usuarioLogado.position && usuarioLogado.position.includes('view')) {
+    return true;
+  }
+  
+  // Para operações de escrita, verifica se tem permissão de edição
+  if (['create', 'update', 'delete'].includes(operation)) {
+    // Verifica se tem permissão de edição
+    if (!usuarioLogado.position || !usuarioLogado.position.includes('edit')) {
+      console.error('Operação negada: usuário sem permissão para editar');
+      throw new Error('Você não tem permissão para editar dados');
+    }
+    
+    // Se tem permissão de edição, verifica se está editando dentro do seu departamento
+    if (data && data.department_id && usuarioLogado.department_id && 
+        data.department_id !== usuarioLogado.department_id) {
+      console.error('Operação negada: usuário tentando editar fora do seu departamento');
+      throw new Error('Você só pode editar dados do seu próprio departamento');
+    }
+    
+    return true;
+  }
+  
+  // Por padrão, nega a permissão
+  console.error('Operação negada: verificação de permissão falhou');
+  throw new Error('Você não tem permissão para realizar esta operação');
+};
+
+// Função auxiliar para adicionar o usuário ao body das requisições
+const addUserToRequest = (data) => {
+  // Recupera o usuário logado do localStorage
+  const usuarioLogado = JSON.parse(localStorage.getItem('user'));
+  
+  if (!usuarioLogado) return data;
+  
+  return {
+    ...data,
+    // Inclui apenas dados relevantes do usuário
+    usuario: {
+      id: usuarioLogado.id,
+      name: usuarioLogado.name,
+      position: usuarioLogado.position || [],
+      department_id: usuarioLogado.department_id
+    }
+  };
+};
+
 // Função auxiliar para limpar os dados antes de enviar para a API
 export const cleanDataForApi = (data) => {
   if (!data) return {};
@@ -36,6 +98,9 @@ export const cleanDataForApi = (data) => {
 
 const createEntityOperations = (collection) => ({
   list: async () => {
+    // Verifica se o usuário tem permissão para ler
+    hasPermission(null, 'read');
+    
     console.log(`Fazendo requisição GET para ${API_URL}/${collection}`);
     const response = await fetch(`${API_URL}/${collection}`);
     if (!response.ok) {
@@ -48,6 +113,9 @@ const createEntityOperations = (collection) => ({
   },
 
   get: async (id) => {
+    // Verifica se o usuário tem permissão para ler
+    hasPermission(null, 'read');
+    
     console.log(`Fazendo requisição GET para ${API_URL}/${collection}/${id}`);
     const response = await fetch(`${API_URL}/${collection}/${id}`);
     if (!response.ok) {
@@ -61,12 +129,16 @@ const createEntityOperations = (collection) => ({
 
   create: async (data) => {
     const cleanData = cleanDataForApi(data);
+    
+    // Verifica se o usuário tem permissão para criar
+    hasPermission(cleanData, 'create');
+    
+    // Adiciona o usuário ao body
+    const dataWithUser = addUserToRequest(cleanData);
+    
     const response = await fetch(`${API_URL}/${collection}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(cleanData),
+      body: JSON.stringify(dataWithUser),
     });
     if (!response.ok) throw new Error('Erro ao criar documento');
     return response.json();
@@ -74,14 +146,18 @@ const createEntityOperations = (collection) => ({
 
   update: async (id, data) => {
     const cleanData = cleanDataForApi(data);
-    console.log(`Atualizando ${collection}/${id} com dados:`, cleanData);
+    
+    // Verifica se o usuário tem permissão para atualizar
+    hasPermission(cleanData, 'update');
+    
+    // Adiciona o usuário ao body
+    const dataWithUser = addUserToRequest(cleanData);
+    
+    console.log(`Atualizando ${collection}/${id} com dados:`, dataWithUser);
     
     const response = await fetch(`${API_URL}/${collection}/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(cleanData),
+      body: JSON.stringify(dataWithUser),
     });
     
     if (!response.ok) {
@@ -95,8 +171,32 @@ const createEntityOperations = (collection) => ({
   },
 
   delete: async (id) => {
+    // Verifica se o usuário tem permissão para deletar
+    // Para deletar, geralmente precisamos verificar o item antes para saber o departamento
+    try {
+      // Buscar o item diretamente em vez de usar this
+      console.log(`Buscando item para verificar permissões de deleção: ${API_URL}/${collection}/${id}`);
+      const response = await fetch(`${API_URL}/${collection}/${id}`);
+      if (!response.ok) {
+        throw new Error('Item não encontrado ou você não tem permissão para acessá-lo');
+      }
+      const item = await response.json();
+      hasPermission(item, 'delete');
+    } catch (error) {
+      console.error(`Erro ao verificar permissão para deletar ${collection}/${id}:`, error);
+      throw new Error('Você não tem permissão para deletar este item');
+    }
+    
+    // Para DELETE, enviamos o usuário em um body vazio
+    const userInfo = addUserToRequest({});
+    
     const response = await fetch(`${API_URL}/${collection}/${id}`, {
       method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      // Enviamos o usuário no body mesmo para DELETE
+      body: JSON.stringify(userInfo),
     });
     if (!response.ok) throw new Error('Erro ao deletar documento');
     return response.json();
@@ -105,12 +205,16 @@ const createEntityOperations = (collection) => ({
   bulkCreate: async (items) => {
     const promises = items.map(item => {
       const cleanData = cleanDataForApi(item);
+      
+      // Verifica se o usuário tem permissão para criar cada item
+      hasPermission(cleanData, 'create');
+      
+      // Adiciona o usuário ao body
+      const dataWithUser = addUserToRequest(cleanData);
+      
       return fetch(`${API_URL}/${collection}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(cleanData),
+        body: JSON.stringify(dataWithUser),
       }).then(response => {
         if (!response.ok) throw new Error('Erro ao criar documento');
         return response.json();
