@@ -1,9 +1,7 @@
 // Adicionar console.log para depuração da URL
 console.log('Variável de ambiente VITE_API_URL:', import.meta.env.VITE_API_URL);
 
-import { fetchWithUser } from './fetchWithUser';
-
-export const API_URL = import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod';
+export const API_URL = import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod/entities';
 
 // Função auxiliar para limpar os dados antes de enviar para a API
 export const cleanDataForApi = (data) => {
@@ -39,7 +37,7 @@ export const cleanDataForApi = (data) => {
 const createEntityOperations = (collection) => ({
   list: async () => {
     console.log(`Fazendo requisição GET para ${API_URL}/${collection}`);
-    const response = await fetchWithUser(`${API_URL}/${collection}`);
+    const response = await fetch(`${API_URL}/${collection}`);
     if (!response.ok) {
       console.error(`Erro na requisição GET ${collection}:`, response.status, response.statusText);
       throw new Error('Erro ao buscar dados');
@@ -63,8 +61,11 @@ const createEntityOperations = (collection) => ({
 
   create: async (data) => {
     const cleanData = cleanDataForApi(data);
-    const response = await fetchWithUser(`${API_URL}/${collection}`, {
+    const response = await fetch(`${API_URL}/${collection}`, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(cleanData),
     });
     if (!response.ok) throw new Error('Erro ao criar documento');
@@ -75,8 +76,11 @@ const createEntityOperations = (collection) => ({
     const cleanData = cleanDataForApi(data);
     console.log(`Atualizando ${collection}/${id} com dados:`, cleanData);
     
-    const response = await fetchWithUser(`${API_URL}/${collection}/${id}`, {
+    const response = await fetch(`${API_URL}/${collection}/${id}`, {
       method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(cleanData),
     });
     
@@ -91,7 +95,7 @@ const createEntityOperations = (collection) => ({
   },
 
   delete: async (id) => {
-    const response = await fetchWithUser(`${API_URL}/${collection}/${id}`, {
+    const response = await fetch(`${API_URL}/${collection}/${id}`, {
       method: 'DELETE',
     });
     if (!response.ok) throw new Error('Erro ao deletar documento');
@@ -101,8 +105,11 @@ const createEntityOperations = (collection) => ({
   bulkCreate: async (items) => {
     const promises = items.map(item => {
       const cleanData = cleanDataForApi(item);
-      return fetchWithUser(`${API_URL}/${collection}`, {
+      return fetch(`${API_URL}/${collection}`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(cleanData),
       }).then(response => {
         if (!response.ok) throw new Error('Erro ao criar documento');
