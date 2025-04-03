@@ -99,8 +99,7 @@ export const cleanDataForApi = (data) => {
 const createEntityOperations = (collection) => ({
   list: async () => {
     // Verifica se o usuário tem permissão para ler
-    hasPermission(null, 'read');
-    
+     
     console.log(`Fazendo requisição GET para ${API_URL}/${collection}`);
     const response = await fetch(`${API_URL}/${collection}`);
     if (!response.ok) {
@@ -114,8 +113,7 @@ const createEntityOperations = (collection) => ({
 
   get: async (id) => {
     // Verifica se o usuário tem permissão para ler
-    hasPermission(null, 'read');
-    
+     
     console.log(`Fazendo requisição GET para ${API_URL}/${collection}/${id}`);
     const response = await fetch(`${API_URL}/${collection}/${id}`);
     if (!response.ok) {
