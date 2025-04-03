@@ -58,7 +58,7 @@ export default function LoginPage() {
         localStorage.setItem("user_position", JSON.stringify(data.user.position));
         localStorage.setItem("user_department_id", JSON.stringify(data.user.department_id));
         
-        console.log(lovalStorage.getItem("user_name"));
+        console.log(localStorage.getItem("user_name"));
         console.log(localStorage.getItem("user_department_id"));
 
          navigate("/");
