@@ -54,8 +54,7 @@ export default function LoginPage() {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
         console.log(data);
-        console.log(response);
-        
+
          navigate("/");
       } else {
         console.error("Resposta com erro:", data);
