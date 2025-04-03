@@ -51,7 +51,7 @@ const createEntityOperations = (collection) => ({
 
   get: async (id) => {
     console.log(`Fazendo requisição GET para ${API_URL}/${collection}/${id}`);
-    const response = await fetchWithUser(`${API_URL}/${collection}/${id}`);
+    const response = await fetch(`${API_URL}/${collection}/${id}`);
     if (!response.ok) {
       console.error(`Erro na requisição GET ${collection}/${id}:`, response.status, response.statusText);
       throw new Error('Erro ao buscar documento');

@@ -18,7 +18,8 @@ export async function fetchWithUser(url, options = {}) {
   // Faz a requisição com os headers atualizados
   const response = await fetch(url, {
     ...options,
-    headers
+    headers,
+    mode: 'cors' // Explicitamente definir o modo como CORS (embora seja o padrão)
   });
 
   return response;
