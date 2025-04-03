@@ -229,7 +229,7 @@ const createEntityOperations = (collection) => ({
       
       // Adiciona o usuário ao body
       const dataWithUser = addUserToRequest(cleanData);
-      
+       
       return fetch(`${API_URL}/${collection}`, {
         method: 'POST',
         headers: {
