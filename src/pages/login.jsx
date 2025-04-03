@@ -53,6 +53,10 @@ export default function LoginPage() {
       if (response.ok) {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("user_position", JSON.stringify(data.user.position));
+        localStorage.setItem("user_department_id", JSON.stringify(data.user.department_id));
+        console.log(localStorage.getItem("user_position"));
+        console.log(localStorage.getItem("user_department_id"));
         navigate("/");
       } else {
         console.error("Resposta com erro:", data);
