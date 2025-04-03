@@ -1,7 +1,7 @@
 // Adicionar console.log para depuração da URL
 console.log('Variável de ambiente VITE_API_URL:', import.meta.env.VITE_API_URL);
 
-export const API_URL = import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod';
+export const API_URL = import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod/entities';
 
 // Função para verificar se o usuário tem permissão para modificar dados
 const hasPermission = (data, operation) => {
@@ -19,7 +19,7 @@ const hasPermission = (data, operation) => {
   }
   
   // Se a operação é apenas leitura, verifica se tem permissão de visualização
-  if (operation === 'read' && usuarioLogado.position && usuarioLogado.position.includes('view')) {
+  if (operation === 'read' && usuarioLogado.position) {
     return true;
   }
   
