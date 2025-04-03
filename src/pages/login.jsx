@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 // Adicionar console.log para depuração
 console.log('VITE_API_URL no login:', import.meta.env.VITE_API_URL);
 
+// Garantir que estamos usando a URL base e não a URL com /entities
 const API_URL = import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod';
 
 export default function LoginPage() {
@@ -26,10 +27,12 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      console.log('Enviando requisição para:', `${API_URL}/auth`);
+      // A URL de autenticação não deve incluir /entities
+      const authUrl = `${API_URL}/auth`;
+      console.log('Enviando requisição para:', authUrl);
       console.log('Dados:', { email: formData.email, password: formData.password });
       
-      const response = await fetch(`${API_URL}/auth`, {
+      const response = await fetch(authUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

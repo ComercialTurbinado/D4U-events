@@ -98,10 +98,17 @@ export const cleanDataForApi = (data) => {
 
 const createEntityOperations = (collection) => ({
   list: async () => {
-    // Verifica se o usuário tem permissão para ler
-     
+    // Não verifica permissões para list para permitir login
+    
     console.log(`Fazendo requisição GET para ${API_URL}/${collection}`);
-    const response = await fetch(`${API_URL}/${collection}`);
+    
+    // Adicionar headers para evitar erros de CORS
+    const response = await fetch(`${API_URL}/${collection}`, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
     if (!response.ok) {
       console.error(`Erro na requisição GET ${collection}:`, response.status, response.statusText);
       throw new Error('Erro ao buscar dados');
@@ -112,10 +119,17 @@ const createEntityOperations = (collection) => ({
   },
 
   get: async (id) => {
-    // Verifica se o usuário tem permissão para ler
-     
+    // Não verifica permissões para get para permitir login
+    
     console.log(`Fazendo requisição GET para ${API_URL}/${collection}/${id}`);
-    const response = await fetch(`${API_URL}/${collection}/${id}`);
+    
+    // Adicionar headers para evitar erros de CORS
+    const response = await fetch(`${API_URL}/${collection}/${id}`, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
     if (!response.ok) {
       console.error(`Erro na requisição GET ${collection}/${id}:`, response.status, response.statusText);
       throw new Error('Erro ao buscar documento');
@@ -136,6 +150,9 @@ const createEntityOperations = (collection) => ({
     
     const response = await fetch(`${API_URL}/${collection}`, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify(dataWithUser),
     });
     if (!response.ok) throw new Error('Erro ao criar documento');
@@ -155,6 +172,9 @@ const createEntityOperations = (collection) => ({
     
     const response = await fetch(`${API_URL}/${collection}/${id}`, {
       method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify(dataWithUser),
     });
     
@@ -212,6 +232,9 @@ const createEntityOperations = (collection) => ({
       
       return fetch(`${API_URL}/${collection}`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify(dataWithUser),
       }).then(response => {
         if (!response.ok) throw new Error('Erro ao criar documento');
