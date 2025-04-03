@@ -15,22 +15,11 @@ export async function fetchWithUser(url, options = {}) {
     ...options.headers,
   };
 
-  // Adiciona cabeçalhos CORS
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-  };
-
   // Faz a requisição com os headers atualizados
   const response = await fetch(url, {
     ...options,
-    headers: {
-      ...headers,
-      ...corsHeaders
-    },
-    mode: 'cors', // Use 'cors' em vez de 'no-cors' para obter respostas legíveis
-    credentials: 'same-origin'
+    headers,
+    credentials: 'include'  // Isso permite enviar cookies com a requisição
   });
 
   return response;

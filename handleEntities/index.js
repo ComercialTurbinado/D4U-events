@@ -159,10 +159,10 @@ exports.handler = async (event) => {
 
 function corsHeaders() {
   return {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': 'https://main.d2p3ej85wi84d5.amplifyapp.com',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Credentials': true
+    'Access-Control-Allow-Credentials': 'true'
   };
 }
 
