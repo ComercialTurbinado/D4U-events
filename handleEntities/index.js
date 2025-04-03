@@ -52,9 +52,12 @@ exports.handler = async (event) => {
 
       const result = await login(email, password);
 
+      // Adicionar cabeçalhos CORS a todas as respostas
+      const responseHeaders = corsHeaders();
+      
       return {
         statusCode: 200,
-        headers: corsHeaders(),
+        headers: responseHeaders,
         body: JSON.stringify(result)
       };
     }
@@ -145,11 +148,11 @@ exports.handler = async (event) => {
     }
 
   } catch (error) {
-    console.error('Erro na operação:', error);
+    console.error('❌ Erro:', error);
     return {
       statusCode: 500,
-      headers: corsHeaders(),
-      body: JSON.stringify({ error: 'Erro interno do servidor' })
+      headers: corsHeaders(), // Adicionar CORS até nas respostas de erro
+      body: JSON.stringify({ error: error.message })
     };
   }
 };
@@ -157,9 +160,9 @@ exports.handler = async (event) => {
 function corsHeaders() {
   return {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Content-Type': 'application/json'
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Credentials': true
   };
 }
 
