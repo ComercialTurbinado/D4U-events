@@ -12,6 +12,8 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+ import { toast } from "react-hot-toast";
+import { TeamMemberOps } from "@/api/team-member";
 
 export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
@@ -22,11 +24,13 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
     whatsapp: initialData?.whatsapp || "",
     is_active: initialData?.is_active ?? true,
     password: initialData?.password || "",
-    position: initialData?.position || [] // Inicializa com as permissões existentes
+    position: initialData?.position || [],
+    can_edit: false
   });
 
   const [departments, setDepartments] = useState([]);
   const [isLoadingDepartments, setIsLoadingDepartments] = useState(true);
+  const [shouldUpdatePassword, setShouldUpdatePassword] = useState(false);
 
   // Verifica se o usuário atual é admin ou o dono do perfil
   const currentUser = JSON.parse(localStorage.getItem('user'));
@@ -59,20 +63,37 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    const submittedData = {
-      ...formData,
-      is_active: true
-    };
-    console.log('submittedData', submittedData);
-    if (initialData && typeof initialData.id === 'string') {
-      onSubmit(initialData.id, submittedData);
-    } else if (initialData && typeof initialData._id === 'string') {
-      onSubmit(initialData._id, submittedData);
-    } else {
-      onSubmit(submittedData);
+    setLoading(true);
+    setError(null);
+    setPermissionAlert(null);
+
+    try {
+      const dataToSend = { ...formData };
+      
+      // Se não deve atualizar a senha, remove ela do objeto
+      if (!shouldUpdatePassword) {
+        delete dataToSend.password;
+      }
+
+      if (initialData) {
+        await TeamMemberOps.update(initialData.id, dataToSend);
+        toast.success('Membro da equipe atualizado com sucesso!');
+      } else {
+        await TeamMemberOps.create(dataToSend);
+        toast.success('Membro da equipe criado com sucesso!');
+      }
+      onSuccess();
+    } catch (error) {
+      console.error('Erro ao salvar membro da equipe:', error);
+      if (error.type === 'permission') {
+        setPermissionAlert(error);
+      } else {
+        setError(error.message || 'Erro ao salvar membro da equipe');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -162,18 +183,32 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
           <div className="space-y-4">
             {(isAdmin || isOwner) && (
               <div>
-                <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={e => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                  placeholder="Digite a senha"
-                  required={!initialData}
-                />
-                {initialData && (
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Senha</Label>
+                  {initialData && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShouldUpdatePassword(!shouldUpdatePassword)}
+                    >
+                      {shouldUpdatePassword ? 'Cancelar alteração' : 'Alterar senha'}
+                    </Button>
+                  )}
+                </div>
+                {shouldUpdatePassword && (
+                  <Input
+                    id="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={e => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                    placeholder="Digite a nova senha"
+                    required={!initialData}
+                  />
+                )}
+                {initialData && !shouldUpdatePassword && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    Deixe em branco para manter a senha atual
+                    Clique em "Alterar senha" para modificar a senha atual
                   </p>
                 )}
               </div>
