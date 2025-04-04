@@ -6,12 +6,16 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/lib/utils";
 import EventList from "../components/events/EventList";
 import EventForm from "../components/events/EventForm";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export default function EventsPage() {
   const [events, setEvents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
+  const [activeTab, setActiveTab] = useState("active");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -145,6 +149,25 @@ export default function EventsPage() {
     navigate(createPageUrl(`events/${eventId}`));
   };
 
+  const getFilteredEvents = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (activeTab === "active") {
+      return events.filter(event => {
+        const eventDate = new Date(event.start_date);
+        eventDate.setHours(0, 0, 0, 0);
+        return eventDate >= today || event.status === "in_progress";
+      });
+    } else {
+      return events.filter(event => {
+        const eventDate = new Date(event.start_date);
+        eventDate.setHours(0, 0, 0, 0);
+        return eventDate < today && event.status !== "in_progress";
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto py-8 max-w-7xl">
       <div className="flex justify-between items-center mb-8">
@@ -176,13 +199,34 @@ export default function EventsPage() {
           }}
         />
       ) : (
-        <EventList
-          events={events}
-          isLoading={isLoading}
-          onEdit={handleEdit}
-          onDelete={handleDeleteEvent}
-          onView={handleViewEvent}
-        />
+        <div className="space-y-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList>
+              <TabsTrigger value="active">Eventos Ativos</TabsTrigger>
+              <TabsTrigger value="completed">Eventos Concluídos</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="active">
+              <EventList
+                events={getFilteredEvents()}
+                isLoading={isLoading}
+                onEdit={handleEdit}
+                onDelete={handleDeleteEvent}
+                onView={handleViewEvent}
+              />
+            </TabsContent>
+            
+            <TabsContent value="completed">
+              <EventList
+                events={getFilteredEvents()}
+                isLoading={isLoading}
+                onEdit={handleEdit}
+                onDelete={handleDeleteEvent}
+                onView={handleViewEvent}
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
       )}
     </div>
   );

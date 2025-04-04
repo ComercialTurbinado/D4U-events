@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Eye } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export default function EventList({ events, isLoading, onEdit, onDelete, onView }) {
   const getStatusLabel = (status) => {
@@ -32,6 +33,14 @@ export default function EventList({ events, isLoading, onEdit, onDelete, onView 
       cancelled: "bg-red-100 text-red-800"
     };
     return colors[status] || "bg-gray-100 text-gray-800";
+  };
+
+  const isEventCompleted = (event) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const eventDate = new Date(event.start_date);
+    eventDate.setHours(0, 0, 0, 0);
+    return eventDate < today && event.status !== "in_progress";
   };
 
   if (isLoading) {
@@ -66,13 +75,18 @@ export default function EventList({ events, isLoading, onEdit, onDelete, onView 
             <TableRow key={event.id}>
               <TableCell className="font-medium">{event.name}</TableCell>
               <TableCell>
-                {event.start_date && format(new Date(event.start_date), "dd/MM/yyyy")}
+                {event.start_date && format(new Date(event.start_date), "dd/MM/yyyy", { locale: ptBR })}
               </TableCell>
               <TableCell>{event.location || "-"}</TableCell>
               <TableCell>
                 <Badge className={getStatusColor(event.status)}>
                   {getStatusLabel(event.status)}
                 </Badge>
+                {isEventCompleted(event) && (
+                  <span className="ml-2 text-xs text-gray-500">
+                    (Concluído)
+                  </span>
+                )}
               </TableCell>
               <TableCell>{event.manager || "-"}</TableCell>
               <TableCell>
@@ -85,22 +99,26 @@ export default function EventList({ events, isLoading, onEdit, onDelete, onView 
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onEdit(event)}
-                    title="Editar"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onDelete(event.id)}
-                    title="Excluir"
-                  >
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
+                  {!isEventCompleted(event) && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onEdit(event)}
+                        title="Editar"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onDelete(event.id)}
+                        title="Excluir"
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </>
+                  )}
                 </div>
               </TableCell>
             </TableRow>
@@ -108,7 +126,7 @@ export default function EventList({ events, isLoading, onEdit, onDelete, onView 
           {events.length === 0 && (
             <TableRow>
               <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                Nenhum evento cadastrado
+                Nenhum evento encontrado
               </TableCell>
             </TableRow>
           )}
