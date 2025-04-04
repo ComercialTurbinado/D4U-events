@@ -12,8 +12,9 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
- import { toast } from "react-hot-toast";
+import { toast } from "sonner";
 import { TeamMemberOps } from "@/api/team-member";
+import PermissionAlert from "@/components/PermissionAlert";
 
 export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
@@ -31,6 +32,9 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
   const [departments, setDepartments] = useState([]);
   const [isLoadingDepartments, setIsLoadingDepartments] = useState(true);
   const [shouldUpdatePassword, setShouldUpdatePassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [permissionAlert, setPermissionAlert] = useState(null);
 
   // Verifica se o usuário atual é admin ou o dono do perfil
   const currentUser = JSON.parse(localStorage.getItem('user'));
@@ -78,13 +82,12 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
       }
 
       if (initialData) {
-        await TeamMemberOps.update(initialData.id, dataToSend);
+        await onSubmit(initialData.id, dataToSend);
         toast.success('Membro da equipe atualizado com sucesso!');
       } else {
-        await TeamMemberOps.create(dataToSend);
+        await onSubmit(dataToSend);
         toast.success('Membro da equipe criado com sucesso!');
       }
-      onSuccess();
     } catch (error) {
       console.error('Erro ao salvar membro da equipe:', error);
       if (error.type === 'permission') {
@@ -99,6 +102,17 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {permissionAlert && (
+        <PermissionAlert
+          title={permissionAlert.title}
+          description={permissionAlert.description}
+        />
+      )}
+      {error && (
+        <div className="bg-red-50 text-red-600 p-4 rounded-md">
+          {error}
+        </div>
+      )}
       <Card className="p-6">
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -253,14 +267,15 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
           type="button"
           variant="outline"
           onClick={onCancel}
+          disabled={loading}
         >
           Cancelar
         </Button>
         <Button 
           type="submit"
-          disabled={departments.length === 0}
+          disabled={departments.length === 0 || loading}
         >
-          {initialData ? "Atualizar" : "Criar"} Membro
+          {loading ? "Salvando..." : initialData ? "Atualizar" : "Criar"} Membro
         </Button>
       </div>
     </form>

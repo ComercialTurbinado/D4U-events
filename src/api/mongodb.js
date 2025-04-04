@@ -123,7 +123,7 @@ export const cleanDataForApi = (data) => {
   return cleanData;
 };
 
-const createEntityOperations = (collection) => ({
+export const createEntityOperations = (collection) => ({
   list: async () => {
     // Não verifica permissões para list para permitir login
     
