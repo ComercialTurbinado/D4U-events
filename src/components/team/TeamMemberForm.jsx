@@ -9,6 +9,7 @@ import { AlertCircle } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { DepartmentOps } from "@/api/mongodb";
 import PermissionAlert from "@/components/PermissionAlert";
+ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
@@ -142,40 +143,29 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
           </div>
           
           <div>
-            <Label>Permissões</Label>
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="edit"
-                  checked={formData.position.includes('edit')}
-                  onCheckedChange={checked => {
-                    setFormData(prev => ({
-                      ...prev,
-                      position: checked
-                        ? [...prev.position, 'edit']
-                        : prev.position.filter(p => p !== 'edit')
-                    }));
-                  }}
-                />
-                <Label htmlFor="edit">Editar</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="admin"
-                  checked={formData.position.includes('admin')}
-                  onCheckedChange={checked => {
-                    setFormData(prev => ({
-                      ...prev,
-                      position: checked
-                        ? [...prev.position, 'admin']
-                        : prev.position.filter(p => p !== 'admin')
-                    }));
-                  }}
-                />
-                <Label htmlFor="admin">Administrador</Label>
-              </div>
-            </div>
-          </div>
+  <Label className="mb-2 block">Permissões</Label>
+  <RadioGroup
+    value={formData.position}
+    onValueChange={(value) =>
+      setFormData(prev => ({ ...prev, position: value }))
+    }
+    className="space-y-2"
+  >
+    <div className="flex items-center space-x-2">
+      <RadioGroupItem value="view" id="view" />
+      <Label htmlFor="view">Visualizar</Label>
+    </div>
+    <div className="flex items-center space-x-2">
+      <RadioGroupItem value="edit" id="edit" />
+      <Label htmlFor="edit">Editar</Label>
+    </div>
+    <div className="flex items-center space-x-2">
+      <RadioGroupItem value="admin" id="admin" />
+      <Label htmlFor="admin">Administrador</Label>
+    </div>
+  </RadioGroup>
+</div>
+
         </div>
         
         <div className="flex justify-end space-x-2 mt-6">
