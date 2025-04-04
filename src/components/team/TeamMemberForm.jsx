@@ -66,7 +66,7 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
       ...formData,
       is_active: true
     };
-    
+    console.log('submittedData', submittedData);
     if (initialData && typeof initialData.id === 'string') {
       onSubmit(initialData.id, submittedData);
     } else if (initialData && typeof initialData._id === 'string') {
