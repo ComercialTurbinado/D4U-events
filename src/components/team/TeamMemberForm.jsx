@@ -11,7 +11,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { TeamMemberOps } from "@/api/team-member";
 import PermissionAlert from "@/components/PermissionAlert";
@@ -59,12 +59,10 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
   };
 
   const handlePermissionChange = (permission) => {
-    setFormData(prev => {
-      const newPosition = prev.position.includes(permission)
-        ? prev.position.filter(p => p !== permission)
-        : [...prev.position, permission];
-      return { ...prev, position: newPosition };
-    });
+    setFormData(prev => ({
+      ...prev,
+      position: [permission] // Agora position é um array com apenas uma permissão
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -229,33 +227,25 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
             )}
              {(isAdmin) && (
               <div className="space-y-2">
-                      <Label>Permissões</Label>
-                      <div className="flex flex-col gap-2">
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="view"
-                            checked={formData?.position?.includes('view')}
-                            onCheckedChange={() => handlePermissionChange('view')}
-                          />
-                          <Label htmlFor="view">Visualizar</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="edit"
-                            checked={formData?.position?.includes('edit')}
-                            onCheckedChange={() => handlePermissionChange('edit')}
-                          />
-                          <Label htmlFor="edit">Editar</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="admin"
-                            checked={formData?.position?.includes('admin')}
-                            onCheckedChange={() => handlePermissionChange('admin')}
-                          />
-                          <Label htmlFor="admin">Administrar</Label>
-                        </div>
-                      </div>
+                <Label>Permissões</Label>
+                <RadioGroup
+                  value={formData.position[0] || ''}
+                  onValueChange={handlePermissionChange}
+                  className="flex flex-col gap-2"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="view" id="view" />
+                    <Label htmlFor="view">Visualizar</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="edit" id="edit" />
+                    <Label htmlFor="edit">Editar</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="admin" id="admin" />
+                    <Label htmlFor="admin">Administrar</Label>
+                  </div>
+                </RadioGroup>
               </div>
              )}
               </div>
