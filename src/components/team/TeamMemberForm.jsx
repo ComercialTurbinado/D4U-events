@@ -25,7 +25,7 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
     whatsapp: initialData?.whatsapp || "",
     is_active: initialData?.is_active ?? true,
     password: initialData?.password || "",
-    position: initialData?.position || [],
+    position: initialData?.position || "",
     can_edit: false
   });
 
@@ -61,7 +61,7 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
   const handlePermissionChange = (permission) => {
     setFormData(prev => ({
       ...prev,
-      position: [permission] // Agora position é um array com apenas uma permissão
+      position: permission // Agora position é uma string
     }));
   };
 
@@ -77,6 +77,11 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
       // Se não deve atualizar a senha, remove ela do objeto
       if (!shouldUpdatePassword) {
         delete dataToSend.password;
+      }
+
+      // Converte o array position para string
+      if (dataToSend.position && Array.isArray(dataToSend.position)) {
+        dataToSend.position = dataToSend.position[0] || '';
       }
 
       if (initialData) {
@@ -229,7 +234,7 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }) {
               <div className="space-y-2">
                 <Label>Permissões</Label>
                 <RadioGroup
-                  value={formData.position[0] || ''}
+                  value={formData.position || ''}
                   onValueChange={handlePermissionChange}
                   className="flex flex-col gap-2"
                 >
