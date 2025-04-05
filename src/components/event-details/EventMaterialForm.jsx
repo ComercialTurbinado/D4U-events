@@ -299,8 +299,7 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
                   type="number"
                   min="0"
                   step="0.01"
-                  value={totalCost}
-                  onChange={e => handleTotalCostChange(e.target.value)}
+                   onChange={e => handleTotalCostChange(e.target.value)}
                   placeholder="Valor total"
                 />
               </div>

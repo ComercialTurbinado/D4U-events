@@ -293,6 +293,10 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
         total_cost: totalCost
       });
       
+      // Calcular a diferença de quantidade
+      const quantityDiff = newQuantity - material.quantity;
+      
+      // Atualizar o material do evento
       const updatedMaterial = await EventMaterial.update(id, {
         quantity: newQuantity,
         unit_cost: unitCost,
@@ -300,6 +304,30 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
       });
       
       console.log('Material atualizado após salvar quantidade:', updatedMaterial);
+      
+      // Se o material tem controle de estoque, atualizar o estoque
+      if (material.material_id && material.material_id.track_inventory) {
+        try {
+          const currentStock = material.material_id.current_stock || 0;
+          const newStock = currentStock - quantityDiff;
+          
+          console.log('Atualizando estoque:', {
+            materialId: material.material_id._id,
+            currentStock,
+            quantityDiff,
+            newStock
+          });
+          
+          await Material.update(material.material_id._id, {
+            current_stock: newStock
+          });
+          
+          console.log('Estoque atualizado com sucesso');
+        } catch (error) {
+          console.error("Erro ao atualizar estoque:", error);
+        }
+      }
+      
       await loadMaterials();
     } catch (error) {
       console.error("Erro ao salvar quantidade:", error);
