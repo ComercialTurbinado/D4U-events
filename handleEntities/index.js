@@ -81,7 +81,27 @@ exports.handler = async (event) => {
             body: JSON.stringify(item ? { ...item.toObject(), id: item._id } : { error: 'Item não encontrado' })
           };
         } else {
-          const items = await Model.find();
+          // Extrair parâmetros de query da URL
+          const queryParams = new URLSearchParams(event.queryStringParameters || {});
+          const sort = queryParams.get('sort');
+          
+          console.log('Parâmetros de query:', event.queryStringParameters);
+          console.log('Parâmetro sort:', sort);
+          
+          // Construir objeto de ordenação
+          let sortOptions = {};
+          if (sort) {
+            // Se o sort começa com -, significa ordenação decrescente
+            if (sort.startsWith('-')) {
+              sortOptions[sort.substring(1)] = -1;
+            } else {
+              sortOptions[sort] = 1;
+            }
+          }
+          
+          console.log('Opções de ordenação:', sortOptions);
+          
+          const items = await Model.find().sort(sortOptions);
           const formatted = items.map(i => ({
             ...i.toObject(),
             id: i._id

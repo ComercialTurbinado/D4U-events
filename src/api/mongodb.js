@@ -124,13 +124,14 @@ export const cleanDataForApi = (data) => {
 };
 
 export const createEntityOperations = (collection) => ({
-  list: async () => {
+  list: async (sort) => {
     // Não verifica permissões para list para permitir login
     
-    console.log(`Fazendo requisição GET para ${API_URL}/${collection}`);
+    const url = `${API_URL}/${collection}${sort ? `?sort=${sort}` : ''}`;
+    console.log(`Fazendo requisição GET para ${url}`);
     
     // Adicionar headers para evitar erros de CORS
-    const response = await fetch(`${API_URL}/${collection}`, {
+    const response = await fetch(url, {
       headers: {
         'Content-Type': 'application/json'
       }

@@ -26,6 +26,7 @@ export default function EventsPage() {
     setIsLoading(true);
     try {
       const data = await Event.list("-start_date");
+      console.log('Eventos carregados:', data);
       setEvents(data);
     } catch (error) {
       console.error("Error loading events:", error);

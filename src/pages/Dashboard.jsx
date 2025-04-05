@@ -48,11 +48,12 @@ export default function Dashboard() {
     setIsLoading(true);
     try {
       // Get all events
-      const eventData = await Event.list();
+      const eventData = await Event.list("-start_date");
       setEvents(eventData);
       
       // Calculate progress for each event
-      await Promise.all(eventData.map(calculateEventProgress));
+      const progressPromises = eventData.map(calculateEventProgress);
+      await Promise.all(progressPromises);
       
     } catch (error) {
       console.error("Error loading events:", error);
@@ -64,18 +65,26 @@ export default function Dashboard() {
   const loadStats = async () => {
     try {
       const [allEvents, suppliers, materials] = await Promise.all([
-        Event.list(),
+        Event.list("-start_date"),
         Supplier.list(),
         Material.list()
       ]);
       
       const today = new Date();
-      const upcoming = allEvents.filter(event => 
-        (event.status === "planning" || event.status === "in_progress") && 
-        (isToday(new Date(event.start_date)) || isAfter(new Date(event.start_date), today))
-      ).length;
+      today.setHours(0, 0, 0, 0);
       
-      const completed = allEvents.filter(event => event.status === "completed").length;
+      const upcoming = allEvents.filter(event => {
+        const eventDate = new Date(event.start_date);
+        eventDate.setHours(0, 0, 0, 0);
+        return (event.status === "planning" || event.status === "in_progress") && 
+               (isToday(eventDate) || isAfter(eventDate, today));
+      }).length;
+      
+      const completed = allEvents.filter(event => {
+        const eventDate = new Date(event.start_date);
+        eventDate.setHours(0, 0, 0, 0);
+        return eventDate < today && event.status !== "in_progress";
+      }).length;
       
       setStats({
         upcoming,
