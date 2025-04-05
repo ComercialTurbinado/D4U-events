@@ -94,6 +94,24 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
     if (initialData) {
       onSubmit(initialData.id, updatedFormData);
     } else {
+      // Verificar se há estoque suficiente
+      if (formData.material_id && materialDetails?.track_inventory) {
+        const currentStock = materialDetails.current_stock || 0;
+        if (currentStock < formData.quantity) {
+          alert(`Estoque insuficiente! Estoque atual: ${currentStock}, Quantidade solicitada: ${formData.quantity}`);
+          return;
+        }
+        
+        try {
+          const newStock = Math.max(0, currentStock - formData.quantity);
+          await Material.update(formData.material_id, {
+            current_stock: newStock
+          });
+        } catch (error) {
+          console.error("Erro ao atualizar estoque:", error);
+          return;
+        }
+      }
       onSubmit(updatedFormData);
     }
   };
@@ -231,6 +249,11 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
                 <p className="text-sm">
                   Estoque atual: <span className="font-medium">{materialDetails.current_stock || 0} unidades</span>
                 </p>
+                {materialDetails.track_inventory && materialDetails.current_stock < formData.quantity && (
+                  <p className="text-sm text-red-600 mt-1">
+                    Atenção: Estoque insuficiente para a quantidade solicitada!
+                  </p>
+                )}
               </div>
             )}
 
