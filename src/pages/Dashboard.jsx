@@ -49,6 +49,7 @@ export default function Dashboard() {
     try {
       // Get all events
       const eventData = await Event.list("-start_date");
+      console.log('Eventos carregados:', eventData);
       setEvents(eventData);
       
       // Calculate progress for each event
@@ -70,6 +71,8 @@ export default function Dashboard() {
         Material.list()
       ]);
       
+      console.log('Eventos carregados para stats:', allEvents);
+      
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
@@ -83,8 +86,11 @@ export default function Dashboard() {
       const completed = allEvents.filter(event => {
         const eventDate = new Date(event.start_date);
         eventDate.setHours(0, 0, 0, 0);
-        return eventDate < today && event.status !== "in_progress";
+        return eventDate < today || event.status === "completed";
       }).length;
+      
+      console.log('Eventos próximos:', upcoming);
+      console.log('Eventos concluídos:', completed);
       
       setStats({
         upcoming,
@@ -186,15 +192,25 @@ export default function Dashboard() {
 
   const upcomingEvents = useMemo(() => {
     const today = new Date();
-    return filteredEvents.filter(event => 
-      (event.status === "planning" || event.status === "in_progress") && 
-      (isToday(new Date(event.start_date)) || isAfter(new Date(event.start_date), today))
-    ).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+    today.setHours(0, 0, 0, 0);
+    
+    return filteredEvents.filter(event => {
+      const eventDate = new Date(event.start_date);
+      eventDate.setHours(0, 0, 0, 0);
+      return (event.status === "planning" || event.status === "in_progress") && 
+             (isToday(eventDate) || isAfter(eventDate, today));
+    }).sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
   }, [filteredEvents]);
 
   const completedEvents = useMemo(() => {
-    return filteredEvents.filter(event => event.status === "completed")
-      .sort((a, b) => new Date(b.start_date) - new Date(a.start_date));
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return filteredEvents.filter(event => {
+      const eventDate = new Date(event.start_date);
+      eventDate.setHours(0, 0, 0, 0);
+      return eventDate < today || event.status === "completed";
+    }).sort((a, b) => new Date(b.start_date) - new Date(a.start_date));
   }, [filteredEvents]);
 
   if (isLoading) {
