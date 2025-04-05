@@ -97,22 +97,43 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
       // Verificar se há estoque suficiente
       if (formData.material_id && materialDetails?.track_inventory) {
         const currentStock = materialDetails.current_stock || 0;
+        console.log('Atualizando estoque:', {
+          materialId: formData.material_id,
+          currentStock,
+          requestedQuantity: formData.quantity,
+          newStock: currentStock - formData.quantity
+        });
+
         if (currentStock < formData.quantity) {
           alert(`Estoque insuficiente! Estoque atual: ${currentStock}, Quantidade solicitada: ${formData.quantity}`);
           return;
         }
         
         try {
-          const newStock = Math.max(0, currentStock - formData.quantity);
+          // Atualizar o estoque antes de adicionar o material ao evento
+          const newStock = currentStock - formData.quantity;
+          console.log('Atualizando estoque no banco de dados...');
           await Material.update(formData.material_id, {
             current_stock: newStock
           });
+          console.log('Estoque atualizado com sucesso!');
+          
+          // Atualizar os detalhes do material localmente
+          setMaterialDetails(prev => ({
+            ...prev,
+            current_stock: newStock
+          }));
+          
+          // Adicionar o material ao evento
+          onSubmit(updatedFormData);
         } catch (error) {
           console.error("Erro ao atualizar estoque:", error);
+          alert("Erro ao atualizar o estoque. Por favor, tente novamente.");
           return;
         }
+      } else {
+        onSubmit(updatedFormData);
       }
-      onSubmit(updatedFormData);
     }
   };
 
