@@ -308,21 +308,26 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
       // Se o material tem controle de estoque, atualizar o estoque
       if (material.material_id && material.material_id.track_inventory) {
         try {
-          const currentStock = material.material_id.current_stock || 0;
-          const newStock = currentStock - quantityDiff;
+          // Buscar os detalhes completos do material
+          const materialDetails = await Material.get(material.material_id._id || material.material_id);
           
-          console.log('Atualizando estoque:', {
-            materialId: material.material_id._id,
-            currentStock,
-            quantityDiff,
-            newStock
-          });
-          
-          await Material.update(material.material_id._id, {
-            current_stock: newStock
-          });
-          
-          console.log('Estoque atualizado com sucesso');
+          if (materialDetails && materialDetails.track_inventory) {
+            const currentStock = materialDetails.current_stock || 0;
+            const newStock = currentStock - quantityDiff;
+            
+            console.log('Atualizando estoque:', {
+              materialId: materialDetails.id,
+              currentStock,
+              quantityDiff,
+              newStock
+            });
+            
+            await Material.update(materialDetails.id, {
+              current_stock: newStock
+            });
+            
+            console.log('Estoque atualizado com sucesso');
+          }
         } catch (error) {
           console.error("Erro ao atualizar estoque:", error);
         }
@@ -544,7 +549,7 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
                             type="number"
                             min="0"
                             step="0.01"
-                            value={editableCosts[material.id] || material.total_cost || 0}
+                            value={0}
                             onChange={(e) => handleCostChange(material.id, e.target.value)}
                             onBlur={() => saveCost(material.id)}
                             className="w-20 h-8"
