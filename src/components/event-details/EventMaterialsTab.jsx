@@ -279,6 +279,7 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
 
   const saveQuantity = async (id) => {
     const material = materials.find(m => m.id === id);
+    console.log('Material encontrado:', material);
     if (!material) return;
     
     const newQuantity = editableQuantities[id];
