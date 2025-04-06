@@ -95,11 +95,13 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
       onSubmit(initialData.id, updatedFormData);
     } else {
       // Verificar se há estoque suficiente
+      alert(formData.material_id);
+
       if (formData.material_id) {
         try {
           // Buscar os detalhes completos do material
           const materialDetails = await Material.get(formData.material_id);
-          
+          alert(materialDetails);
           if (materialDetails && materialDetails.track_inventory) {
             const availableStock = materialDetails.current_stock - (materialDetails.reserved_stock || 0);
             console.log('Verificando estoque:', {
@@ -115,13 +117,16 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
               return;
             }
             
+            // Calcular a diferença de quantidade
+            const quantityDiff = formData.quantity;
+            
             // Atualizar o estoque antes de adicionar o material ao evento
-            const newReservedStock = (materialDetails.reserved_stock || 0) + formData.quantity;
+            const newReservedStock = (materialDetails.reserved_stock || 0) + quantityDiff;
             console.log('Atualizando estoque reservado:', {
               materialId: materialDetails.id,
               currentReservedStock: materialDetails.reserved_stock || 0,
               newReservedStock,
-              quantityToAdd: formData.quantity
+              quantityToAdd: quantityDiff
             });
             
             // Primeiro atualiza o estoque reservado
