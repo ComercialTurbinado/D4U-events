@@ -306,7 +306,7 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
       console.log('Material atualizado após salvar quantidade:', updatedMaterial);
       
       // Se o material tem controle de estoque, atualizar o estoque
-      if (material.material_id && material.material_id.track_inventory) {
+      if (material.material_id) {
         try {
           // Buscar os detalhes completos do material
           const materialDetails = await Material.get(material.material_id._id || material.material_id);
@@ -549,7 +549,7 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
                             type="number"
                             min="0"
                             step="0.01"
-                            value={0}
+                            value={editableCosts[material.id] || material.total_cost || 0}
                             onChange={(e) => handleCostChange(material.id, e.target.value)}
                             onBlur={() => saveCost(material.id)}
                             className="w-20 h-8"

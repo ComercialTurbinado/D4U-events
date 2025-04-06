@@ -95,34 +95,33 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
       onSubmit(initialData.id, updatedFormData);
     } else {
       // Verificar se há estoque suficiente
-      if (formData.material_id && materialDetails?.track_inventory) {
-        const currentStock = materialDetails.current_stock || 0;
-        console.log('Atualizando estoque:', {
-          materialId: formData.material_id,
-          currentStock,
-          requestedQuantity: formData.quantity,
-          newStock: currentStock - formData.quantity
-        });
-
-        if (currentStock < formData.quantity) {
-          alert(`Estoque insuficiente! Estoque atual: ${currentStock}, Quantidade solicitada: ${formData.quantity}`);
-          return;
-        }
-        
+      if (formData.material_id) {
         try {
-          // Atualizar o estoque antes de adicionar o material ao evento
-          const newStock = currentStock - formData.quantity;
-          console.log('Atualizando estoque no banco de dados...');
-          await Material.update(formData.material_id, {
-            current_stock: newStock
-          });
-          console.log('Estoque atualizado com sucesso!');
+          // Buscar os detalhes completos do material
+          const materialDetails = await Material.get(formData.material_id);
           
-          // Atualizar os detalhes do material localmente
-          setMaterialDetails(prev => ({
-            ...prev,
-            current_stock: newStock
-          }));
+          if (materialDetails && materialDetails.track_inventory) {
+            const currentStock = materialDetails.current_stock || 0;
+            console.log('Atualizando estoque:', {
+              materialId: materialDetails.id,
+              currentStock,
+              requestedQuantity: formData.quantity,
+              newStock: currentStock - formData.quantity
+            });
+
+            if (currentStock < formData.quantity) {
+              alert(`Estoque insuficiente! Estoque atual: ${currentStock}, Quantidade solicitada: ${formData.quantity}`);
+              return;
+            }
+            
+            // Atualizar o estoque antes de adicionar o material ao evento
+            const newStock = currentStock - formData.quantity;
+            console.log('Atualizando estoque no banco de dados...');
+            await Material.update(materialDetails.id, {
+              current_stock: newStock
+            });
+            console.log('Estoque atualizado com sucesso!');
+          }
           
           // Adicionar o material ao evento
           onSubmit(updatedFormData);
