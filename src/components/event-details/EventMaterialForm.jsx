@@ -119,18 +119,24 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
             const newReservedStock = (materialDetails.reserved_stock || 0) + formData.quantity;
             console.log('Atualizando estoque reservado:', {
               materialId: materialDetails.id,
-              newReservedStock
+              currentReservedStock: materialDetails.reserved_stock || 0,
+              newReservedStock,
+              quantityToAdd: formData.quantity
             });
             
+            // Primeiro atualiza o estoque reservado
             await Material.update(materialDetails.id, {
               reserved_stock: newReservedStock
             });
             
             console.log('Estoque reservado atualizado com sucesso!');
+            
+            // Depois adiciona o material ao evento
+            onSubmit(updatedFormData);
+          } else {
+            // Se não tem controle de estoque, apenas adiciona o material
+            onSubmit(updatedFormData);
           }
-          
-          // Adicionar o material ao evento
-          onSubmit(updatedFormData);
         } catch (error) {
           console.error("Erro ao atualizar estoque:", error);
           alert("Erro ao atualizar o estoque. Por favor, tente novamente.");
@@ -286,9 +292,7 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
                 <p className="text-sm">
                   Estoque total: <span className="font-medium">{materialDetails.current_stock || 0} unidades</span>
                 </p>
-                <p className="text-sm">
-                  Estoque disponível: <span className="font-medium">{materialDetails.current_stock - materialDetails.reserved_stock || 0} unidades</span>
-                </p>
+                 
                 {materialDetails.track_inventory && (materialDetails.current_stock - materialDetails.reserved_stock) < formData.quantity && (
                   <p className="text-sm text-red-600 mt-1">
                     Atenção: Estoque disponível insuficiente para a quantidade solicitada!
