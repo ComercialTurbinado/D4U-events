@@ -290,7 +290,8 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
         id,
         quantity: newQuantity,
         unit_cost: unitCost,
-        total_cost: totalCost
+        total_cost: totalCost,
+        material_id: material.material_id
       });
       
       // Calcular a diferença de quantidade
@@ -310,6 +311,7 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
         try {
           // Buscar os detalhes completos do material
           const materialDetails = await Material.get(material.material_id._id || material.material_id);
+          console.log('Detalhes do material:', materialDetails);
           
           if (materialDetails && materialDetails.track_inventory) {
             const currentStock = materialDetails.current_stock || 0;
@@ -319,7 +321,8 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
               materialId: materialDetails.id,
               currentStock,
               quantityDiff,
-              newStock
+              newStock,
+              track_inventory: materialDetails.track_inventory
             });
             
             await Material.update(materialDetails.id, {
@@ -327,10 +330,14 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
             });
             
             console.log('Estoque atualizado com sucesso');
+          } else {
+            console.log('Material não tem controle de inventário habilitado');
           }
         } catch (error) {
           console.error("Erro ao atualizar estoque:", error);
         }
+      } else {
+        console.log('Material não tem material_id definido');
       }
       
       await loadMaterials();
@@ -510,7 +517,16 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
                             min="1"
                             value={editableQuantities[material.id] || material.quantity}
                             onChange={(e) => handleQuantityChange(material.id, e.target.value)}
-                            onBlur={() => saveQuantity(material.id)}
+                            onBlur={() => {
+                              console.log('Input perdeu foco, salvando quantidade...');
+                              saveQuantity(material.id);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                console.log('Enter pressionado, salvando quantidade...');
+                                saveQuantity(material.id);
+                              }
+                            }}
                             className="w-20 h-8"
                           />
                           {isStockLow(material.material_id, material.quantity) && (
