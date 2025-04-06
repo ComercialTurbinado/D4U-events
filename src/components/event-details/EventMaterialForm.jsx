@@ -101,26 +101,32 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
           const materialDetails = await Material.get(formData.material_id);
           
           if (materialDetails && materialDetails.track_inventory) {
-            const currentStock = materialDetails.current_stock || 0;
-            console.log('Atualizando estoque:', {
+            const availableStock = materialDetails.current_stock - (materialDetails.reserved_stock || 0);
+            console.log('Verificando estoque:', {
               materialId: materialDetails.id,
-              currentStock,
-              requestedQuantity: formData.quantity,
-              newStock: currentStock - formData.quantity
+              currentStock: materialDetails.current_stock,
+              reservedStock: materialDetails.reserved_stock || 0,
+              availableStock,
+              requestedQuantity: formData.quantity
             });
 
-            if (currentStock < formData.quantity) {
-              alert(`Estoque insuficiente! Estoque atual: ${currentStock}, Quantidade solicitada: ${formData.quantity}`);
+            if (availableStock < formData.quantity) {
+              alert(`Estoque disponível insuficiente! Estoque disponível: ${availableStock}, Quantidade solicitada: ${formData.quantity}`);
               return;
             }
             
             // Atualizar o estoque antes de adicionar o material ao evento
-            const newStock = currentStock - formData.quantity;
-            console.log('Atualizando estoque no banco de dados...');
-            await Material.update(materialDetails.id, {
-              current_stock: newStock
+            const newReservedStock = (materialDetails.reserved_stock || 0) + formData.quantity;
+            console.log('Atualizando estoque reservado:', {
+              materialId: materialDetails.id,
+              newReservedStock
             });
-            console.log('Estoque atualizado com sucesso!');
+            
+            await Material.update(materialDetails.id, {
+              reserved_stock: newReservedStock
+            });
+            
+            console.log('Estoque reservado atualizado com sucesso!');
           }
           
           // Adicionar o material ao evento
@@ -211,6 +217,17 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
       setTotalCost(unitCost * newQuantity);
       return updatedData;
     });
+
+    // Verificar estoque disponível
+    if (materialDetails && materialDetails.track_inventory) {
+      const availableStock = materialDetails.current_stock - (materialDetails.reserved_stock || 0);
+      if (availableStock < newQuantity) {
+        console.log('Estoque insuficiente:', {
+          availableStock,
+          requestedQuantity: newQuantity
+        });
+      }
+    }
   };
 
   const handleTotalCostChange = (value) => {
