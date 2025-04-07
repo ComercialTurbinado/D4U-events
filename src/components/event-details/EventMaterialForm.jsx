@@ -100,7 +100,6 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
         try {
           // Buscar os detalhes completos do material
           const materialDetails = await Material.get(formData.material_id);
-          alert(materialDetails);
           if (materialDetails && materialDetails.track_inventory) {
             const availableStock = materialDetails.current_stock - (materialDetails.reserved_stock || 0);
             console.log('Verificando estoque:', {
