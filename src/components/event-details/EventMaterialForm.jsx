@@ -76,30 +76,39 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
   
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('handleSubmit chamado');
+    console.log('formData:', formData);
     
     const unitCost = formData.quantity > 0 ? totalCost / formData.quantity : 0;
-
-   
-
+    
     const updatedFormData = {
       ...formData,
       unit_cost: unitCost,
       total_cost: totalCost
     };
 
+    console.log('updatedFormData:', updatedFormData);
+
     if (!initialData && !formData.material_id) {
+      console.log('Sem material_id, mostrando diálogo');
       setPendingSubmission(updatedFormData);
       setShowStockDialog(true);
       return;
     }
- 
-      // Verificar se há estoque suficiente
+    
+    if (initialData) {
+      console.log('Atualizando material existente');
+      onSubmit(initialData.id, updatedFormData);
+    } else {
+      console.log('Verificando estoque para novo material');
+      console.log('material_id:', formData.material_id);
       
-
       if (formData.material_id) {
         try {
-          // Buscar os detalhes completos do material
+          console.log('Buscando detalhes do material');
           const materialDetails = await Material.get(formData.material_id);
+          console.log('Detalhes do material:', materialDetails);
+          
           if (materialDetails && materialDetails.track_inventory) {
             const availableStock = materialDetails.current_stock - (materialDetails.reserved_stock || 0);
             console.log('Verificando estoque:', {
@@ -128,16 +137,16 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
             });
             
             // Primeiro atualiza o estoque reservado
-            await Material.update(materialDetails.id, {
+            const updatedMaterial = await Material.update(materialDetails.id, {
               reserved_stock: newReservedStock
             });
             
-            console.log('Estoque reservado atualizado com sucesso!');
+            console.log('Estoque reservado atualizado:', updatedMaterial);
             
             // Depois adiciona o material ao evento
             onSubmit(updatedFormData);
           } else {
-            // Se não tem controle de estoque, apenas adiciona o material
+            console.log('Material sem controle de estoque');
             onSubmit(updatedFormData);
           }
         } catch (error) {
@@ -146,11 +155,10 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
           return;
         }
       } else {
+        console.log('Sem material_id, adicionando material sem controle de estoque');
         onSubmit(updatedFormData);
       }
-      if (initialData) {
-        onSubmit(initialData.id, updatedFormData);
-      } 
+    }
   };
 
   const handleAddToStock = async () => {

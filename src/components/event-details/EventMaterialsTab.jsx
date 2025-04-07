@@ -164,12 +164,40 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
 
   const handleUpdateMaterial = async (id, materialData) => {
     try {
+      const existingMaterial = materials.find(m => m.id === id);
+      if (!existingMaterial) return;
+  
+      const newQuantity = materialData.quantity;
+      const oldQuantity = existingMaterial.quantity;
+      const quantityDiff = newQuantity - oldQuantity;
+  
       const updatedMaterial = {
         ...materialData,
         total_cost: materialData.total_cost || (materialData.unit_cost * materialData.quantity) || 0
       };
-      
+  
+      // Atualiza o material do evento
       await EventMaterial.update(id, updatedMaterial);
+  
+      // Se houver controle de estoque, ajusta o current_stock do material base
+      if (existingMaterial.material_id) {
+        try {
+          const materialDetails = await Material.get(existingMaterial.material_id._id || existingMaterial.material_id);
+  
+          if (materialDetails && materialDetails.track_inventory) {
+            const newStock = (materialDetails.current_stock || 0) - quantityDiff;
+  
+            await Material.update(materialDetails.id, {
+              current_stock: newStock
+            });
+  
+            console.log("Estoque atualizado após edição no formulário.");
+          }
+        } catch (error) {
+          console.error("Erro ao atualizar o estoque no formulário:", error);
+        }
+      }
+  
       setShowForm(false);
       setEditingMaterial(null);
       await loadMaterials();
@@ -346,6 +374,7 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
       console.error("Erro ao salvar quantidade:", error);
     }
   };
+
 
   const saveCost = async (id) => {
     const material = materials.find(m => m.id === id);
