@@ -78,8 +78,8 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
     e.preventDefault();
     
     const unitCost = formData.quantity > 0 ? totalCost / formData.quantity : 0;
-    
-    alert(formData.material_id);
+
+   
 
     const updatedFormData = {
       ...formData,
@@ -92,7 +92,7 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
       setShowStockDialog(true);
       return;
     }
-    
+    alert(initialData);
     if (initialData) {
       onSubmit(initialData.id, updatedFormData);
     } else {
