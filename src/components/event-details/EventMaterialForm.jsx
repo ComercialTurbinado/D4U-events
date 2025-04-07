@@ -92,10 +92,7 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
       setShowStockDialog(true);
       return;
     }
-    alert(initialData);
-    if (initialData) {
-      onSubmit(initialData.id, updatedFormData);
-    } else {
+ 
       // Verificar se há estoque suficiente
       
 
@@ -152,7 +149,9 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
       } else {
         onSubmit(updatedFormData);
       }
-    }
+      if (initialData) {
+        onSubmit(initialData.id, updatedFormData);
+      } 
   };
 
   const handleAddToStock = async () => {
