@@ -79,6 +79,8 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
     
     const unitCost = formData.quantity > 0 ? totalCost / formData.quantity : 0;
     
+    alert(formData.material_id);
+
     const updatedFormData = {
       ...formData,
       unit_cost: unitCost,
@@ -95,7 +97,7 @@ export default function EventMaterialForm({ initialData, availableMaterials, onS
       onSubmit(initialData.id, updatedFormData);
     } else {
       // Verificar se há estoque suficiente
-      alert(formData.material_id);
+      
 
       if (formData.material_id) {
         try {
