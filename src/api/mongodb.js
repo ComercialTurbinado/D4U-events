@@ -1,7 +1,11 @@
 // Adicionar console.log para depuração da URL
 console.log('Variável de ambiente VITE_API_URL:', import.meta.env.VITE_API_URL);
 
-export const API_URL = import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod/entities';
+export const API_URL = import.meta.env.VITE_API_URL ? 
+  `${import.meta.env.VITE_API_URL}/entities` : 
+  'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod/entities';
+
+console.log('API_URL final:', API_URL);
 
 import { useState } from "react";
 import PermissionAlert from "@/components/PermissionAlert";
