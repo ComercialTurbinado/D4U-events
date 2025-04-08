@@ -10,6 +10,13 @@ console.log('API_URL final:', API_URL);
 import { useState } from "react";
 import PermissionAlert from "@/components/PermissionAlert";
 
+// Função auxiliar para obter o token
+const getAuthToken = () => {
+  const token = localStorage.getItem('token');
+  console.log('Token obtido do localStorage:', token ? 'Presente' : 'Ausente');
+  return token;
+};
+
 // Função para verificar se o usuário tem permissão para modificar dados
 const hasPermission = (data, operation) => {
   const usuarioLogado = JSON.parse(localStorage.getItem('user'));
@@ -213,17 +220,28 @@ export const createEntityOperations = (collection) => ({
     
     console.log(`Atualizando ${collection}/${id} com dados:`, dataWithUser);
     
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('Token de autenticação não encontrado. Por favor, faça login novamente.');
+    }
+    
     const response = await fetch(`${API_URL}/${collection}/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : ''
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify(dataWithUser),
     });
     
     if (!response.ok) {
       console.error(`Erro ao atualizar ${collection}/${id}:`, response.status, response.statusText);
+      if (response.status === 401) {
+        // Token expirado ou inválido
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        throw new Error('Sua sessão expirou. Por favor, faça login novamente.');
+      }
       throw new Error('Erro ao atualizar documento');
     }
     
