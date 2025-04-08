@@ -1,16 +1,37 @@
-const { findTeamMemberByEmail } = require('./team-member');
-const { createTeamMember } = require('./team-member');
+const { findTeamMemberByEmail, createTeamMember } = require('./team-member');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'd4u-secret-key';
 
-const login = async (email, password) => {
+const corsHeaders = {
+  'Access-Control-Allow-Origin': 'https://main.d2p3ej85wi84d5.amplifyapp.com',
+  'Access-Control-Allow-Methods': 'POST,OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type,Authorization'
+};
+
+exports.handler = async (event) => {
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: corsHeaders,
+      body: ''
+    };
+  }
+
+  if (event.httpMethod !== 'POST') {
+    return {
+      statusCode: 405,
+      headers: corsHeaders,
+      body: JSON.stringify({ message: 'Método não permitido' })
+    };
+  }
+
   try {
-    // Verifica se existe algum usuário no sistema
+    const { email, password } = JSON.parse(event.body);
+
     const existingUser = await findTeamMemberByEmail(email);
-    
-    // Se não existir nenhum usuário, cria o admin automaticamente
+
     if (!existingUser) {
       const adminData = {
         name: "Administrador",
@@ -25,24 +46,27 @@ const login = async (email, password) => {
       console.log('✅ Usuário administrador criado automaticamente');
     }
 
-    // Busca o usuário (agora deve existir)
     const user = await findTeamMemberByEmail(email);
-    
-    if (!user) {
-      throw new Error('Usuário não encontrado');
-    }
 
-    if (!user.is_active) {
-      throw new Error('Usuário inativo');
+    if (!user || !user.is_active) {
+      return {
+        statusCode: 401,
+        headers: corsHeaders,
+        body: JSON.stringify({ message: 'Usuário inválido ou inativo' })
+      };
     }
 
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) {
-      throw new Error('Senha incorreta');
+      return {
+        statusCode: 401,
+        headers: corsHeaders,
+        body: JSON.stringify({ message: 'Senha incorreta' })
+      };
     }
 
     const token = jwt.sign(
-      { 
+      {
         id: user._id,
         email: user.email,
         role: user.role,
@@ -53,29 +77,29 @@ const login = async (email, password) => {
     );
 
     return {
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        position: user.position
-      }
+      statusCode: 200,
+      headers: corsHeaders,
+      body: JSON.stringify({
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          position: user.position
+        }
+      })
     };
   } catch (error) {
-    console.error('Erro no login:', error);
-    throw error;
+    console.error("❌ Erro no login:", error);
+
+    return {
+      statusCode: 500,
+      headers: corsHeaders,
+      body: JSON.stringify({
+        message: 'Erro interno no servidor',
+        error: error.message || String(error)
+      })
+    };
   }
 };
-
-module.exports = {
-  login
-};
-
-const verifyToken = (token) => {
-  try {
-    return jwt.verify(token, JWT_SECRET);
-  } catch (error) {
-    throw new Error('Token inválido');
-  }
-}; 

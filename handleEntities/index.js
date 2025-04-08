@@ -1,6 +1,6 @@
 const { connectToDatabase, models } = require('./mongodb');
-const { login } = require('./auth');
 const { findTeamMemberByEmail, createTeamMember } = require('./team-member');
+const jwt = require('jsonwebtoken');
 
 exports.handler = async (event) => {
   // Tratamento do OPTIONS para CORS
@@ -42,7 +42,7 @@ exports.handler = async (event) => {
           email: "admin@d4uimmigration.com",
           password: "D4U!@dmin",
           role: "admin",
-          position: "Administrador do Sistema",
+          position: "admin",
           is_active: true
         };
 
@@ -50,15 +50,10 @@ exports.handler = async (event) => {
         console.log('✅ Usuário administrador criado automaticamente');
       }
 
-      const result = await login(email, password);
-
-      // Adicionar cabeçalhos CORS a todas as respostas
-      const responseHeaders = corsHeaders();
-      
       return {
         statusCode: 200,
-        headers: responseHeaders,
-        body: JSON.stringify(result)
+        headers: corsHeaders(),
+        body: JSON.stringify({ message: 'Admin created or already exists' })
       };
     }
 
@@ -81,27 +76,7 @@ exports.handler = async (event) => {
             body: JSON.stringify(item ? { ...item.toObject(), id: item._id } : { error: 'Item não encontrado' })
           };
         } else {
-          // Extrair parâmetros de query da URL
-          const queryParams = new URLSearchParams(event.queryStringParameters || {});
-          const sort = queryParams.get('sort');
-          
-          console.log('Parâmetros de query:', event.queryStringParameters);
-          console.log('Parâmetro sort:', sort);
-          
-          // Construir objeto de ordenação
-          let sortOptions = {};
-          if (sort) {
-            // Se o sort começa com -, significa ordenação decrescente
-            if (sort.startsWith('-')) {
-              sortOptions[sort.substring(1)] = -1;
-            } else {
-              sortOptions[sort] = 1;
-            }
-          }
-          
-          console.log('Opções de ordenação:', sortOptions);
-          
-          const items = await Model.find().sort(sortOptions);
+          const items = await Model.find();
           const formatted = items.map(i => ({
             ...i.toObject(),
             id: i._id
@@ -115,6 +90,13 @@ exports.handler = async (event) => {
 
       case 'POST':
         const dataPost = JSON.parse(event.body);
+
+        if (collection === 'teammembers' && dataPost.password) {
+          const bcrypt = require('bcryptjs');
+          const salt = await bcrypt.genSalt(10);
+          dataPost.password = await bcrypt.hash(dataPost.password, salt);
+        }
+        
         const newItem = new Model(dataPost);
         await newItem.save();
         return {
@@ -126,13 +108,58 @@ exports.handler = async (event) => {
       case 'PUT':
         if (!id) return badRequest('ID obrigatório para update');
 
-        let dataPut = JSON.parse(event.body);
+        const token = event.headers.Authorization || event.headers.authorization;
+        console.log('Token recebido:', token);
+        
+        if (!token) return { statusCode: 401, headers: corsHeaders(), body: JSON.stringify({ error: 'Token ausente' }) };
 
+        let userData;
+        try {
+          userData = jwt.verify(token.replace('Bearer ', ''), process.env.JWT_SECRET);
+          console.log('Dados do usuário decodificados:', userData);
+        } catch (err) {
+          console.error('Erro ao verificar token:', err);
+          return { statusCode: 401, headers: corsHeaders(), body: JSON.stringify({ error: 'Token inválido' }) };
+        }
+
+        const userPositions = Array.isArray(userData.position) ? userData.position : [userData.position];
+        const isEditor = userPositions.includes('editor');
+        const isAdmin = userPositions.includes('admin');
+        const isReadOnly = userPositions.includes('read');
+
+        if (!isAdmin && !isEditor) {
+          if (isReadOnly && collection === 'tasks') {
+            const taskToUpdate = await Model.findById(id);
+            if (!taskToUpdate || String(taskToUpdate.department_id) !== String(userData.department_id)) {
+              return {
+                statusCode: 403,
+                headers: corsHeaders(),
+                body: JSON.stringify({ error: 'Permissão negada para editar esta tarefa' })
+              };
+            }
+          } else {
+            return {
+              statusCode: 403,
+              headers: corsHeaders(),
+              body: JSON.stringify({ error: 'Permissão negada' })
+            };
+          }
+        }
+
+        let dataPut = JSON.parse(event.body);
+        
         // Remove campos que não devem ser atualizados
         delete dataPut._id;
         delete dataPut.id;
         delete dataPut.__v;
         delete dataPut.createdAt;
+
+         // Se for atualização de teammember com senha nova, faz hash
+          if (collection === 'teammembers' && dataPut.password) {
+            const bcrypt = require('bcryptjs');
+            const salt = await bcrypt.genSalt(10);
+            dataPut.password = await bcrypt.hash(dataPut.password, salt);
+          }
 
         const updatedItem = await Model.findByIdAndUpdate(
           id,
@@ -168,11 +195,11 @@ exports.handler = async (event) => {
     }
 
   } catch (error) {
-    console.error('❌ Erro:', error);
+    console.error('Erro na operação:', error);
     return {
       statusCode: 500,
-      headers: corsHeaders(), // Adicionar CORS até nas respostas de erro
-      body: JSON.stringify({ error: error.message })
+      headers: corsHeaders(),
+      body: JSON.stringify({ error: 'Erro interno do servidor' })
     };
   }
 };
@@ -180,8 +207,8 @@ exports.handler = async (event) => {
 function corsHeaders() {
   return {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Content-Type': 'application/json'
   };
 }
@@ -192,4 +219,4 @@ function badRequest(message) {
     headers: corsHeaders(),
     body: JSON.stringify({ error: message })
   };
-} 
+}
