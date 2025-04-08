@@ -45,7 +45,7 @@ const handleExpiredToken = () => {
   localStorage.removeItem('user');
   localStorage.removeItem('user_position');
   localStorage.removeItem('user_department_id');
-  window.location.href = '/login';
+  //window.location.href = '/login';
 };
 
 // Função para verificar se o usuário tem permissão para modificar dados
