@@ -22,6 +22,22 @@ const getAuthToken = () => {
   return token;
 };
 
+// Função para criar os headers com o token
+const createHeaders = () => {
+  const token = getAuthToken();
+  if (!token) {
+    throw new Error('Token de autenticação não encontrado');
+  }
+  
+  const headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  };
+  
+  console.log('Headers criados:', headers);
+  return headers;
+};
+
 // Função para lidar com token expirado
 const handleExpiredToken = () => {
   console.log('Token expirado, redirecionando para login...');
@@ -151,21 +167,17 @@ export const cleanDataForApi = (data) => {
 
 export const createEntityOperations = (collection) => ({
   list: async (sort) => {
-    // Não verifica permissões para list para permitir login
-    
     const url = `${API_URL}/${collection}${sort ? `?sort=${sort}` : ''}`;
     console.log(`Fazendo requisição GET para ${url}`);
     
-    // Adicionar headers para evitar erros de CORS
-    const response = await fetch(url, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : ''
-      }
-    });
+    const headers = createHeaders();
+    const response = await fetch(url, { headers });
     
     if (!response.ok) {
       console.error(`Erro na requisição GET ${collection}:`, response.status, response.statusText);
+      if (response.status === 401) {
+        handleExpiredToken();
+      }
       throw new Error('Erro ao buscar dados');
     }
     const data = await response.json();
@@ -174,20 +186,16 @@ export const createEntityOperations = (collection) => ({
   },
 
   get: async (id) => {
-    // Não verifica permissões para get para permitir login
-    
     console.log(`Fazendo requisição GET para ${API_URL}/${collection}/${id}`);
     
-    // Adicionar headers para evitar erros de CORS
-    const response = await fetch(`${API_URL}/${collection}/${id}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : ''
-      }
-    });
+    const headers = createHeaders();
+    const response = await fetch(`${API_URL}/${collection}/${id}`, { headers });
     
     if (!response.ok) {
       console.error(`Erro na requisição GET ${collection}/${id}:`, response.status, response.statusText);
+      if (response.status === 401) {
+        handleExpiredToken();
+      }
       throw new Error('Erro ao buscar documento');
     }
     const data = await response.json();
@@ -208,15 +216,20 @@ export const createEntityOperations = (collection) => ({
     // Adiciona o usuário ao body
     const dataWithUser = addUserToRequest(cleanData);
     
+    const headers = createHeaders();
     const response = await fetch(`${API_URL}/${collection}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : ''
-      },
+      headers,
       body: JSON.stringify(dataWithUser),
     });
-    if (!response.ok) throw new Error('Erro ao criar documento');
+    
+    if (!response.ok) {
+      console.error(`Erro na requisição POST ${collection}:`, response.status, response.statusText);
+      if (response.status === 401) {
+        handleExpiredToken();
+      }
+      throw new Error('Erro ao criar documento');
+    }
     return response.json();
   },
 
@@ -235,22 +248,12 @@ export const createEntityOperations = (collection) => ({
     
     console.log(`Atualizando ${collection}/${id} com dados:`, dataWithUser);
     
-    const token = getAuthToken();
-    if (!token) {
-      handleExpiredToken();
-      throw new Error('Token de autenticação não encontrado. Por favor, faça login novamente.');
-    }
-    
-    const headers = {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    };
-    
+    const headers = createHeaders();
     console.log('Headers da requisição:', headers);
     
     const response = await fetch(`${API_URL}/${collection}/${id}`, {
       method: 'PUT',
-      headers: headers,
+      headers,
       body: JSON.stringify(dataWithUser),
     });
     
@@ -259,7 +262,6 @@ export const createEntityOperations = (collection) => ({
       console.error('Resposta completa:', await response.text());
       if (response.status === 401) {
         handleExpiredToken();
-        throw new Error('Sua sessão expirou. Por favor, faça login novamente.');
       }
       throw new Error('Erro ao atualizar documento');
     }
