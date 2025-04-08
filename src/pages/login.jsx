@@ -46,17 +46,36 @@ export default function LoginPage() {
       let data = {};
       try {
         data = await response.json();
+        console.log('Resposta do servidor:', data);
       } catch (err) {
         console.error("❌ Erro ao converter resposta em JSON:", err);
       }
 
       if (response.ok) {
+        console.log('Token recebido:', data.token);
+        console.log('Dados do usuário recebidos:', data.user);
+        
+        // Verifica se o token e dados do usuário existem
+        if (!data.token || !data.user) {
+          throw new Error('Token ou dados do usuário não recebidos do servidor');
+        }
+
+        // Armazena os dados
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
         localStorage.setItem("user_position", JSON.stringify(data.user.position));
         localStorage.setItem("user_department_id", JSON.stringify(data.user.department_id));
-        console.log('Token armazenado:', data.token);
-        console.log('Dados do usuário armazenados:', data.user);
+        
+        // Verifica se os dados foram armazenados corretamente
+        const storedToken = localStorage.getItem('token');
+        const storedUser = localStorage.getItem('user');
+        console.log('Token armazenado:', storedToken);
+        console.log('Dados do usuário armazenados:', storedUser);
+        
+        if (!storedToken || !storedUser) {
+          throw new Error('Falha ao armazenar dados no localStorage');
+        }
+
         navigate("/");
       } else {
         console.error("Resposta com erro:", data);

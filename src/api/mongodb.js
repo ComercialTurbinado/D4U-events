@@ -14,7 +14,22 @@ import PermissionAlert from "@/components/PermissionAlert";
 const getAuthToken = () => {
   const token = localStorage.getItem('token');
   console.log('Token obtido do localStorage:', token ? 'Presente' : 'Ausente');
+  if (token) {
+    console.log('Token completo:', token);
+    console.log('Tipo do token:', typeof token);
+    console.log('Comprimento do token:', token.length);
+  }
   return token;
+};
+
+// Função para lidar com token expirado
+const handleExpiredToken = () => {
+  console.log('Token expirado, redirecionando para login...');
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+  localStorage.removeItem('user_position');
+  localStorage.removeItem('user_department_id');
+  window.location.href = '/login';
 };
 
 // Função para verificar se o usuário tem permissão para modificar dados
@@ -222,24 +237,28 @@ export const createEntityOperations = (collection) => ({
     
     const token = getAuthToken();
     if (!token) {
+      handleExpiredToken();
       throw new Error('Token de autenticação não encontrado. Por favor, faça login novamente.');
     }
     
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    };
+    
+    console.log('Headers da requisição:', headers);
+    
     const response = await fetch(`${API_URL}/${collection}/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
+      headers: headers,
       body: JSON.stringify(dataWithUser),
     });
     
     if (!response.ok) {
       console.error(`Erro ao atualizar ${collection}/${id}:`, response.status, response.statusText);
+      console.error('Resposta completa:', await response.text());
       if (response.status === 401) {
-        // Token expirado ou inválido
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        handleExpiredToken();
         throw new Error('Sua sessão expirou. Por favor, faça login novamente.');
       }
       throw new Error('Erro ao atualizar documento');
