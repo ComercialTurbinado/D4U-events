@@ -74,22 +74,28 @@ const hasPermission = (data, operation) => {
     return { hasPermission: true };
   }
   
-  // Para operações de escrita, verifica se tem permissão de edição
-  if (['create', 'update', 'delete'].includes(operation)) {
-    // Verifica se tem permissão de edição
-    if (!usuarioLogado.position || !usuarioLogado.position.includes('edit')) {
-      return {
-        hasPermission: false,
-        alert: {
-          type: 'permission',
-          title: 'Permissão Negada',
-          description: 'Você não tem permissão para editar dados'
-        }
-      };
-    }
+    // Para operações de escrita, verifica se tem permissão de edição
+    if (['create', 'update', 'delete'].includes(operation)) {
+      const userPositions = Array.isArray(usuarioLogado.position)
+        ? usuarioLogado.position
+        : [usuarioLogado.position];
+
+      const isAdmin = userPositions.includes('admin');
+      const isEditor = userPositions.includes('editor') || userPositions.includes('edit');
+
+      if (!isAdmin && !isEditor) {
+        return {
+          hasPermission: false,
+          alert: {
+            type: 'permission',
+            title: 'Permissão Negada',
+            description: 'Você não tem permissão para editar dados'
+          }
+        };
+      }
     
     // Se tem permissão de edição, verifica se está editando dentro do seu departamento
-    if (data && data.department_id && usuarioLogado.department_id && 
+    if (!isAdmin && data && data.department_id && usuarioLogado.department_id && 
         data.department_id !== usuarioLogado.department_id) {
       return {
         hasPermission: false,
