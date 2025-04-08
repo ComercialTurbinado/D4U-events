@@ -29,6 +29,29 @@ const createHeaders = () => {
     throw new Error('Token de autenticação não encontrado');
   }
   
+  // Verificar se o token é válido
+  try {
+    const tokenParts = token.split('.');
+    if (tokenParts.length !== 3) {
+      throw new Error('Token mal formatado');
+    }
+    
+    const payload = JSON.parse(atob(tokenParts[1]));
+    console.log('Payload do token:', payload);
+    
+    // Verificar se o token expirou
+    const now = Math.floor(Date.now() / 1000);
+    if (payload.exp && payload.exp < now) {
+      console.log('Token expirado:', new Date(payload.exp * 1000));
+      handleExpiredToken();
+      throw new Error('Token expirado');
+    }
+  } catch (error) {
+    console.error('Erro ao verificar token:', error);
+    handleExpiredToken();
+    throw error;
+  }
+  
   const headers = {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`
