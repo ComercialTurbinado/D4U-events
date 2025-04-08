@@ -106,7 +106,11 @@ exports.handler = async (event) => {
         };
 
       case 'PUT':
-        if (!id) return badRequest('ID obrigatório para update');
+        if (!id) return {
+          statusCode: 400,
+          headers: corsHeaders(),
+          body: JSON.stringify({ error: 'ID obrigatório para update' })
+        };
 
         const token = event.headers.Authorization || event.headers.authorization;
         console.log('Token recebido:', token);
@@ -178,7 +182,11 @@ exports.handler = async (event) => {
         };
 
       case 'DELETE':
-        if (!id) return badRequest('ID obrigatório para delete');
+        if (!id) return {
+          statusCode: 400,
+          headers: corsHeaders(),
+          body: JSON.stringify({ error: 'ID obrigatório para delete' })
+        };
         const deletedItem = await Model.findByIdAndDelete(id);
         return {
           statusCode: deletedItem ? 200 : 404,
@@ -206,10 +214,9 @@ exports.handler = async (event) => {
 
 function corsHeaders() {
   return {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': 'https://main.d2p3ej85wi84d5.amplifyapp.com',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Credentials': 'true',
     'Content-Type': 'application/json'
   };
 }
