@@ -133,8 +133,11 @@ export const createEntityOperations = (collection) => ({
     // Adicionar headers para evitar erros de CORS
     const response = await fetch(url, {
       headers: {
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+        'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : ''
+      },
+      credentials: 'include',
+      mode: 'cors'
     });
     
     if (!response.ok) {
@@ -154,8 +157,11 @@ export const createEntityOperations = (collection) => ({
     // Adicionar headers para evitar erros de CORS
     const response = await fetch(`${API_URL}/${collection}/${id}`, {
       headers: {
-        'Content-Type': 'application/json'
-      }
+        'Content-Type': 'application/json',
+        'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : ''
+      },
+      credentials: 'include',
+      mode: 'cors'
     });
     
     if (!response.ok) {
@@ -183,8 +189,11 @@ export const createEntityOperations = (collection) => ({
     const response = await fetch(`${API_URL}/${collection}`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : ''
       },
+      credentials: 'include',
+      mode: 'cors',
       body: JSON.stringify(dataWithUser),
     });
     if (!response.ok) throw new Error('Erro ao criar documento');
@@ -209,8 +218,11 @@ export const createEntityOperations = (collection) => ({
     const response = await fetch(`${API_URL}/${collection}/${id}`, {
       method: 'PUT',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : ''
       },
+      credentials: 'include',
+      mode: 'cors',
       body: JSON.stringify(dataWithUser),
     });
     
@@ -230,7 +242,14 @@ export const createEntityOperations = (collection) => ({
     try {
       // Buscar o item diretamente em vez de usar this
       console.log(`Buscando item para verificar permissões de deleção: ${API_URL}/${collection}/${id}`);
-      const response = await fetch(`${API_URL}/${collection}/${id}`);
+      const response = await fetch(`${API_URL}/${collection}/${id}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : ''
+        },
+        credentials: 'include',
+        mode: 'cors'
+      });
       if (!response.ok) {
         throw new Error('Item não encontrado ou você não tem permissão para acessá-lo');
       }
@@ -251,8 +270,10 @@ export const createEntityOperations = (collection) => ({
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : ''
       },
-      // Enviamos o usuário no body mesmo para DELETE
+      credentials: 'include',
+      mode: 'cors',
       body: JSON.stringify(userInfo),
     });
     if (!response.ok) throw new Error('Erro ao deletar documento');
@@ -276,8 +297,11 @@ export const createEntityOperations = (collection) => ({
       return fetch(`${API_URL}/${collection}`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : ''
         },
+        credentials: 'include',
+        mode: 'cors',
         body: JSON.stringify(dataWithUser),
       }).then(response => {
         if (!response.ok) throw new Error('Erro ao criar documento');

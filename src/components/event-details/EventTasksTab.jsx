@@ -211,17 +211,19 @@ export default function EventTasksTab({ eventId, eventTypeId, eventData }) {
           const dueDate = new Date(task.due_date);
           
           // Verificar se a data já passou
-          if (dueDate < now) {
-            isLate = true;
-            isUrgent = true;
-          } else {
-            // Verificar se está próximo do prazo (menos de 3 dias)
-            const threeDaysFromNow = new Date();
-            threeDaysFromNow.setDate(now.getDate() + 3);
-            if (dueDate <= threeDaysFromNow) {
+          if(task.status !== "completed"){
+            if (dueDate < now) {
+              isLate = true;
               isUrgent = true;
+            } else {
+              // Verificar se está próximo do prazo (menos de 3 dias)
+              const threeDaysFromNow = new Date();
+              threeDaysFromNow.setDate(now.getDate() + 3);
+              if (dueDate <= threeDaysFromNow) {
+                isUrgent = true;
+              }
             }
-          }
+         }
         }
         
         // 7.5 Se não encontrou departamento ou categoria, registrar aviso

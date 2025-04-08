@@ -1,8 +1,8 @@
-import { connectToDatabase, models } from './mongodb.js';
-import { login } from './auth.js';
-import { findTeamMemberByEmail, createTeamMember } from './team-member.js';
+const { connectToDatabase, models } = require('./mongodb');
+const { login } = require('./auth');
+const { findTeamMemberByEmail, createTeamMember } = require('./team-member');
 
-export const handler = async (event) => {
+exports.handler = async (event) => {
   // Tratamento do OPTIONS para CORS
   if (event.httpMethod === 'OPTIONS') {
     return {
@@ -92,6 +92,13 @@ export const handler = async (event) => {
 
       case 'POST':
         const dataPost = JSON.parse(event.body);
+
+        if (collection === 'teammembers' && dataPost.password) {
+          const bcrypt = require('bcryptjs');
+          const salt = await bcrypt.genSalt(10);
+          dataPost.password = await bcrypt.hash(dataPost.password, salt);
+        }
+        
         const newItem = new Model(dataPost);
         await newItem.save();
         return {
@@ -104,12 +111,19 @@ export const handler = async (event) => {
         if (!id) return badRequest('ID obrigatório para update');
 
         let dataPut = JSON.parse(event.body);
-
+        
         // Remove campos que não devem ser atualizados
         delete dataPut._id;
         delete dataPut.id;
         delete dataPut.__v;
         delete dataPut.createdAt;
+
+         // Se for atualização de teammember com senha nova, faz hash
+          if (collection === 'teammembers' && dataPut.password) {
+            const bcrypt = require('bcryptjs');
+            const salt = await bcrypt.genSalt(10);
+            dataPut.password = await bcrypt.hash(dataPut.password, salt);
+          }
 
         const updatedItem = await Model.findByIdAndUpdate(
           id,

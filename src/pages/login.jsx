@@ -55,8 +55,8 @@ export default function LoginPage() {
         localStorage.setItem("user", JSON.stringify(data.user));
         localStorage.setItem("user_position", JSON.stringify(data.user.position));
         localStorage.setItem("user_department_id", JSON.stringify(data.user.department_id));
-        console.log(localStorage.getItem("user_position"));
-        console.log(localStorage.getItem("user_department_id"));
+        console.log('Token armazenado:', data.token);
+        console.log('Dados do usuário armazenados:', data.user);
         navigate("/");
       } else {
         console.error("Resposta com erro:", data);

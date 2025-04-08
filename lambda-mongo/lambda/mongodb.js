@@ -1,8 +1,8 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 let cachedDb = null;
 
-export const connectToDatabase = async () => {
+const connectToDatabase = async () => {
   if (cachedDb) {
     return cachedDb;
   }
@@ -224,16 +224,51 @@ const teamMemberSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, required: true, enum: ['admin', 'user'] },
+  role: { type: String, required: true, enum: ['admin', 'editor', 'read'] },
   department_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' },
-  position: { type: String, required: true },
+  position: { type: [String], required: true },
   whatsapp: String,
   is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
 
+module.exports = function globalPermissionMiddleware(schema) {
+  schema.pre('save', function (next) {
+    const doc = this;
+    const user = doc._currentUser;
+
+    if (!user) {
+      return next(new Error('Usuário não autenticado'));
+    }
+
+    const positions = Array.isArray(user.position) ? user.position : [user.position];
+    const isAdmin = positions.includes('admin');
+    const isEditor = positions.includes('editor');
+    const isReadOnly = positions.includes('read');
+
+    if (isAdmin) return next();
+
+    const modelName = this.constructor.modelName;
+
+    if (isEditor) {
+      if (['TeamMember', 'Department'].includes(modelName)) {
+        return next(new Error('Você não tem permissão para editar membros ou departamentos.'));
+      }
+      return next();
+    }
+
+    if (isReadOnly && modelName === 'Task') {
+      if (doc.department_id?.equals(user.department_id)) return next();
+      return next(new Error('Você só pode editar tarefas do seu departamento.'));
+    }
+
+    return next(new Error('Você não tem permissão para editar.'));
+  });
+};
+
+
 // Models
-export const models = {
+const models = {
   'event-types': mongoose.model('EventType', eventTypeSchema),
   'tasks': mongoose.model('Task', taskSchema),
   'materials': mongoose.model('Material', materialSchema),
@@ -248,5 +283,10 @@ export const models = {
   'supplier-categories': mongoose.model('SupplierCategory', supplierCategorySchema),
   'default-tasks': mongoose.model('DefaultTask', defaultTaskSchema),
   'default-materials': mongoose.model('DefaultMaterial', defaultMaterialSchema),
-  'team-members': mongoose.model('TeamMember', teamMemberSchema)
+  'teammembers': mongoose.model('TeamMember', teamMemberSchema, 'teammembers')
+};
+
+module.exports = {
+  connectToDatabase,
+  models
 }; 
