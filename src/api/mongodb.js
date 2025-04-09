@@ -323,4 +323,68 @@ export const createEntityOperations = (collection) => ({
       }
     } catch (error) {
       console.error(`Erro ao verificar permissão para deletar ${collection}/${id}:`, error);
-      throw new Error('Você não tem
+      throw new Error('Você não tem permissão para deletar este item');
+    }
+    
+    // Para DELETE, enviamos o usuário em um body vazio
+    const userInfo = addUserToRequest({});
+    
+    const response = await fetch(`${API_URL}/entities/${collection}/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : ''
+      },
+      body: JSON.stringify(userInfo),
+    });
+    if (!response.ok) throw new Error('Erro ao deletar documento');
+    return response.json();
+  },
+
+  bulkCreate: async (items) => {
+    const promises = items.map(item => {
+      const cleanData = cleanDataForApi(item);
+      
+      // Verifica se o usuário tem permissão para criar cada item
+      const { hasPermission: permissionResult, alert } = hasPermission(cleanData, 'create');
+      
+      if (!permissionResult) {
+        throw alert;
+      }
+      
+      // Adiciona o usuário ao body
+      const dataWithUser = addUserToRequest(cleanData);
+       
+      return fetch(`${API_URL}/entities/${collection}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : ''
+        },
+        body: JSON.stringify(dataWithUser),
+      }).then(response => {
+        if (!response.ok) throw new Error('Erro ao criar documento');
+        return response.json();
+      });
+    });
+    return Promise.all(promises);
+  }
+});
+
+// Exporta as operações para cada entidade
+export const EventTypeOps = createEntityOperations('event-types');
+export const TaskOps = createEntityOperations('tasks');
+export const MaterialOps = createEntityOperations('materials');
+export const SupplierOps = createEntityOperations('suppliers');
+export const DepartmentOps = createEntityOperations('departments');
+export const EventOps = createEntityOperations('events');
+export const EventTaskOps = createEntityOperations('event-tasks');
+export const EventMaterialOps = createEntityOperations('event-materials');
+export const EventSupplierOps = createEntityOperations('event-suppliers');
+export const TaskCategoryOps = createEntityOperations('task-categories');
+export const MaterialCategoryOps = createEntityOperations('material-categories');
+export const SupplierCategoryOps = createEntityOperations('supplier-categories');
+export const DefaultTaskOps = createEntityOperations('default-tasks');
+export const DefaultMaterialOps = createEntityOperations('default-materials');
+export const DefaultSupplierOps = createEntityOperations('default-suppliers');
+export const TeamMemberOps = createEntityOperations('teammembers');

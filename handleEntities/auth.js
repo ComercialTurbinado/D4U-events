@@ -72,34 +72,3 @@ exports.handler = async (event) => {
         role: user.role,
         name: user.name
       },
-      JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    return {
-      statusCode: 200,
-      headers: corsHeaders,
-      body: JSON.stringify({
-        token,
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
-          position: user.position
-        }
-      })
-    };
-  } catch (error) {
-    console.error("❌ Erro no login:", error);
-
-    return {
-      statusCode: 500,
-      headers: corsHeaders,
-      body: JSON.stringify({
-        message: 'Erro interno no servidor',
-        error: error.message || String(error)
-      })
-    };
-  }
-};
