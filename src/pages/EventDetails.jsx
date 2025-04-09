@@ -9,11 +9,21 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { format } from "date-fns";
-import { Edit, ArrowLeft, Calendar, MapPin, DollarSign, User, Briefcase, ShoppingCart, ClipboardList } from "lucide-react";
+import { Edit, ArrowLeft, Calendar, MapPin, DollarSign, User, Briefcase, ShoppingCart, ClipboardList, Info, Package, Truck, ListTodo, StickyNote, QrCode } from "lucide-react";
 
 import EventTasksTab from "../components/event-details/EventTasksTab";
 import EventMaterialsTab from "../components/event-details/EventMaterialsTab";
 import EventSuppliersTab from "../components/event-details/EventSuppliersTab";
+import EventUTMTab from '@/components/event-details/EventUTMTab';
+
+const tabs = [
+  { id: 'details', label: 'Detalhes', icon: Info },
+  { id: 'materials', label: 'Materiais', icon: Package },
+  { id: 'suppliers', label: 'Fornecedores', icon: Truck },
+  { id: 'tasks', label: 'Tarefas', icon: ListTodo },
+  { id: 'notes', label: 'Notas', icon: StickyNote },
+  { id: 'utm', label: 'UTM', icon: QrCode },
+];
 
 export default function EventDetailsPage() {
   const { id } = useParams();
@@ -276,7 +286,15 @@ export default function EventDetailsPage() {
           <TabsTrigger value="materials" className="flex items-center gap-2">
             <ShoppingCart className="h-4 w-4" /> Materiais
           </TabsTrigger>
-           
+          <TabsTrigger value="suppliers" className="flex items-center gap-2">
+            <Briefcase className="h-4 w-4" /> Fornecedores
+          </TabsTrigger>
+          <TabsTrigger value="notes" className="flex items-center gap-2">
+            <StickyNote className="h-4 w-4" /> Notas
+          </TabsTrigger>
+          <TabsTrigger value="utm" className="flex items-center gap-2">
+            <QrCode className="h-4 w-4" /> UTM
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="tasks">
@@ -289,6 +307,14 @@ export default function EventDetailsPage() {
         
         <TabsContent value="suppliers">
           <EventSuppliersTab eventId={id} eventTypeId={event?.event_type_id} />
+        </TabsContent>
+        
+        <TabsContent value="notes">
+          {/* Implemente a lógica para exibir a aba de notas */}
+        </TabsContent>
+        
+        <TabsContent value="utm">
+          <EventUTMTab event={event} />
         </TabsContent>
       </Tabs>
     </div>

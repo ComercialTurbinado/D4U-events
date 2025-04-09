@@ -1,9 +1,7 @@
 // Adicionar console.log para depuração da URL
 console.log('Variável de ambiente VITE_API_URL:', import.meta.env.VITE_API_URL);
 
-export const API_URL = import.meta.env.VITE_API_URL ? 
-  `${import.meta.env.VITE_API_URL}/entities` : 
-  'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod/entities';
+export const API_URL = import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod';
 
 console.log('API_URL final:', API_URL);
 
@@ -198,7 +196,7 @@ export const cleanDataForApi = (data) => {
 
 export const createEntityOperations = (collection) => ({
   list: async (sort) => {
-    const url = `${API_URL}/${collection}${sort ? `?sort=${sort}` : ''}`;
+    const url = `${API_URL}/entities/${collection}${sort ? `?sort=${sort}` : ''}`;
     console.log(`Fazendo requisição GET para ${url}`);
     
     const headers = createHeaders();
@@ -217,10 +215,11 @@ export const createEntityOperations = (collection) => ({
   },
 
   get: async (id) => {
-    console.log(`Fazendo requisição GET para ${API_URL}/${collection}/${id}`);
+    const url = `${API_URL}/entities/${collection}/${id}`;
+    console.log(`Fazendo requisição GET para ${url}`);
     
     const headers = createHeaders();
-    const response = await fetch(`${API_URL}/${collection}/${id}`, { headers });
+    const response = await fetch(url, { headers });
     
     if (!response.ok) {
       console.error(`Erro na requisição GET ${collection}/${id}:`, response.status, response.statusText);
@@ -248,7 +247,7 @@ export const createEntityOperations = (collection) => ({
     const dataWithUser = addUserToRequest(cleanData);
     
     const headers = createHeaders();
-    const response = await fetch(`${API_URL}/${collection}`, {
+    const response = await fetch(`${API_URL}/entities/${collection}`, {
       method: 'POST',
       headers,
       body: JSON.stringify(dataWithUser),
@@ -282,7 +281,7 @@ export const createEntityOperations = (collection) => ({
     const headers = createHeaders();
     console.log('Headers da requisição:', headers);
     
-    const response = await fetch(`${API_URL}/${collection}/${id}`, {
+    const response = await fetch(`${API_URL}/entities/${collection}/${id}`, {
       method: 'PUT',
       headers,
       body: JSON.stringify(dataWithUser),
@@ -307,8 +306,8 @@ export const createEntityOperations = (collection) => ({
     // Para deletar, geralmente precisamos verificar o item antes para saber o departamento
     try {
       // Buscar o item diretamente em vez de usar this
-      console.log(`Buscando item para verificar permissões de deleção: ${API_URL}/${collection}/${id}`);
-      const response = await fetch(`${API_URL}/${collection}/${id}`, {
+      console.log(`Buscando item para verificar permissões de deleção: ${API_URL}/entities/${collection}/${id}`);
+      const response = await fetch(`${API_URL}/entities/${collection}/${id}`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : ''
@@ -324,68 +323,4 @@ export const createEntityOperations = (collection) => ({
       }
     } catch (error) {
       console.error(`Erro ao verificar permissão para deletar ${collection}/${id}:`, error);
-      throw new Error('Você não tem permissão para deletar este item');
-    }
-    
-    // Para DELETE, enviamos o usuário em um body vazio
-    const userInfo = addUserToRequest({});
-    
-    const response = await fetch(`${API_URL}/${collection}/${id}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : ''
-      },
-      body: JSON.stringify(userInfo),
-    });
-    if (!response.ok) throw new Error('Erro ao deletar documento');
-    return response.json();
-  },
-
-  bulkCreate: async (items) => {
-    const promises = items.map(item => {
-      const cleanData = cleanDataForApi(item);
-      
-      // Verifica se o usuário tem permissão para criar cada item
-      const { hasPermission: permissionResult, alert } = hasPermission(cleanData, 'create');
-      
-      if (!permissionResult) {
-        throw alert;
-      }
-      
-      // Adiciona o usuário ao body
-      const dataWithUser = addUserToRequest(cleanData);
-       
-      return fetch(`${API_URL}/${collection}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : ''
-        },
-        body: JSON.stringify(dataWithUser),
-      }).then(response => {
-        if (!response.ok) throw new Error('Erro ao criar documento');
-        return response.json();
-      });
-    });
-    return Promise.all(promises);
-  }
-});
-
-// Exporta as operações para cada entidade
-export const EventTypeOps = createEntityOperations('event-types');
-export const TaskOps = createEntityOperations('tasks');
-export const MaterialOps = createEntityOperations('materials');
-export const SupplierOps = createEntityOperations('suppliers');
-export const DepartmentOps = createEntityOperations('departments');
-export const EventOps = createEntityOperations('events');
-export const EventTaskOps = createEntityOperations('event-tasks');
-export const EventMaterialOps = createEntityOperations('event-materials');
-export const EventSupplierOps = createEntityOperations('event-suppliers');
-export const TaskCategoryOps = createEntityOperations('task-categories');
-export const MaterialCategoryOps = createEntityOperations('material-categories');
-export const SupplierCategoryOps = createEntityOperations('supplier-categories');
-export const DefaultTaskOps = createEntityOperations('default-tasks');
-export const DefaultMaterialOps = createEntityOperations('default-materials');
-export const DefaultSupplierOps = createEntityOperations('default-suppliers');
-export const TeamMemberOps = createEntityOperations('teammembers');
+      throw new Error('Você não tem
