@@ -1,6 +1,8 @@
 const { connectToDatabase, models } = require('./mongodb');
-const { login } = require('./auth');
 const { findTeamMemberByEmail, createTeamMember } = require('./team-member');
+const jwt = require('jsonwebtoken');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'd4u-secret-key';
 
 exports.handler = async (event) => {
   // Tratamento do OPTIONS para CORS
@@ -42,7 +44,7 @@ exports.handler = async (event) => {
           email: "admin@d4uimmigration.com",
           password: "D4U!@dmin",
           role: "admin",
-          position: "Administrador do Sistema",
+          position: "admin",
           is_active: true
         };
 
@@ -50,12 +52,10 @@ exports.handler = async (event) => {
         console.log('✅ Usuário administrador criado automaticamente');
       }
 
-      const result = await login(email, password);
-
       return {
         statusCode: 200,
         headers: corsHeaders(),
-        body: JSON.stringify(result)
+        body: JSON.stringify({ message: 'Admin created or already exists' })
       };
     }
 
@@ -108,7 +108,51 @@ exports.handler = async (event) => {
         };
 
       case 'PUT':
-        if (!id) return badRequest('ID obrigatório para update');
+        if (!id) return {
+          statusCode: 400,
+          headers: corsHeaders(),
+          body: JSON.stringify({ error: 'ID obrigatório para update' })
+        };
+
+        const token = event.headers.Authorization || event.headers.authorization;
+        console.log('Token recebido:', token);
+        
+        if (!token) return { statusCode: 401, headers: corsHeaders(), body: JSON.stringify({ error: 'Token ausente' }) };
+        console.log('Headers recebidos:', event.headers);
+        
+        let userData;
+        try {
+          userData = jwt.verify(token.replace('Bearer ', ''), JWT_SECRET);
+            console.log('Dados do usuário decodificados:', userData);
+        } catch (err) {
+          console.error('Erro ao verificar token:', err);
+          
+          return { statusCode: 401, headers: corsHeaders(), body: JSON.stringify({ error: 'Token inválido' }) };
+        }
+
+        const userPositions = Array.isArray(userData.position) ? userData.position : [userData.position];
+        const isEditor = userPositions.includes('edit');
+        const isAdmin = userPositions.includes('admin');
+        const isReadOnly = userPositions.includes('read');
+
+        if (!isAdmin && !isEditor) {
+          if (isReadOnly && collection === 'tasks') {
+            const taskToUpdate = await Model.findById(id);
+            if (!taskToUpdate || String(taskToUpdate.department_id) !== String(userData.department_id)) {
+              return {
+                statusCode: 403,
+                headers: corsHeaders(),
+                body: JSON.stringify({ error: 'Permissão negada para editar esta tarefa' })
+              };
+            }
+          } else {
+            return {
+              statusCode: 403,
+              headers: corsHeaders(),
+              body: JSON.stringify({ error: 'Permissão negada' })
+            };
+          }
+        }
 
         let dataPut = JSON.parse(event.body);
         
@@ -142,7 +186,11 @@ exports.handler = async (event) => {
         };
 
       case 'DELETE':
-        if (!id) return badRequest('ID obrigatório para delete');
+        if (!id) return {
+          statusCode: 400,
+          headers: corsHeaders(),
+          body: JSON.stringify({ error: 'ID obrigatório para delete' })
+        };
         const deletedItem = await Model.findByIdAndDelete(id);
         return {
           statusCode: deletedItem ? 200 : 404,
@@ -183,4 +231,4 @@ function badRequest(message) {
     headers: corsHeaders(),
     body: JSON.stringify({ error: message })
   };
-} 
+}

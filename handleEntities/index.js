@@ -2,6 +2,8 @@ const { connectToDatabase, models } = require('./mongodb');
 const { findTeamMemberByEmail, createTeamMember } = require('./team-member');
 const jwt = require('jsonwebtoken');
 
+const JWT_SECRET = process.env.JWT_SECRET || 'd4u-secret-key';
+
 exports.handler = async (event) => {
   // Tratamento do OPTIONS para CORS
   if (event.httpMethod === 'OPTIONS') {
@@ -119,7 +121,7 @@ exports.handler = async (event) => {
 
         let userData;
         try {
-          userData = jwt.verify(token.replace('Bearer ', ''), process.env.JWT_SECRET);
+          userData = jwt.verify(token.replace('Bearer ', ''), JWT_SECRET);
           console.log('Dados do usuário decodificados:', userData);
         } catch (err) {
           console.error('Erro ao verificar token:', err);
@@ -214,7 +216,7 @@ exports.handler = async (event) => {
 
 function corsHeaders() {
   return {
-    'Access-Control-Allow-Origin': 'https://main.d2p3ej85wi84d5.amplifyapp.com',
+    'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Content-Type': 'application/json'
