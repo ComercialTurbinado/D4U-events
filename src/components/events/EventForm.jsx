@@ -119,8 +119,7 @@ export default function EventForm({ initialData, onSubmit, onCancel }) {
         body: JSON.stringify({
           frame_name: "no-frame",
           qr_code_text: utmUrl,
-          image_format: "SVG",
-          qr_code_logo: "scan-me-square"
+          image_format: "SVG"   
         })
       });
 
