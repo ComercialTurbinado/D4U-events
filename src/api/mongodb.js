@@ -21,7 +21,7 @@ const getAuthToken = () => {
 };
 
 // Função para criar os headers com o token
-const createHeaders = () => {
+export const createHeaders = () => {
   const token = getAuthToken();
   if (!token) {
     throw new Error('Token de autenticação não encontrado');

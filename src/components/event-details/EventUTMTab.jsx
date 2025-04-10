@@ -3,8 +3,9 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Copy, QrCode } from 'lucide-react';
+import { Copy, QrCode, Download } from 'lucide-react';
 import { EventUTM } from '@/api/entities';
+import { API_URL, createHeaders } from '@/api/mongodb';
 
 export default function EventUTMTab({ event }) {
   console.log("EventUTMTab sendo renderizado com evento:", event);
@@ -19,6 +20,7 @@ export default function EventUTMTab({ event }) {
 
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState('');
 
   const generateUTMUrl = () => {
     const baseUrl = 'https://d4uimmigration.com';
@@ -35,31 +37,41 @@ export default function EventUTMTab({ event }) {
 
   const generateQRCode = async () => {
     setIsLoading(true);
+    setStatus('Gerando QR Code...');
     try {
-      // Gera o QR Code
-      const response = await fetch('https://api.qr-code-generator.com/v1/create', {
+      // Usaremos nosso próprio backend como proxy para a API do QR Code Generator
+      const response = await fetch(`${API_URL}/entities/generate-qrcode`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer CO3JxMEAYGJNaSfmdav_EGI-CP8yMa8HuJNoheULlxzRQBTs8Wg8QMBQUPPFU_3c'
+          ...createHeaders()
         },
         body: JSON.stringify({
+          apiKey: 'CO3JxMEAYGJNaSfmdav_EGI-CP8yMa8HuJNoheULlxzRQBTs8Wg8QMBQUPPFU_3c',
           frame_name: "no-frame",
           qr_code_text: generateUTMUrl(),
-          image_format: "SVG"
-         })
+          image_format: "SVG",
+          qr_code_logo: "scan-me-square"
+        })
       });
 
       if (!response.ok) {
-        throw new Error('Erro ao gerar QR Code');
+        const errorData = await response.json();
+        console.error('Erro ao gerar QR Code:', errorData);
+        setStatus(`Erro: ${errorData.details || errorData.error || 'Erro desconhecido'}`);
+        throw new Error(`Erro ao gerar QR Code: ${errorData.details || errorData.error || 'Erro desconhecido'}`);
       }
 
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      setQrCodeUrl(url);
+      const result = await response.json();
+      setStatus('QR Code gerado com sucesso!');
+      
+      // Criamos uma URL de dados a partir do base64 retornado
+      const dataUrl = `data:image/svg+xml;base64,${result.qrcode}`;
+      setQrCodeUrl(dataUrl);
 
       // Salva a UTM no banco de dados
       try {
+        setStatus('Salvando UTM para o evento...');
         console.log('Salvando UTM para o evento:', event.id);
         await EventUTM.create({
           event_id: event.id,
@@ -68,15 +80,18 @@ export default function EventUTMTab({ event }) {
           campaign: utmParams.campaign,
           content: utmParams.content,
           term: utmParams.term,
-          qr_code_url: generateUTMUrl()
+          qr_code_url: generateUTMUrl() // Salvamos a URL em vez da imagem
         });
         console.log('UTM salva com sucesso!');
+        setStatus('UTM e QR Code salvos com sucesso!');
       } catch (utmError) {
         console.error('Erro ao salvar UTM:', utmError);
+        setStatus('QR Code gerado, mas houve um erro ao salvar a UTM');
       }
 
     } catch (error) {
       console.error('Erro ao gerar QR Code:', error);
+      setStatus('Erro ao gerar QR Code');
     } finally {
       setIsLoading(false);
     }
@@ -84,6 +99,22 @@ export default function EventUTMTab({ event }) {
 
   const handleCopyUTM = () => {
     navigator.clipboard.writeText(generateUTMUrl());
+    setStatus('URL copiada para a área de transferência!');
+    setTimeout(() => setStatus(''), 2000);
+  };
+
+  const handleDownloadQRCode = () => {
+    if (!qrCodeUrl) return;
+    
+    const link = document.createElement('a');
+    link.href = qrCodeUrl;
+    link.download = `qrcode-${event.name.toLowerCase().replace(/\s+/g, '-')}.svg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    setStatus('QR Code baixado!');
+    setTimeout(() => setStatus(''), 2000);
   };
 
   useEffect(() => {
@@ -207,13 +238,27 @@ export default function EventUTMTab({ event }) {
             </Button>
           </div>
 
+          {status && (
+            <div className={`mt-2 p-2 text-sm text-center rounded-md ${status.includes('Erro') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+              {status}
+            </div>
+          )}
+
           {qrCodeUrl && (
-            <div className="mt-4 flex justify-center">
+            <div className="mt-4 flex flex-col items-center">
               <img
                 src={qrCodeUrl}
                 alt="QR Code"
-                className="max-w-[200px]"
+                className="max-w-[200px] mb-3"
               />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleDownloadQRCode}
+                className="flex items-center"
+              >
+                <Download className="h-4 w-4 mr-2" /> Baixar QR Code
+              </Button>
             </div>
           )}
         </div>

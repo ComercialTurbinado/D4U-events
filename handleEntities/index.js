@@ -1,6 +1,7 @@
 const { connectToDatabase, models } = require('./mongodb');
 const { findTeamMemberByEmail, createTeamMember } = require('./team-member');
 const jwt = require('jsonwebtoken');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 const JWT_SECRET = process.env.JWT_SECRET || 'd4u-secret-key';
 
@@ -21,6 +22,72 @@ exports.handler = async (event) => {
     const pathParts = fullPath.split('/');
     const collection = pathParts[0];
     const id = pathParts[1] || null;
+
+    // Rota para gerar QR Code (proxy para evitar CORS)
+    if (collection === 'generate-qrcode') {
+      if (method !== 'POST') {
+        return {
+          statusCode: 405,
+          headers: corsHeaders(),
+          body: JSON.stringify({ error: 'Método não permitido para geração de QR Code' })
+        };
+      }
+
+      try {
+        const requestBody = JSON.parse(event.body);
+        console.log('Gerando QR Code com dados:', requestBody);
+        
+        const response = await fetch('https://api.qr-code-generator.com/v1/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${requestBody.apiKey}`
+          },
+          body: JSON.stringify({
+            frame_name: requestBody.frame_name || "no-frame",
+            qr_code_text: requestBody.qr_code_text,
+            image_format: requestBody.image_format || "SVG",
+            qr_code_logo: requestBody.qr_code_logo || "scan-me-square"
+          })
+        });
+
+        if (!response.ok) {
+          console.error('Erro na resposta da API do QR Code:', response.status, response.statusText);
+          return {
+            statusCode: response.status,
+            headers: corsHeaders(),
+            body: JSON.stringify({ 
+              error: 'Erro ao gerar QR Code',
+              details: await response.text()
+            })
+          };
+        }
+
+        // Converter a resposta para base64
+        const imageBuffer = await response.buffer();
+        const base64Image = imageBuffer.toString('base64');
+
+        return {
+          statusCode: 200,
+          headers: {
+            ...corsHeaders(),
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ 
+            success: true,
+            qrcode: base64Image,
+            format: requestBody.image_format || "SVG"
+          })
+        };
+      } catch (error) {
+        console.error('Erro ao gerar QR Code:', error);
+        return {
+          statusCode: 500,
+          headers: corsHeaders(),
+          body: JSON.stringify({ error: 'Erro ao gerar QR Code', details: error.message })
+        };
+      }
+    }
 
     // Tratamento especial para a rota de autenticação
     if (collection === 'auth') {
