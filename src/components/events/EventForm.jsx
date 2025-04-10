@@ -23,6 +23,7 @@ import { CalendarIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Event } from "@/api/mongodb";
 import { toast } from "react-toastify";
+import { EventUTM } from "@/api/entities";
 
 const QR_CODE_API_URL = "https://api.qr-code-generator.com/v1/create";
 const QR_CODE_API_KEY = "CO3JxMEAYGJNaSfmdav_EGI-CP8yMa8HuJNoheULlxzRQBTs8Wg8QMBQUPPFU_3c";
@@ -60,6 +61,7 @@ export default function EventForm({ initialData, onSubmit, onCancel }) {
   const [eventTypes, setEventTypes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [qrCode, setQrCode] = useState(null);
+  const [qrCodeUrl, setQrCodeUrl] = useState(null);
 
   useEffect(() => {
     loadEventTypes();
@@ -108,18 +110,20 @@ export default function EventForm({ initialData, onSubmit, onCancel }) {
   };
 
   const generateQRCode = async () => {
+    setIsLoading(true);
     try {
-      const utmUrl = generateUTM();
-      const response = await fetch(QR_CODE_API_URL, {
+      // Gera o QR Code
+      const response = await fetch('https://api.qr-code-generator.com/v1/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${QR_CODE_API_KEY}`
+          'Authorization': 'Bearer CO3JxMEAYGJNaSfmdav_EGI-CP8yMa8HuJNoheULlxzRQBTs8Wg8QMBQUPPFU_3c'
         },
         body: JSON.stringify({
           frame_name: "no-frame",
-          qr_code_text: utmUrl,
-          image_format: "SVG"   
+          qr_code_text: generateUTM(),
+          image_format: "SVG",
+          qr_code_logo: "scan-me-square"
         })
       });
 
@@ -127,11 +131,25 @@ export default function EventForm({ initialData, onSubmit, onCancel }) {
         throw new Error('Erro ao gerar QR Code');
       }
 
-      const qrCodeData = await response.text();
-      setQrCode(qrCodeData);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      setQrCodeUrl(url);
+
+      // Salva a UTM no banco de dados
+      await EventUTM.create({
+        event_id: initialData.id,
+        source: formData.utm_source,
+        medium: formData.utm_medium,
+        campaign: formData.utm_campaign,
+        content: formData.utm_content,
+        term: formData.utm_term,
+        qr_code_url: url
+      });
+
     } catch (error) {
       console.error('Erro ao gerar QR Code:', error);
-      toast.error('Erro ao gerar QR Code');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -266,4 +284,159 @@ export default function EventForm({ initialData, onSubmit, onCancel }) {
               <Label htmlFor="status">Status</Label>
               <Select
                 value={formData.status}
-                onValueChange={value => set
+                onValueChange={value => setFormData(prev => ({ ...prev, status: value }))}
+              >
+                <SelectTrigger id="status">
+                  <SelectValue placeholder="Selecione um status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="planning">Planejamento</SelectItem>
+                  <SelectItem value="in_progress">Em Andamento</SelectItem>
+                  <SelectItem value="completed">Concluído</SelectItem>
+                  <SelectItem value="cancelled">Cancelado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="budget">Orçamento (R$)</Label>
+              <Input
+                id="budget"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.budget}
+                onChange={e => setFormData(prev => ({ ...prev, budget: e.target.value }))}
+                placeholder="Ex: 10000.00"
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="manager">Responsável</Label>
+              <Input
+                id="manager"
+                value={formData.manager}
+                onChange={e => setFormData(prev => ({ ...prev, manager: e.target.value }))}
+                placeholder="Ex: João Silva"
+              />
+            </div>
+          </div>
+          
+          <div>
+            <Label htmlFor="description">Descrição</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="Descreva o evento..."
+              className="h-24"
+            />
+          </div>
+
+          {/* UTM Fields */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                UTM Source
+              </label>
+              <input
+                type="text"
+                name="utm_source"
+                value={formData.utm_source}
+                onChange={e => setFormData(prev => ({ ...prev, utm_source: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Ex: google, facebook, newsletter"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                UTM Medium
+              </label>
+              <input
+                type="text"
+                name="utm_medium"
+                value={formData.utm_medium}
+                onChange={e => setFormData(prev => ({ ...prev, utm_medium: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Ex: cpc, banner, email"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                UTM Campaign
+              </label>
+              <input
+                type="text"
+                name="utm_campaign"
+                value={formData.utm_campaign}
+                onChange={e => setFormData(prev => ({ ...prev, utm_campaign: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Ex: summer_sale, product_launch"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                UTM Term
+              </label>
+              <input
+                type="text"
+                name="utm_term"
+                value={formData.utm_term}
+                onChange={e => setFormData(prev => ({ ...prev, utm_term: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Ex: running+shoes"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                UTM Content
+              </label>
+              <input
+                type="text"
+                name="utm_content"
+                value={formData.utm_content}
+                onChange={e => setFormData(prev => ({ ...prev, utm_content: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Ex: logolink, textlink"
+              />
+            </div>
+          </div>
+
+          {/* UTM URL Preview */}
+          {formData.utm_source || formData.utm_medium || formData.utm_campaign ? (
+            <div className="mt-4 p-4 bg-gray-50 rounded-md">
+              <h3 className="text-sm font-medium text-gray-700 mb-2">URL com UTM:</h3>
+              <p className="text-sm text-gray-600 break-all">{generateUTM()}</p>
+            </div>
+          ) : null}
+
+          {/* QR Code Preview */}
+          {qrCodeUrl && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-md">
+              <h3 className="text-sm font-medium text-gray-700 mb-2">QR Code:</h3>
+              <div 
+                className="w-48 h-48 mx-auto"
+                dangerouslySetInnerHTML={{ __html: qrCodeUrl }}
+              />
+            </div>
+          )}
+        </div>
+      </Card>
+
+      <div className="flex justify-end gap-3">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          Cancelar
+        </Button>
+        <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+          {initialData ? "Atualizar" : "Criar"} Evento
+        </Button>
+      </div>
+    </form>
+  );
+}

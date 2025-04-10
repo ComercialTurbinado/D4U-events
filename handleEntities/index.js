@@ -118,18 +118,20 @@ exports.handler = async (event) => {
         console.log('Token recebido:', token);
         
         if (!token) return { statusCode: 401, headers: corsHeaders(), body: JSON.stringify({ error: 'Token ausente' }) };
-
+        console.log('Headers recebidos:', event.headers);
+        
         let userData;
         try {
           userData = jwt.verify(token.replace('Bearer ', ''), JWT_SECRET);
-          console.log('Dados do usuário decodificados:', userData);
+            console.log('Dados do usuário decodificados:', userData);
         } catch (err) {
           console.error('Erro ao verificar token:', err);
+          
           return { statusCode: 401, headers: corsHeaders(), body: JSON.stringify({ error: 'Token inválido' }) };
         }
 
         const userPositions = Array.isArray(userData.position) ? userData.position : [userData.position];
-        const isEditor = userPositions.includes('editor');
+        const isEditor = userPositions.includes('edit');
         const isAdmin = userPositions.includes('admin');
         const isReadOnly = userPositions.includes('read');
 

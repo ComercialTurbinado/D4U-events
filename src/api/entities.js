@@ -19,6 +19,7 @@ export const EventSupplier = EventSupplierOps;
 export const TaskCategory = TaskCategoryOps;
 export const MaterialCategory = MaterialCategoryOps;
 export const SupplierCategory = SupplierCategoryOps;
+export const TeamMember = TeamMemberOps;
 
 // Mock auth
 export const User = {
@@ -27,4 +28,4 @@ export const User = {
   getCurrentUser: () => Promise.resolve({})
 };
 
-export const TeamMember = TeamMemberOps;
+export const EventUTM = new Entity('event-utms');

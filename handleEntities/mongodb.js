@@ -174,7 +174,18 @@ const eventSupplierSchema = new mongoose.Schema({
   is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
- 
+
+const eventUTMSchema = new mongoose.Schema({
+  event_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
+  source: { type: String, default: 'evento' },
+  medium: { type: String, default: 'qr_code' },
+  campaign: { type: String, required: true },
+  content: String,
+  term: String,
+  qr_code_url: String,
+  is_active: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now }
+});
 
 const materialCategorySchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -226,7 +237,7 @@ const teamMemberSchema = new mongoose.Schema({
   password: { type: String, required: true },
   role: { type: String, required: true, enum: ['admin', 'user'] },
   department_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Department' },
-  position: { type: [String], required: true },
+  position: { type: String, required: true },
   whatsapp: String,
   is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
@@ -243,7 +254,7 @@ module.exports = function globalPermissionMiddleware(schema) {
 
     const positions = Array.isArray(user.position) ? user.position : [user.position];
     const isAdmin = positions.includes('admin');
-    const isEditor = positions.includes('editor');
+    const isEditor = positions.includes('edit');
     const isReadOnly = positions.includes('read');
 
     if (isAdmin) return next();
@@ -278,6 +289,7 @@ const models = {
   'event-tasks': mongoose.model('EventTask', eventTaskSchema),
   'event-materials': mongoose.model('EventMaterial', eventMaterialSchema),
   'event-suppliers': mongoose.model('EventSupplier', eventSupplierSchema),
+  'event-utms': mongoose.model('EventUTM', eventUTMSchema),
   'task-categories': mongoose.model('TaskCategory', taskCategorySchema),
   'material-categories': mongoose.model('MaterialCategory', materialCategorySchema),
   'supplier-categories': mongoose.model('SupplierCategory', supplierCategorySchema),

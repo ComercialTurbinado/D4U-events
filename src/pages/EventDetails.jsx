@@ -274,7 +274,7 @@ export default function EventDetailsPage() {
           className="bg-blue-600 hover:bg-blue-700"
         >
           <Edit className="w-4 h-4 mr-2" />
-          Editar Evento
+          Editar Evento a
         </Button>
       </div>
 
