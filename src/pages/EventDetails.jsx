@@ -278,8 +278,11 @@ export default function EventDetailsPage() {
         </Button>
       </div>
 
-      <Tabs defaultValue="tasks" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+      <Tabs defaultValue="utm" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="w-full">
+          <TabsTrigger value="utm" className="flex items-center gap-2">
+            <QrCode className="h-4 w-4" /> UTM
+          </TabsTrigger>
           <TabsTrigger value="tasks" className="flex items-center gap-2">
             <ClipboardList className="h-4 w-4" /> Tarefas
           </TabsTrigger>
@@ -291,9 +294,6 @@ export default function EventDetailsPage() {
           </TabsTrigger>
           <TabsTrigger value="notes" className="flex items-center gap-2">
             <StickyNote className="h-4 w-4" /> Notas
-          </TabsTrigger>
-          <TabsTrigger value="utm" className="flex items-center gap-2">
-            <QrCode className="h-4 w-4" /> UTM
           </TabsTrigger>
         </TabsList>
         

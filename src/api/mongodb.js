@@ -388,3 +388,111 @@ export const DefaultTaskOps = createEntityOperations('default-tasks');
 export const DefaultMaterialOps = createEntityOperations('default-materials');
 export const DefaultSupplierOps = createEntityOperations('default-suppliers');
 export const TeamMemberOps = createEntityOperations('teammembers');
+
+// Certifique-se de que a classe Entity é exportada
+export class Entity {
+  constructor(collection) {
+    this.collection = collection;
+  }
+
+  async list(query = '') {
+    try {
+      const url = `${API_URL}/entities/${this.collection}${query}`;
+      console.log('URL da requisição:', url);
+      
+      const response = await fetch(url, {
+        headers: createHeaders()
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Erro ${response.status} ao listar ${this.collection}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error(`Erro ao listar ${this.collection}:`, error);
+      throw error;
+    }
+  }
+
+  async get(id) {
+    try {
+      const response = await fetch(`${API_URL}/entities/${this.collection}/${id}`, {
+        headers: createHeaders()
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Erro ${response.status} ao buscar ${this.collection}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error(`Erro ao buscar ${this.collection}:`, error);
+      throw error;
+    }
+  }
+
+  async create(data) {
+    try {
+      const cleanData = cleanDataForApi(data);
+      const response = await fetch(`${API_URL}/entities/${this.collection}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...createHeaders()
+        },
+        body: JSON.stringify(cleanData)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Erro ${response.status} ao criar ${this.collection}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error(`Erro ao criar ${this.collection}:`, error);
+      throw error;
+    }
+  }
+
+  async update(id, data) {
+    try {
+      const cleanData = cleanDataForApi(data);
+      const response = await fetch(`${API_URL}/entities/${this.collection}/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...createHeaders()
+        },
+        body: JSON.stringify(cleanData)
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Erro ${response.status} ao atualizar ${this.collection}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error(`Erro ao atualizar ${this.collection}:`, error);
+      throw error;
+    }
+  }
+
+  async delete(id) {
+    try {
+      const response = await fetch(`${API_URL}/entities/${this.collection}/${id}`, {
+        method: 'DELETE',
+        headers: createHeaders()
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Erro ${response.status} ao excluir ${this.collection}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error(`Erro ao excluir ${this.collection}:`, error);
+      throw error;
+    }
+  }
+}

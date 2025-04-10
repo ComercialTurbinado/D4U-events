@@ -4,8 +4,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Copy, QrCode } from 'lucide-react';
+import { EventUTM } from '@/api/entities';
 
 export default function EventUTMTab({ event }) {
+  console.log("EventUTMTab sendo renderizado com evento:", event);
+
   const [utmParams, setUtmParams] = useState({
     source: 'evento',
     medium: 'qr_code',
@@ -33,6 +36,7 @@ export default function EventUTMTab({ event }) {
   const generateQRCode = async () => {
     setIsLoading(true);
     try {
+      // Gera o QR Code
       const response = await fetch('https://api.qr-code-generator.com/v1/create', {
         method: 'POST',
         headers: {
@@ -53,6 +57,24 @@ export default function EventUTMTab({ event }) {
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       setQrCodeUrl(url);
+
+      // Salva a UTM no banco de dados
+      try {
+        console.log('Salvando UTM para o evento:', event.id);
+        await EventUTM.create({
+          event_id: event.id,
+          source: utmParams.source,
+          medium: utmParams.medium,
+          campaign: utmParams.campaign,
+          content: utmParams.content,
+          term: utmParams.term,
+          qr_code_url: generateUTMUrl()
+        });
+        console.log('UTM salva com sucesso!');
+      } catch (utmError) {
+        console.error('Erro ao salvar UTM:', utmError);
+      }
+
     } catch (error) {
       console.error('Erro ao gerar QR Code:', error);
     } finally {
@@ -71,7 +93,38 @@ export default function EventUTMTab({ event }) {
         campaign: event.name.toLowerCase().replace(/\s+/g, '-')
       }));
     }
-  }, [event?.name]);
+    
+    // Carrega a UTM existente para o evento
+    if (event?.id) {
+      loadExistingUTM();
+    }
+  }, [event?.name, event?.id]);
+
+  const loadExistingUTM = async () => {
+    try {
+      console.log('Carregando UTM para o evento:', event.id);
+      const utms = await EventUTM.list();
+      const eventUTM = utms.find(utm => utm.event_id === event.id);
+      
+      if (eventUTM) {
+        console.log('UTM existente encontrada:', eventUTM);
+        setUtmParams({
+          source: eventUTM.source || 'evento',
+          medium: eventUTM.medium || 'qr_code',
+          campaign: eventUTM.campaign || event?.name?.toLowerCase().replace(/\s+/g, '-') || '',
+          content: eventUTM.content || '',
+          term: eventUTM.term || ''
+        });
+        
+        // Se houver um QR Code salvo, exibe-o
+        if (eventUTM.qr_code_url) {
+          setQrCodeUrl(eventUTM.qr_code_url);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao carregar UTM existente:', error);
+    }
+  };
 
   return (
     <div className="space-y-6">
