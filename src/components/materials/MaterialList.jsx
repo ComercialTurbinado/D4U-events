@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, Image } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MaterialCategory } from "@/api/entities";
 
@@ -52,6 +52,7 @@ export default function MaterialList({ materials, isLoading, onEdit, onDelete })
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-16"></TableHead>
             <TableHead>Nome do Material</TableHead>
             <TableHead>Categoria</TableHead>
             <TableHead>Qtd. Padrão</TableHead>
@@ -63,6 +64,21 @@ export default function MaterialList({ materials, isLoading, onEdit, onDelete })
         <TableBody>
           {materials.map((material) => (
             <TableRow key={material.id}>
+              <TableCell>
+                {material.image_url ? (
+                  <div className="w-12 h-12 rounded-md overflow-hidden">
+                    <img 
+                      src={material.image_url} 
+                      alt={material.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-12 h-12 flex items-center justify-center rounded-md bg-gray-100">
+                    <Image className="w-6 h-6 text-gray-400" />
+                  </div>
+                )}
+              </TableCell>
               <TableCell className="font-medium">{material.name}</TableCell>
               <TableCell>
                 {material.category_id ? (
@@ -118,7 +134,7 @@ export default function MaterialList({ materials, isLoading, onEdit, onDelete })
           ))}
           {materials.length === 0 && (
             <TableRow>
-              <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+              <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                 Nenhum material cadastrado
               </TableCell>
             </TableRow>

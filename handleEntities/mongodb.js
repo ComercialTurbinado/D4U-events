@@ -62,6 +62,7 @@ const materialSchema = new mongoose.Schema({
   unit: String,
   quantity: Number,
   price: Number,
+  image_url: String,
   is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });

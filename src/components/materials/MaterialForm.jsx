@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Image, Upload } from "lucide-react";
 import { 
   Select, 
   SelectContent, 
@@ -25,18 +26,27 @@ export default function MaterialForm({ initialData, onSubmit, onCancel }) {
     initial_purchase_quantity: "",
     initial_purchase_cost: "",
     storage_country: "",
-    notes: ""
+    notes: "",
+    image_url: ""
   });
 
   const [suppliers, setSuppliers] = useState([]);
   const [categories, setCategories] = useState([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
   const [isLoadingSuppliers, setIsLoadingSuppliers] = useState(true);
+  const [imagePreview, setImagePreview] = useState(initialData?.image_url || "");
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     loadCategories();
     loadSuppliers();
   }, []);
+
+  useEffect(() => {
+    if (initialData?.image_url) {
+      setImagePreview(initialData.image_url);
+    }
+  }, [initialData]);
 
   const loadCategories = async () => {
     setIsLoadingCategories(true);
@@ -62,6 +72,40 @@ export default function MaterialForm({ initialData, onSubmit, onCancel }) {
     } finally {
       setIsLoadingSuppliers(false);
     }
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Verifica se o arquivo é uma imagem
+    if (!file.type.match('image.*')) {
+      alert('Por favor, selecione uma imagem válida');
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      // Converte a imagem para base64
+      const base64 = await convertToBase64(file);
+      setImagePreview(base64);
+      setFormData(prev => ({ ...prev, image_url: base64 }));
+    } catch (error) {
+      console.error("Erro ao processar a imagem:", error);
+      alert('Ocorreu um erro ao processar a imagem');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const convertToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
   };
 
   const handleSubmit = (e) => {
@@ -143,6 +187,43 @@ export default function MaterialForm({ initialData, onSubmit, onCancel }) {
                 onChange={e => setFormData(prev => ({ ...prev, storage_country: e.target.value }))}
                 placeholder="Ex: Brasil"
               />
+            </div>
+          </div>
+
+          {/* Campo de Upload de Imagem */}
+          <div>
+            <Label htmlFor="image_upload">Imagem do Material</Label>
+            <div className="flex items-start gap-4 mt-1">
+              <div 
+                className={`border rounded-md flex items-center justify-center bg-gray-50 w-32 h-32 overflow-hidden ${!imagePreview ? 'border-dashed' : ''}`}
+              >
+                {imagePreview ? (
+                  <img src={imagePreview} alt="Imagem do material" className="w-full h-full object-cover" />
+                ) : (
+                  <Image className="w-10 h-10 text-gray-300" />
+                )}
+              </div>
+              
+              <div className="flex flex-col">
+                <label 
+                  htmlFor="image_upload" 
+                  className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  {isUploading ? 'Processando...' : 'Carregar imagem'}
+                </label>
+                <input
+                  id="image_upload"
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  disabled={isUploading}
+                />
+                <p className="mt-2 text-xs text-gray-500">
+                  Formatos suportados: JPEG, PNG, GIF. Tamanho máximo: 5MB.
+                </p>
+              </div>
             </div>
           </div>
           

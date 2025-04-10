@@ -38,11 +38,10 @@ exports.handler = async (event) => {
         console.log('Gerando QR Code com dados:', requestBody);
         console.log('Token de API usado:', requestBody.apiKey);
         
-        const response = await fetch('https://api.qr-code-generator.com/v1/create', {
+        const response = await fetch(`https://api.qr-code-generator.com/v1/create?access-token=${requestBody.apiKey}`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${requestBody.apiKey}`
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({
             frame_name: requestBody.frame_name || "no-frame",
