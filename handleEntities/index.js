@@ -36,6 +36,7 @@ exports.handler = async (event) => {
       try {
         const requestBody = JSON.parse(event.body);
         console.log('Gerando QR Code com dados:', requestBody);
+        console.log('Token de API usado:', requestBody.apiKey);
         
         const response = await fetch('https://api.qr-code-generator.com/v1/create', {
           method: 'POST',
@@ -46,9 +47,8 @@ exports.handler = async (event) => {
           body: JSON.stringify({
             frame_name: requestBody.frame_name || "no-frame",
             qr_code_text: requestBody.qr_code_text,
-            image_format: requestBody.image_format || "SVG",
-            qr_code_logo: requestBody.qr_code_logo || "scan-me-square"
-          })
+            image_format: requestBody.image_format || "SVG"
+           })
         });
 
         if (!response.ok) {

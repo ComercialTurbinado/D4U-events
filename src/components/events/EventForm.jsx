@@ -113,17 +113,17 @@ export default function EventForm({ initialData, onSubmit, onCancel }) {
     setIsLoading(true);
     try {
       // Gera o QR Code
-      const response = await fetch('https://api.qr-code-generator.com/v1/create', {
+      const response = await fetch(`${API_URL}/entities/generate-qrcode`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer CO3JxMEAYGJNaSfmdav_EGI-CP8yMa8HuJNoheULlxzRQBTs8Wg8QMBQUPPFU_3c'
+          ...createHeaders()
         },
         body: JSON.stringify({
+          apiKey: 'CO3JxMEAYGJNaSfmdav_EGI-CP8yMa8HuJNoheULlxzRQBTs8Wg8QMBQUPPFU_3c',
           frame_name: "no-frame",
-          qr_code_text: generateUTM(),
-          image_format: "SVG",
-          qr_code_logo: "scan-me-square"
+          qr_code_text: generateUTMUrl(),
+          image_format: "SVG" 
         })
       });
 
