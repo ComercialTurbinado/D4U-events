@@ -11,6 +11,8 @@ export const DefaultSupplier = DefaultSupplierOps;
 export const Task = TaskOps;
 export const Material = MaterialOps;
 export const Supplier = SupplierOps;
+export const Promoter = new Entity('promoters');
+export const Influencer = new Entity('influencers');
 export const Department = DepartmentOps;
 export const Event = EventOps;
 export const EventTask = EventTaskOps;
@@ -29,3 +31,26 @@ export const User = {
 };
 
 export const EventUTM = new Entity('event-utms');
+
+export class EventInfluencer extends Entity {
+  static collection = "event_influencers";
+
+  static async list(filters = {}) {
+    const data = await super.list(filters);
+    // Popula os dados do influenciador
+    for (const item of data) {
+      if (item.influencer_id) {
+        item.influencer = await Influencer.get(item.influencer_id);
+      }
+    }
+    return data;
+  }
+
+  static async get(id) {
+    const data = await super.get(id);
+    if (data && data.influencer_id) {
+      data.influencer = await Influencer.get(data.influencer_id);
+    }
+    return data;
+  }
+}

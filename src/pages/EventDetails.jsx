@@ -15,6 +15,7 @@ import EventTasksTab from "../components/event-details/EventTasksTab";
 import EventMaterialsTab from "../components/event-details/EventMaterialsTab";
 import EventSuppliersTab from "../components/event-details/EventSuppliersTab";
 import EventUTMTab from '@/components/event-details/EventUTMTab';
+import EventInfluencerTab from '../components/event-details/EventInfluencerTab';
 
 const tabs = [
   { id: 'details', label: 'Detalhes', icon: Info },
@@ -23,6 +24,7 @@ const tabs = [
   { id: 'tasks', label: 'Tarefas', icon: ListTodo },
   { id: 'notes', label: 'Notas', icon: StickyNote },
   { id: 'utm', label: 'UTM', icon: QrCode },
+  { id: 'influencers', label: 'Influenciadores', component: <EventInfluencerTab eventId={id} /> },
 ];
 
 export default function EventDetailsPage() {
@@ -295,6 +297,9 @@ export default function EventDetailsPage() {
           <TabsTrigger value="notes" className="flex items-center gap-2">
             <StickyNote className="h-4 w-4" /> Notas
           </TabsTrigger>
+          <TabsTrigger value="influencers" className="flex items-center gap-2">
+            <Info className="h-4 w-4" /> Influenciadores
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="tasks">
@@ -315,6 +320,10 @@ export default function EventDetailsPage() {
         
         <TabsContent value="utm">
           <EventUTMTab event={event} />
+        </TabsContent>
+        
+        <TabsContent value="influencers">
+          <EventInfluencerTab eventId={id} />
         </TabsContent>
       </Tabs>
     </div>

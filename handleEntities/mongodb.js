@@ -84,6 +84,41 @@ const supplierSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+const promoterSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  description: String,
+  contact_person: String,
+  phone: String,
+  email: String,
+  country: String,
+  state: String,
+  city: String,
+  address: String,
+  service_description: String,
+  reference_value: { type: Number, default: 0 },
+  image_url: String,
+  is_active: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const influencerSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  description: String,
+  contact_person: String,
+  phone: String,
+  email: String,
+  social_media: String,
+  followers_count: Number,
+  engagement_rate: Number,
+  country: String,
+  state: String,
+  city: String,
+  reference_value: { type: Number, default: 0 },
+  image_url: String,
+  is_active: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now }
+});
+
 const departmentSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: String,
@@ -285,6 +320,8 @@ const models = {
   'tasks': mongoose.model('Task', taskSchema),
   'materials': mongoose.model('Material', materialSchema),
   'suppliers': mongoose.model('Supplier', supplierSchema),
+  'promoters': mongoose.model('Promoter', promoterSchema),
+  'influencers': mongoose.model('Influencer', influencerSchema),
   'departments': mongoose.model('Department', departmentSchema),
   'events': mongoose.model('Event', eventSchema),
   'event-tasks': mongoose.model('EventTask', eventTaskSchema),
