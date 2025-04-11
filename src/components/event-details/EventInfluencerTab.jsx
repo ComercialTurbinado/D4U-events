@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -7,9 +8,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { EventInfluencer, Influencer } from "@/api/entities";
+import { EventInfluencer } from "@/api/entities";
+import { formatCurrency } from "@/lib/utils";
+import { Edit, Trash2 } from "lucide-react";
 import EventInfluencerForm from "./EventInfluencerForm";
 
 export default function EventInfluencerTab({ eventId }) {
@@ -30,33 +31,18 @@ export default function EventInfluencerTab({ eventId }) {
     }
   };
 
-  const handleAddInfluencer = async (formData) => {
+  const handleSubmit = async (formData) => {
     try {
-      await EventInfluencer.create(formData);
-      await loadInfluencers();
-      setShowForm(false);
-    } catch (error) {
-      console.error("Erro ao adicionar influenciador:", error);
-    }
-  };
-
-  const handleUpdateInfluencer = async (formData) => {
-    try {
-      await EventInfluencer.update(editingInfluencer.id, formData);
-      await loadInfluencers();
+      if (editingInfluencer) {
+        await EventInfluencer.update(editingInfluencer.id, formData);
+      } else {
+        await EventInfluencer.create(formData);
+      }
       setShowForm(false);
       setEditingInfluencer(null);
+      loadInfluencers();
     } catch (error) {
-      console.error("Erro ao atualizar influenciador:", error);
-    }
-  };
-
-  const handleDeleteInfluencer = async (id) => {
-    try {
-      await EventInfluencer.delete(id);
-      await loadInfluencers();
-    } catch (error) {
-      console.error("Erro ao deletar influenciador:", error);
+      console.error("Erro ao salvar influenciador:", error);
     }
   };
 
@@ -65,82 +51,90 @@ export default function EventInfluencerTab({ eventId }) {
     setShowForm(true);
   };
 
-  const handleSubmit = async (formData) => {
-    if (editingInfluencer) {
-      await handleUpdateInfluencer(formData);
-    } else {
-      await handleAddInfluencer(formData);
+  const handleDelete = async (id) => {
+    if (window.confirm("Tem certeza que deseja remover este influenciador?")) {
+      try {
+        await EventInfluencer.delete(id);
+        loadInfluencers();
+      } catch (error) {
+        console.error("Erro ao remover influenciador:", error);
+      }
     }
   };
 
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditingInfluencer(null);
+  };
+
+  if (showForm) {
+    return (
+      <EventInfluencerForm
+        eventId={eventId}
+        influencer={editingInfluencer}
+        onSubmit={handleSubmit}
+        onCancel={handleCancel}
+      />
+    );
+  }
+
   return (
     <div className="space-y-4">
-      {showForm ? (
-        <EventInfluencerForm
-          eventId={eventId}
-          onSubmit={handleSubmit}
-          onCancel={() => {
-            setShowForm(false);
-            setEditingInfluencer(null);
-          }}
-        />
-      ) : (
-        <>
-          <div className="flex justify-between items-center">
-            <h2 className="text-lg font-semibold">Influenciadores</h2>
-            <Button onClick={() => setShowForm(true)}>Adicionar Influenciador</Button>
-          </div>
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-medium">Influenciadores do Evento</h3>
+        <Button onClick={() => setShowForm(true)}>
+          Adicionar Influenciador
+        </Button>
+      </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nome</TableHead>
-                <TableHead>Quantidade</TableHead>
-                <TableHead>Valor Unitário</TableHead>
-                <TableHead>Valor Total</TableHead>
-                <TableHead>Observações</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {influencers.map((influencer) => (
-                <TableRow key={influencer.id}>
-                  <TableCell>{influencer.influencer?.name || "N/A"}</TableCell>
-                  <TableCell>{influencer.quantity}</TableCell>
-                  <TableCell>R$ {influencer.unit_cost.toFixed(2)}</TableCell>
-                  <TableCell>R$ {influencer.total_cost.toFixed(2)}</TableCell>
-                  <TableCell>{influencer.notes || "-"}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(influencer)}
-                      >
-                        Editar
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDeleteInfluencer(influencer.id)}
-                      >
-                        Deletar
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {influencers.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center">
-                    Nenhum influenciador adicionado
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </>
-      )}
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Nome</TableHead>
+            <TableHead>Quantidade</TableHead>
+            <TableHead>Valor Unitário</TableHead>
+            <TableHead>Valor Total</TableHead>
+            <TableHead>Observações</TableHead>
+            <TableHead className="w-[100px]">Ações</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {influencers.map((influencer) => (
+            <TableRow key={influencer.id}>
+              <TableCell>{influencer.influencer?.name}</TableCell>
+              <TableCell>{influencer.quantity}</TableCell>
+              <TableCell>{formatCurrency(influencer.unit_cost)}</TableCell>
+              <TableCell>{formatCurrency(influencer.total_cost)}</TableCell>
+              <TableCell>{influencer.notes}</TableCell>
+              <TableCell>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleEdit(influencer)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDelete(influencer.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+          {influencers.length === 0 && (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center">
+                Nenhum influenciador adicionado
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
     </div>
   );
 } 

@@ -2,37 +2,35 @@ import { EventTypeOps, TaskOps, MaterialOps, SupplierOps, DepartmentOps, EventOp
 import { API_URL, cleanDataForApi } from './mongodb';
 
 // Mock entities para desenvolvimento
-export const EventType = EventTypeOps;
-
-export const DefaultTask = DefaultTaskOps;
-export const DefaultMaterial = DefaultMaterialOps;
-export const DefaultSupplier = DefaultSupplierOps;
-
-export const Task = TaskOps;
-export const Material = MaterialOps;
-export const Supplier = SupplierOps;
-export const Promoter = new Entity('promoters');
-export const Influencer = new Entity('influencers');
-export const Department = DepartmentOps;
-export const Event = EventOps;
-export const EventTask = EventTaskOps;
-export const EventMaterial = EventMaterialOps;
-export const EventSupplier = EventSupplierOps;
-export const TaskCategory = TaskCategoryOps;
-export const MaterialCategory = MaterialCategoryOps;
-export const SupplierCategory = SupplierCategoryOps;
-export const TeamMember = TeamMemberOps;
+const EventType = EventTypeOps;
+const DefaultTask = DefaultTaskOps;
+const DefaultMaterial = DefaultMaterialOps;
+const DefaultSupplier = DefaultSupplierOps;
+const Task = TaskOps;
+const Material = MaterialOps;
+const Supplier = SupplierOps;
+const Promoter = new Entity('promoters');
+const Influencer = new Entity('influencers');
+const Department = DepartmentOps;
+const Event = EventOps;
+const EventTask = EventTaskOps;
+const EventMaterial = EventMaterialOps;
+const EventSupplier = EventSupplierOps;
+const TaskCategory = TaskCategoryOps;
+const MaterialCategory = MaterialCategoryOps;
+const SupplierCategory = SupplierCategoryOps;
+const TeamMember = TeamMemberOps;
 
 // Mock auth
-export const User = {
+const User = {
   login: () => Promise.resolve({}),
   logout: () => Promise.resolve({}),
   getCurrentUser: () => Promise.resolve({})
 };
 
-export const EventUTM = new Entity('event-utms');
+const EventUTM = new Entity('event-utms');
 
-export class EventInfluencer extends Entity {
+class EventInfluencer extends Entity {
   static collection = "event_influencers";
 
   static async list(filters = {}) {
@@ -54,3 +52,51 @@ export class EventInfluencer extends Entity {
     return data;
   }
 }
+
+class EventPromoter extends Entity {
+  static collection = "event_promoters";
+
+  static async list(filters = {}) {
+    const data = await super.list(filters);
+    // Popula os dados do promoter
+    for (const item of data) {
+      if (item.promoter_id) {
+        item.promoter = await Promoter.get(item.promoter_id);
+      }
+    }
+    return data;
+  }
+
+  static async get(id) {
+    const data = await super.get(id);
+    if (data && data.promoter_id) {
+      data.promoter = await Promoter.get(data.promoter_id);
+    }
+    return data;
+  }
+}
+
+export {
+  Event,
+  EventType,
+  EventTask,
+  EventMaterial,
+  EventSupplier,
+  Task,
+  Material,
+  Supplier,
+  EventInfluencer,
+  Influencer,
+  EventPromoter,
+  Promoter,
+  Department,
+  TaskCategory,
+  MaterialCategory,
+  SupplierCategory,
+  TeamMember,
+  DefaultTask,
+  DefaultMaterial,
+  DefaultSupplier,
+  User,
+  EventUTM
+};

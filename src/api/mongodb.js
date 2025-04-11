@@ -388,6 +388,8 @@ export const DefaultTaskOps = createEntityOperations('default-tasks');
 export const DefaultMaterialOps = createEntityOperations('default-materials');
 export const DefaultSupplierOps = createEntityOperations('default-suppliers');
 export const TeamMemberOps = createEntityOperations('teammembers');
+export const EventPromoterOps = createEntityOperations('event-promoters');
+export const PromoterOps = createEntityOperations('promoters');
 
 // Certifique-se de que a classe Entity é exportada
 export class Entity {
@@ -495,4 +497,104 @@ export class Entity {
       throw error;
     }
   }
+}
+
+export class Event extends Entity {
+  static collection = "events";
+}
+
+export class EventType extends Entity {
+  static collection = "event-types";
+}
+
+export class Task extends Entity {
+  static collection = "tasks";
+}
+
+export class Material extends Entity {
+  static collection = "materials";
+}
+
+export class Supplier extends Entity {
+  static collection = "suppliers";
+}
+
+export class EventTask extends Entity {
+  static collection = "event-tasks";
+}
+
+export class EventMaterial extends Entity {
+  static collection = "event-materials";
+}
+
+export class EventSupplier extends Entity {
+  static collection = "event-suppliers";
+}
+
+export class EventInfluencer extends Entity {
+  static collection = "event_influencers";
+
+  static async list(filters = {}) {
+    const data = await super.list(filters);
+    
+    // Popula os detalhes do influenciador
+    const populatedData = await Promise.all(data.map(async (item) => {
+      if (item.influencer_id) {
+        const influencer = await Influencer.get(item.influencer_id);
+        return { ...item, influencer };
+      }
+      return item;
+    }));
+
+    return populatedData;
+  }
+
+  static async get(id) {
+    const data = await super.get(id);
+    
+    if (data && data.influencer_id) {
+      const influencer = await Influencer.get(data.influencer_id);
+      return { ...data, influencer };
+    }
+    
+    return data;
+  }
+}
+
+export class Influencer extends Entity {
+  static collection = "influencers";
+}
+
+export class EventPromoter extends Entity {
+  static collection = "event_promoters";
+
+  static async list(filters = {}) {
+    const data = await super.list(filters);
+    
+    // Popula os detalhes do promoter
+    const populatedData = await Promise.all(data.map(async (item) => {
+      if (item.promoter_id) {
+        const promoter = await Promoter.get(item.promoter_id);
+        return { ...item, promoter };
+      }
+      return item;
+    }));
+
+    return populatedData;
+  }
+
+  static async get(id) {
+    const data = await super.get(id);
+    
+    if (data && data.promoter_id) {
+      const promoter = await Promoter.get(data.promoter_id);
+      return { ...data, promoter };
+    }
+    
+    return data;
+  }
+}
+
+export class Promoter extends Entity {
+  static collection = "promoters";
 }

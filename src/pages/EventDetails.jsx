@@ -9,13 +9,14 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { format } from "date-fns";
-import { Edit, ArrowLeft, Calendar, MapPin, DollarSign, User, Briefcase, ShoppingCart, ClipboardList, Info, Package, Truck, ListTodo, StickyNote, QrCode } from "lucide-react";
+import { Edit, ArrowLeft, Calendar, MapPin, DollarSign, User, Briefcase, ShoppingCart, ClipboardList, Info, Package, Truck, ListTodo, StickyNote, QrCode, Users } from "lucide-react";
 
 import EventTasksTab from "../components/event-details/EventTasksTab";
 import EventMaterialsTab from "../components/event-details/EventMaterialsTab";
 import EventSuppliersTab from "../components/event-details/EventSuppliersTab";
 import EventUTMTab from '@/components/event-details/EventUTMTab';
 import EventInfluencerTab from '../components/event-details/EventInfluencerTab';
+import EventPromoterTab from '../components/event-details/EventPromoterTab';
 
 const tabs = [
   { id: 'details', label: 'Detalhes', icon: Info },
@@ -24,7 +25,8 @@ const tabs = [
   { id: 'tasks', label: 'Tarefas', icon: ListTodo },
   { id: 'notes', label: 'Notas', icon: StickyNote },
   { id: 'utm', label: 'UTM', icon: QrCode },
-  { id: 'influencers', label: 'Influenciadores', component: <EventInfluencerTab eventId={id} /> },
+  { id: 'influencers', label: 'Influenciadores', icon: User },
+  { id: 'promoters', label: 'Promoters', icon: Users }
 ];
 
 export default function EventDetailsPage() {
@@ -300,6 +302,9 @@ export default function EventDetailsPage() {
           <TabsTrigger value="influencers" className="flex items-center gap-2">
             <Info className="h-4 w-4" /> Influenciadores
           </TabsTrigger>
+          <TabsTrigger value="promoters" className="flex items-center gap-2">
+            <Users className="h-4 w-4" /> Promoters
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="tasks">
@@ -324,6 +329,10 @@ export default function EventDetailsPage() {
         
         <TabsContent value="influencers">
           <EventInfluencerTab eventId={id} />
+        </TabsContent>
+
+        <TabsContent value="promoters">
+          <EventPromoterTab eventId={id} />
         </TabsContent>
       </Tabs>
     </div>
