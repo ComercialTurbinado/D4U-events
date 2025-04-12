@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Promoter } from "@/api/entities";
+import { Promoter } from "@/api/mongodb";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import {

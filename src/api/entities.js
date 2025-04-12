@@ -1,4 +1,4 @@
-import { EventTypeOps, TaskOps, MaterialOps, SupplierOps, DepartmentOps, EventOps, EventTaskOps, EventMaterialOps, EventSupplierOps, TaskCategoryOps, MaterialCategoryOps, SupplierCategoryOps, DefaultTaskOps, DefaultMaterialOps, DefaultSupplierOps, TeamMemberOps, Entity } from './mongodb';
+import { EventTypeOps, TaskOps, MaterialOps, SupplierOps, DepartmentOps, EventOps, EventTaskOps, EventMaterialOps, EventSupplierOps, TaskCategoryOps, MaterialCategoryOps, SupplierCategoryOps, DefaultTaskOps, DefaultMaterialOps, DefaultSupplierOps, TeamMemberOps, Entity, PromoterOps } from './mongodb';
 import { API_URL, cleanDataForApi } from './mongodb';
 
 // Mock entities para desenvolvimento
@@ -18,6 +18,7 @@ const TaskCategory = TaskCategoryOps;
 const MaterialCategory = MaterialCategoryOps;
 const SupplierCategory = SupplierCategoryOps;
 const TeamMember = TeamMemberOps;
+const Promoter = PromoterOps;
 
 // Mock auth
 const User = {
@@ -30,10 +31,31 @@ const EventUTM = new Entity('event-utms');
 
 class Influencer extends Entity {
   static collection = "influencers";
-}
 
-class Promoter extends Entity {
-  static collection = "promoters";
+  static async list(filters = {}) {
+    try {
+      const url = `${API_URL}/influencers${filters ? `?${new URLSearchParams(filters)}` : ''}`;
+      console.log('URL da requisição:', url);
+      
+      const response = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Erro ${response.status} ao listar influencers`);
+      }
+      
+      const data = await response.json();
+      console.log('Dados dos influencers:', data);
+      return data;
+    } catch (error) {
+      console.error('Erro ao listar influencers:', error);
+      throw error;
+    }
+  }
 }
 
 class EventInfluencer extends Entity {

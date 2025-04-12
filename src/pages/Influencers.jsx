@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Influencer } from "@/api/entities";
+import { Influencer } from "@/api/mongodb";
 import { formatCurrency } from "@/lib/utils";
 import { Edit, Trash2, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";

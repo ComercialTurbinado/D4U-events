@@ -20,6 +20,7 @@ import LoginPage from "@/pages/login"
 import { createBrowserRouter } from "react-router-dom"
 import Influencers from "./pages/Influencers"
 import Promoters from "./pages/Promoters"
+import { RouterProvider } from "react-router-dom"
 
 const router = createBrowserRouter([
   {
@@ -40,40 +41,18 @@ const router = createBrowserRouter([
       { path: "/promoters/:id", element: <Promoters /> },
       { path: "/settings", element: <Settings /> }
     ]
+  },
+  {
+    path: "/login",
+    element: <LoginPage />
   }
-])
+]);
 
-function App() {
+export default function App() {
   return (
     <>
-      <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route 
-          path="/" 
-          element={
-            <PrivateRoute>
-              <Layout />
-            </PrivateRoute>
-          }
-        >
-          <Route index element={<Dashboard />} />
-          <Route path="departments" element={<Departments />} />
-          <Route path="departments/members" element={<TeamMembers />} />
-          <Route path="events" element={<Events />} />
-          <Route path="events/:id" element={<EventDetails />} />
-          <Route path="event-types" element={<EventTypes />} />
-          <Route path="tasks" element={<Tasks />} />
-          <Route path="task-categories" element={<TaskCategories />} />
-          <Route path="materials" element={<Materials />} />
-          <Route path="material-categories" element={<MaterialCategories />} />
-          <Route path="suppliers" element={<Suppliers />} />
-          <Route path="supplier-categories" element={<SupplierCategories />} />
-          <Route path="settings" element={<Settings />} />
-        </Route>
-      </Routes>
+      <RouterProvider router={router} />
       <Toaster />
     </>
-  )
-}
-
-export default App 
+  );
+} 
