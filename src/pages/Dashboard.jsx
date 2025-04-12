@@ -28,6 +28,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "react-hot-toast";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -70,38 +71,49 @@ export default function Dashboard() {
 
   const loadStats = async () => {
     try {
-      const [events, tasks, materials, suppliers, influencers, promoters] = await Promise.all([
-        Event.list(),
-        EventTask.list(),
-        Material.list(),
-        Supplier.list(),
-        Influencer.list(),
-        Promoter.list()
-      ]);
+      setIsLoading(true);
 
-      const now = new Date();
-      now.setHours(0, 0, 0, 0);
+      // Carregar eventos
+      const events = await Event.list();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const completedEvents = events.filter(event => {
+        const eventDate = new Date(event.start_date);
+        eventDate.setHours(0, 0, 0, 0);
+        return eventDate < today;
+      });
+
+      // Carregar tarefas
+      const tasks = await EventTask.list();
+      const completedTasks = tasks.filter(task => task.status === 'completed');
+
+      // Carregar contagens das outras entidades
+      const materials = await Material.list();
+      const suppliers = await Supplier.list();
+      const influencers = await Influencer.list();
+      const promoters = await Promoter.list();
 
       setStats({
         events: {
           total: events.length,
-          completed: events.filter(event => {
-            const startDate = new Date(event.start_date);
-            startDate.setHours(0, 0, 0, 0);
-            return startDate < now || event.status === "completed";
-          }).length
+          completed: completedEvents.length
         },
         tasks: {
           total: tasks.length,
-          completed: tasks.filter(task => task.status === "completed").length
+          completed: completedTasks.length
         },
-        materials: { total: materials.length },
-        suppliers: { total: suppliers.length },
-        influencers: { total: influencers.length },
-        promoters: { total: promoters.length }
+        materials: materials.length,
+        suppliers: suppliers.length,
+        influencers: influencers.length,
+        promoters: promoters.length
       });
+
     } catch (error) {
-      console.error("Erro ao carregar estatísticas:", error);
+      console.error('Erro ao carregar estatísticas:', error);
+      toast.error('Erro ao carregar estatísticas');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -247,7 +259,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4 mb-8">
         <Card className="bg-blue-50">
           <CardContent className="p-6">
             <div className="flex justify-between items-center">
@@ -306,6 +318,8 @@ export default function Dashboard() {
             </Button>
           </CardContent>
         </Card>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
 
         <Card className="bg-purple-50">
           <CardContent className="p-6">
