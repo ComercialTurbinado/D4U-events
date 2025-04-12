@@ -12,6 +12,11 @@ export default function PromoterForm() {
   const navigate = useNavigate();
   const { id } = useParams();
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Log para depuração
+  console.log("Objeto Promoter:", Promoter);
+  console.log("Métodos disponíveis:", Object.keys(Promoter));
+  
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -52,11 +57,28 @@ export default function PromoterForm() {
     setIsLoading(true);
 
     try {
+      console.log("Dados do formulário:", formData);
+      
       if (id) {
         await Promoter.update(id, formData);
         toast.success("Promoter atualizado com sucesso!");
       } else {
-        await Promoter.create(formData);
+        // Implementação direta usando fetch
+        console.log("Criando promoter via API direta");
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/promoters`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify(formData)
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Erro ao criar promoter: ${response.status}`);
+        }
+        
+        await response.json();
         toast.success("Promoter criado com sucesso!");
       }
       navigate("/promoters");

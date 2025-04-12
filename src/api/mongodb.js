@@ -232,25 +232,16 @@ export const createEntityOperations = (collection) => ({
     console.log(`Dados retornados para ${collection}/${id}:`, data);
     return data;
   },
-
+  
   create: async (data) => {
+    console.log(`Criando novo documento em ${collection}:`, data);
+    
     const cleanData = cleanDataForApi(data);
-    
-    // Verifica se o usuário tem permissão para criar
-    const { hasPermission: permissionResult, alert } = hasPermission(cleanData, 'create');
-    
-    if (!permissionResult) {
-      throw alert;
-    }
-    
-    // Adiciona o usuário ao body
-    const dataWithUser = addUserToRequest(cleanData);
-    
     const headers = createHeaders();
     const response = await fetch(`${API_URL}/${collection}`, {
       method: 'POST',
       headers,
-      body: JSON.stringify(dataWithUser),
+      body: JSON.stringify(cleanData)
     });
     
     if (!response.ok) {
@@ -260,85 +251,52 @@ export const createEntityOperations = (collection) => ({
       }
       throw new Error('Erro ao criar documento');
     }
-    return response.json();
+    const result = await response.json();
+    console.log(`Documento criado em ${collection}:`, result);
+    return result;
   },
-
+  
   update: async (id, data) => {
+    console.log(`Atualizando documento ${id} em ${collection}:`, data);
+    
     const cleanData = cleanDataForApi(data);
-    
-    // Verifica se o usuário tem permissão para atualizar
-    const { hasPermission: permissionResult, alert } = hasPermission(cleanData, 'update');
-    
-    if (!permissionResult) {
-      throw alert;
-    }
-    
-    // Adiciona o usuário ao body
-    const dataWithUser = addUserToRequest(cleanData);
-    
-    console.log(`Atualizando ${collection}/${id} com dados:`, dataWithUser);
-    
     const headers = createHeaders();
-    console.log('Headers da requisição:', headers);
-    
     const response = await fetch(`${API_URL}/${collection}/${id}`, {
       method: 'PUT',
       headers,
-      body: JSON.stringify(dataWithUser),
+      body: JSON.stringify(cleanData)
     });
     
     if (!response.ok) {
-      console.error(`Erro ao atualizar ${collection}/${id}:`, response.status, response.statusText);
-      console.error('Resposta completa:', await response.text());
+      console.error(`Erro na requisição PUT ${collection}/${id}:`, response.status, response.statusText);
       if (response.status === 401) {
         handleExpiredToken();
       }
       throw new Error('Erro ao atualizar documento');
     }
-    
     const result = await response.json();
-    console.log(`Resposta da atualização ${collection}/${id}:`, result);
+    console.log(`Documento atualizado em ${collection}:`, result);
     return result;
   },
-
+  
   delete: async (id) => {
-    // Verifica se o usuário tem permissão para deletar
-    // Para deletar, geralmente precisamos verificar o item antes para saber o departamento
-    try {
-      // Buscar o item diretamente em vez de usar this
-      console.log(`Buscando item para verificar permissões de deleção: ${API_URL}/${collection}/${id}`);
-      const response = await fetch(`${API_URL}/${collection}/${id}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : ''
-        }
-      });
-      if (!response.ok) {
-        throw new Error('Item não encontrado ou você não tem permissão para acessá-lo');
-      }
-      const item = await response.json();
-      const { hasPermission: permissionResult, alert } = hasPermission(item, 'delete');
-      if (!permissionResult) {
-        throw alert;
-      }
-    } catch (error) {
-      console.error(`Erro ao verificar permissão para deletar ${collection}/${id}:`, error);
-      throw new Error('Você não tem permissão para deletar este item');
-    }
+    console.log(`Removendo documento ${id} de ${collection}`);
     
-    // Para DELETE, enviamos o usuário em um body vazio
-    const userInfo = addUserToRequest({});
-    
+    const headers = createHeaders();
     const response = await fetch(`${API_URL}/${collection}/${id}`, {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : ''
-      },
-      body: JSON.stringify(userInfo),
+      headers
     });
-    if (!response.ok) throw new Error('Erro ao deletar documento');
-    return response.json();
+    
+    if (!response.ok) {
+      console.error(`Erro na requisição DELETE ${collection}/${id}:`, response.status, response.statusText);
+      if (response.status === 401) {
+        handleExpiredToken();
+      }
+      throw new Error('Erro ao remover documento');
+    }
+    console.log(`Documento removido de ${collection}`);
+    return true;
   },
 
   bulkCreate: async (items) => {

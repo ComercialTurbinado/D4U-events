@@ -12,6 +12,11 @@ export default function InfluencerForm() {
   const navigate = useNavigate();
   const { id } = useParams();
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Log para depuração
+  console.log("Objeto Influencer:", Influencer);
+  console.log("Métodos disponíveis:", Object.keys(Influencer));
+  
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -53,11 +58,28 @@ export default function InfluencerForm() {
     setIsLoading(true);
 
     try {
+      console.log("Dados do formulário:", formData);
+      
       if (id) {
         await Influencer.update(id, formData);
         toast.success("Influenciador atualizado com sucesso!");
       } else {
-        await Influencer.create(formData);
+        // Implementação direta usando fetch
+        console.log("Criando influenciador via API direta");
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/influencers`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify(formData)
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Erro ao criar influenciador: ${response.status}`);
+        }
+        
+        await response.json();
         toast.success("Influenciador criado com sucesso!");
       }
       navigate("/influencers");
