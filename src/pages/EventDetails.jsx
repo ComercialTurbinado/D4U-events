@@ -269,18 +269,29 @@ export default function EventDetailsPage() {
           </CardContent>
         </Card>
         
+         
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500 flex items-center gap-2">
-              <DollarSign className="h-4 w-4" /> Orçamento
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="font-medium">
-              {event.budget ? `R$ ${parseFloat(event.budget).toFixed(2)}` : "Não especificado"}
-            </p>
+           
+          <CardContent className="pb-6 pt-6">
+            <div className="grid grid-cols-3  gap-1">
+              <div className="grid grid-cols-1 justify-between">
+                <span>Orçamento:</span>
+                <span className="font-medium">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(event.budget || 0)}</span>
+              </div>
+              <div className="grid grid-cols-1 justify-between">
+                <span>Custo Atual:</span>
+                <span className="font-medium">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalCost || 0)}</span>
+              </div>
+              <div className="grid grid-cols-1 justify-between">
+                <span>Saldo:</span>
+                <span className={`font-medium ${((event.budget || 0) - totalCost) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((event.budget || 0) - totalCost)}
+                </span>
+              </div>
+            </div>
           </CardContent>
         </Card>
+       
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -341,33 +352,7 @@ export default function EventDetailsPage() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500 flex items-center gap-2">
-              <DollarSign className="h-4 w-4" /> Orçamento e Custo
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col gap-1">
-              <div className="flex justify-between">
-                <span>Orçamento:</span>
-                <span className="font-medium">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(event.budget || 0)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Custo Atual:</span>
-                <span className="font-medium">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalCost || 0)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Saldo:</span>
-                <span className={`font-medium ${((event.budget || 0) - totalCost) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((event.budget || 0) - totalCost)}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      
 
       <div className="flex justify-end mb-4">
         <Button
