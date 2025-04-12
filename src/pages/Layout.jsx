@@ -13,7 +13,9 @@ import {
   ChevronDown,
   ChevronRight,
   List,
-  Home
+  Home,
+  User,
+  UserPlus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -66,6 +68,16 @@ export default function Layout() {
         { name: "Listar Fornecedores", path: "/suppliers" },
         { name: "Categorias", path: "/supplier-categories" }
       ]
+    },
+    { 
+      name: "Influenciadores", 
+      icon: User, 
+      path: "/influencers" 
+    },
+    { 
+      name: "Promoters", 
+      icon: UserPlus, 
+      path: "/promoters" 
     },
     { 
       name: "Setores", 

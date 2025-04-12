@@ -78,6 +78,7 @@ export default function InfluencerForm() {
   };
 
   return (
+    <div className="container mx-auto py-8 max-w-7xl">
     <div className="space-y-4">
       <div className="flex items-center gap-4">
         <Button variant="ghost" onClick={() => navigate("/influencers")}>
@@ -225,6 +226,7 @@ export default function InfluencerForm() {
           </Button>
         </div>
       </form>
+    </div>
     </div>
   );
 } 

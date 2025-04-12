@@ -29,7 +29,38 @@ export default function Promoters() {
       console.log('Carregando promoters...');
       const data = await Promoter.list();
       console.log('Dados recebidos:', data);
-      setPromoters(data || []);
+      
+      // Criar um promoter de exemplo se não existir nenhum
+      if (!data || data.length === 0) {
+        console.log('Criando promoter de exemplo...');
+        try {
+          const examplePromoter = {
+            name: "Carlos Promoções",
+            description: "Empresa especializada em eventos",
+            contact_person: "Carlos Santos",
+            email: "carlos@exemplo.com",
+            phone: "(11) 98888-8888",
+            country: "Brasil",
+            state: "SP",
+            city: "São Paulo",
+            address: "Av. Paulista, 1000",
+            service_description: "Promoção de eventos corporativos",
+            reference_value: 2500,
+            is_active: true
+          };
+          
+          await Promoter.create(examplePromoter);
+          console.log('Promoter de exemplo criado com sucesso!');
+          
+          // Recarregar a lista
+          const newData = await Promoter.list();
+          setPromoters(newData || []);
+        } catch (error) {
+          console.error('Erro ao criar promoter de exemplo:', error);
+        }
+      } else {
+        setPromoters(data || []);
+      }
     } catch (error) {
       console.error("Erro ao carregar promoters:", error);
       toast.error("Erro ao carregar promoters");

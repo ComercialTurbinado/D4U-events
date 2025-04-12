@@ -29,7 +29,35 @@ export default function Influencers() {
       console.log('Carregando influencers...');
       const data = await Influencer.list();
       console.log('Dados recebidos:', data);
-      setInfluencers(data || []);
+      
+      // Criar um influenciador de exemplo se não existir nenhum
+      if (!data || data.length === 0) {
+        console.log('Criando influenciador de exemplo...');
+        try {
+          const exampleInfluencer = {
+            name: "Maria Silva",
+            description: "Influenciadora de lifestyle",
+            email: "maria@exemplo.com",
+            phone: "(11) 99999-9999",
+            social_media: "Instagram",
+            followers_count: 50000,
+            engagement_rate: 3.2,
+            reference_value: 1500,
+            is_active: true
+          };
+          
+          await Influencer.create(exampleInfluencer);
+          console.log('Influenciador de exemplo criado com sucesso!');
+          
+          // Recarregar a lista
+          const newData = await Influencer.list();
+          setInfluencers(newData || []);
+        } catch (error) {
+          console.error('Erro ao criar influenciador de exemplo:', error);
+        }
+      } else {
+        setInfluencers(data || []);
+      }
     } catch (error) {
       console.error("Erro ao carregar influenciadores:", error);
       toast.error("Erro ao carregar influenciadores");
@@ -55,6 +83,8 @@ export default function Influencers() {
   };
 
   return (
+    <div className="container mx-auto py-8 max-w-7xl">
+   
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold tracking-tight">Influenciadores</h2>
@@ -118,6 +148,8 @@ export default function Influencers() {
           </TableBody>
         </Table>
       )}
+    </div>
+       
     </div>
   );
 } 
