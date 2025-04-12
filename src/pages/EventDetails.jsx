@@ -17,6 +17,8 @@ import EventSuppliersTab from "../components/event-details/EventSuppliersTab";
 import EventUTMTab from '@/components/event-details/EventUTMTab';
 import EventInfluencerTab from '../components/event-details/EventInfluencerTab';
 import EventPromoterTab from '../components/event-details/EventPromoterTab';
+import EventInfluencersTab from "@/components/event-details/EventInfluencersTab";
+import EventPromotersTab from "@/components/event-details/EventPromotersTab";
 
 const tabs = [
   { id: 'details', label: 'Detalhes', icon: Info },
@@ -127,6 +129,12 @@ export default function EventDetailsPage() {
     if (percentage < 30) return "bg-red-500";
     if (percentage < 70) return "bg-yellow-500";
     return "bg-green-500";
+  };
+
+  // Adicionar uma função para recarregar os dados
+  const refreshEventData = () => {
+    loadEventData();
+    calculateProgress();
   };
 
   if (isLoading) {
@@ -283,28 +291,14 @@ export default function EventDetailsPage() {
       </div>
 
       <Tabs defaultValue="utm" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="w-full">
-          <TabsTrigger value="utm" className="flex items-center gap-2">
-            <QrCode className="h-4 w-4" /> UTM
-          </TabsTrigger>
-          <TabsTrigger value="tasks" className="flex items-center gap-2">
-            <ClipboardList className="h-4 w-4" /> Tarefas
-          </TabsTrigger>
-          <TabsTrigger value="materials" className="flex items-center gap-2">
-            <ShoppingCart className="h-4 w-4" /> Materiais
-          </TabsTrigger>
-          <TabsTrigger value="suppliers" className="flex items-center gap-2">
-            <Briefcase className="h-4 w-4" /> Fornecedores
-          </TabsTrigger>
-          <TabsTrigger value="notes" className="flex items-center gap-2">
-            <StickyNote className="h-4 w-4" /> Notas
-          </TabsTrigger>
-          <TabsTrigger value="influencers" className="flex items-center gap-2">
-            <Info className="h-4 w-4" /> Influenciadores
-          </TabsTrigger>
-          <TabsTrigger value="promoters" className="flex items-center gap-2">
-            <Users className="h-4 w-4" /> Promoters
-          </TabsTrigger>
+        <TabsList className="mb-4">
+          <TabsTrigger value="details">Detalhes</TabsTrigger>
+          <TabsTrigger value="tasks">Tarefas</TabsTrigger>
+          <TabsTrigger value="materials">Materiais</TabsTrigger>
+          <TabsTrigger value="suppliers">Fornecedores</TabsTrigger>
+          <TabsTrigger value="influencers">Influenciadores</TabsTrigger>
+          <TabsTrigger value="promoters">Promoters</TabsTrigger>
+          <TabsTrigger value="utm">UTM</TabsTrigger>
         </TabsList>
         
         <TabsContent value="tasks">
@@ -323,16 +317,16 @@ export default function EventDetailsPage() {
           {/* Implemente a lógica para exibir a aba de notas */}
         </TabsContent>
         
-        <TabsContent value="utm">
-          <EventUTMTab event={event} />
-        </TabsContent>
-        
         <TabsContent value="influencers">
-          <EventInfluencerTab eventId={id} />
+          <EventInfluencersTab event={event} onSuccess={refreshEventData} />
         </TabsContent>
 
         <TabsContent value="promoters">
-          <EventPromoterTab eventId={id} />
+          <EventPromotersTab event={event} onSuccess={refreshEventData} />
+        </TabsContent>
+        
+        <TabsContent value="utm">
+          <EventUTMTab event={event} />
         </TabsContent>
       </Tabs>
     </div>
