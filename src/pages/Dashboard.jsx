@@ -1,6 +1,12 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Event, EventTask, Supplier, Material } from "@/api/mongodb";
-import { InfluencerOps, PromoterOps } from "@/api/mongodb";
+import { 
+  EventOps as Event, 
+  EventTaskOps as EventTask, 
+  SupplierOps as Supplier, 
+  MaterialOps as Material,
+  InfluencerOps, 
+  PromoterOps 
+} from "@/api/mongodb";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
