@@ -142,7 +142,7 @@ export default function EventPromoterForm({ event, onSuccess, editingItem }) {
         const budgetDiff = newTotal - oldTotal;
         
         // Atualizar o evento-promoter
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/event_promoters/${editingItem.id}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/event-promoter/${editingItem.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -193,7 +193,7 @@ export default function EventPromoterForm({ event, onSuccess, editingItem }) {
         console.log("Adicionando promoter ao evento:", dataToSend);
         
         // Usando fetch diretamente para garantir que funcione
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/event_promoters`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/event-promoter`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

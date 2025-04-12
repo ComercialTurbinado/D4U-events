@@ -36,7 +36,7 @@ export default function EventPromotersTab({ event, onSuccess }) {
       setIsLoading(true);
       // Busca os promoters associados ao evento
       const data = await fetch(
-        `${import.meta.env.VITE_API_URL || "https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod"}/entities/event_promoters?event_id=${event.id}`,
+        `${import.meta.env.VITE_API_URL || "https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod"}/entities/event-promoter?event_id=${event.id}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -99,7 +99,7 @@ export default function EventPromotersTab({ event, onSuccess }) {
         setIsLoading(true);
         
         const response = await fetch(
-          `${import.meta.env.VITE_API_URL || "https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod"}/entities/event_promoters/${id}`,
+          `${import.meta.env.VITE_API_URL || "https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod"}/entities/event-promoter/${id}`,
           {
             method: "DELETE",
             headers: {
@@ -199,11 +199,7 @@ export default function EventPromotersTab({ event, onSuccess }) {
         <CardContent>
           {isLoading ? (
             <div className="text-center py-4">Carregando...</div>
-          ) : promoters.length === 0 ? (
-            <div className="text-center py-4 text-muted-foreground">
-              Nenhum promoter associado a este evento
-            </div>
-          ) : (
+          ) :  (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -217,7 +213,11 @@ export default function EventPromotersTab({ event, onSuccess }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {promoters.map((item) => (
+              { influencers.length === 0 ? (
+            <TableRow className="text-center py-4 text-muted-foreground">
+             <TableCell colSpan={6}>Nenhum promoter associado a este evento</TableCell>
+            </TableRow>
+          ) : (promoters.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">{item.promoter?.name}</TableCell>
                     <TableCell>{formatCurrency(item.fee)}</TableCell>
@@ -246,7 +246,7 @@ export default function EventPromotersTab({ event, onSuccess }) {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                )))}
               </TableBody>
             </Table>
           )}

@@ -223,6 +223,38 @@ const eventUTMSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+const eventInfluencerSchema = new mongoose.Schema({
+  event_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
+  influencer_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Influencer', required: true },
+  fee: { type: Number, default: 0 },
+  days: { type: Number, default: 1 },
+  total_fee: { type: Number, default: 0 },
+  status: { 
+    type: String, 
+    enum: ['pending', 'confirmed', 'canceled', 'completed'],
+    default: 'pending'
+  },
+  notes: String,
+  is_active: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const eventPromoterSchema = new mongoose.Schema({
+  event_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
+  promoter_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Promoter', required: true },
+  fee: { type: Number, default: 0 },
+  days: { type: Number, default: 1 },
+  total_fee: { type: Number, default: 0 },
+  status: { 
+    type: String, 
+    enum: ['pending', 'confirmed', 'canceled', 'completed'],
+    default: 'pending'
+  },
+  notes: String,
+  is_active: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now }
+});
+
 const materialCategorySchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: String,
@@ -328,6 +360,8 @@ const models = {
   'event-materials': mongoose.model('EventMaterial', eventMaterialSchema),
   'event-suppliers': mongoose.model('EventSupplier', eventSupplierSchema),
   'event-utms': mongoose.model('EventUTM', eventUTMSchema),
+  'event-influencer': mongoose.model('EventInfluencer', eventInfluencerSchema),
+  'event-promoter': mongoose.model('EventPromoter', eventPromoterSchema),
   'task-categories': mongoose.model('TaskCategory', taskCategorySchema),
   'material-categories': mongoose.model('MaterialCategory', materialCategorySchema),
   'supplier-categories': mongoose.model('SupplierCategory', supplierCategorySchema),

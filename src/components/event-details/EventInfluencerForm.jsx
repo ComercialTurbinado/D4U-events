@@ -139,7 +139,7 @@ export default function EventInfluencerForm({ event, onSuccess, editingItem }) {
         const budgetDiff = newTotal - oldTotal;
         
         // Atualizar o evento-influenciador
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/event_influencers/${editingItem.id}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/event-influencer/${editingItem.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -190,7 +190,7 @@ export default function EventInfluencerForm({ event, onSuccess, editingItem }) {
         console.log("Adicionando influenciador ao evento:", dataToSend);
         
         // Usando fetch diretamente para garantir que funcione
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/event_influencers`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/event-influencer`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

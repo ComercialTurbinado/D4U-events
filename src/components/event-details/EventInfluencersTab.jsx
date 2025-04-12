@@ -36,7 +36,7 @@ export default function EventInfluencersTab({ event, onSuccess }) {
       setIsLoading(true);
       // Busca os influenciadores associados ao evento
       const data = await fetch(
-        `${import.meta.env.VITE_API_URL || "https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod"}/entities/event_influencers?event_id=${event.id}`,
+        `${import.meta.env.VITE_API_URL || "https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod"}/entities/event-influencer?event_id=${event.id}`,
         {
           headers: {
             "Content-Type": "application/json",
@@ -99,7 +99,7 @@ export default function EventInfluencersTab({ event, onSuccess }) {
         setIsLoading(true);
         
         const response = await fetch(
-          `${import.meta.env.VITE_API_URL || "https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod"}/entities/event_influencers/${id}`,
+          `${import.meta.env.VITE_API_URL || "https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod"}/entities/event-influencer/${id}`,
           {
             method: "DELETE",
             headers: {
