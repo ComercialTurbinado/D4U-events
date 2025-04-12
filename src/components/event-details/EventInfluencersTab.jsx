@@ -113,37 +113,6 @@ export default function EventInfluencersTab({ event, onSuccess }) {
           throw new Error("Erro ao remover influenciador do evento");
         }
 
-        // Atualizar o orçamento total do evento
-        if (event && totalFee) {
-          try {
-            const feeValue = parseFloat(totalFee) || 0;
-            const currentBudget = parseFloat(event.budget) || 0;
-            const newBudget = Math.max(0, currentBudget - feeValue); // Garantir que não fique negativo
-            
-            console.log(`Atualizando orçamento do evento: ${currentBudget} - ${feeValue} = ${newBudget}`);
-            
-            const updateResponse = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/events/${event.id}`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-              },
-              body: JSON.stringify({
-                ...event,
-                budget: newBudget
-              })
-            });
-            
-            if (!updateResponse.ok) {
-              console.error("Erro ao atualizar orçamento do evento:", await updateResponse.text());
-            } else {
-              console.log("Orçamento do evento atualizado com sucesso!");
-            }
-          } catch (error) {
-            console.error("Erro ao atualizar orçamento do evento:", error);
-          }
-        }
-
         toast.success("Influenciador removido com sucesso");
         loadEventInfluencers();
         if (onSuccess) onSuccess();

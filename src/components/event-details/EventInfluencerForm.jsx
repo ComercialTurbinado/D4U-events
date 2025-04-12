@@ -133,11 +133,6 @@ export default function EventInfluencerForm({ event, onSuccess, editingItem }) {
       if (editingItem) {
         console.log("Atualizando influenciador no evento:", dataToSend);
         
-        // Cálculo da diferença para o orçamento
-        const oldTotal = parseFloat(editingItem.total_fee) || 0;
-        const newTotal = parseFloat(dataToSend.total_fee) || 0;
-        const budgetDiff = newTotal - oldTotal;
-        
         // Atualizar o evento-influenciador
         const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/event-influencer/${editingItem.id}`, {
           method: 'PUT',
@@ -156,35 +151,6 @@ export default function EventInfluencerForm({ event, onSuccess, editingItem }) {
         
         toast.success("Influenciador atualizado com sucesso!");
         
-        // Atualizar o orçamento total do evento com a diferença
-        if (event && budgetDiff !== 0) {
-          try {
-            const currentBudget = parseFloat(event.budget) || 0;
-            const newBudget = currentBudget + budgetDiff;
-            
-            console.log(`Atualizando orçamento do evento: ${currentBudget} + ${budgetDiff} = ${newBudget}`);
-            
-            const updateResponse = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/events/${event.id}`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-              },
-              body: JSON.stringify({
-                ...event,
-                budget: Math.max(0, newBudget)  // Garantir que o orçamento não seja negativo
-              })
-            });
-            
-            if (!updateResponse.ok) {
-              console.error("Erro ao atualizar orçamento do evento:", await updateResponse.text());
-            } else {
-              console.log("Orçamento do evento atualizado com sucesso!");
-            }
-          } catch (error) {
-            console.error("Erro ao atualizar orçamento do evento:", error);
-          }
-        }
       } else {
         // Código existente para adição de novo influenciador
         console.log("Adicionando influenciador ao evento:", dataToSend);
@@ -206,37 +172,6 @@ export default function EventInfluencerForm({ event, onSuccess, editingItem }) {
         }
         
         toast.success("Influenciador adicionado com sucesso!");
-        
-        // Atualizar o orçamento total do evento
-        if (event && dataToSend.total_fee) {
-          try {
-            const totalFeeValue = parseFloat(dataToSend.total_fee) || 0;
-            const currentBudget = parseFloat(event.budget) || 0;
-            const newBudget = currentBudget + totalFeeValue;
-            
-            console.log(`Atualizando orçamento do evento: ${currentBudget} + ${totalFeeValue} = ${newBudget}`);
-            
-            const updateResponse = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/events/${event.id}`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-              },
-              body: JSON.stringify({
-                ...event,
-                budget: newBudget
-              })
-            });
-            
-            if (!updateResponse.ok) {
-              console.error("Erro ao atualizar orçamento do evento:", await updateResponse.text());
-            } else {
-              console.log("Orçamento do evento atualizado com sucesso!");
-            }
-          } catch (error) {
-            console.error("Erro ao atualizar orçamento do evento:", error);
-          }
-        }
       }
       
       // Reset do formulário e retorno

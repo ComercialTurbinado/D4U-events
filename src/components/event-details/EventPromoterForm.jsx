@@ -136,11 +136,6 @@ export default function EventPromoterForm({ event, onSuccess, editingItem }) {
       if (editingItem) {
         console.log("Atualizando promoter no evento:", dataToSend);
         
-        // Cálculo da diferença para o orçamento
-        const oldTotal = parseFloat(editingItem.total_fee) || 0;
-        const newTotal = parseFloat(dataToSend.total_fee) || 0;
-        const budgetDiff = newTotal - oldTotal;
-        
         // Atualizar o evento-promoter
         const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/event-promoter/${editingItem.id}`, {
           method: 'PUT',
@@ -159,35 +154,6 @@ export default function EventPromoterForm({ event, onSuccess, editingItem }) {
         
         toast.success("Promoter atualizado com sucesso!");
         
-        // Atualizar o orçamento total do evento com a diferença
-        if (event && budgetDiff !== 0) {
-          try {
-            const currentBudget = parseFloat(event.budget) || 0;
-            const newBudget = currentBudget + budgetDiff;
-            
-            console.log(`Atualizando orçamento do evento: ${currentBudget} + ${budgetDiff} = ${newBudget}`);
-            
-            const updateResponse = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/events/${event.id}`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-              },
-              body: JSON.stringify({
-                ...event,
-                budget: Math.max(0, newBudget)  // Garantir que o orçamento não seja negativo
-              })
-            });
-            
-            if (!updateResponse.ok) {
-              console.error("Erro ao atualizar orçamento do evento:", await updateResponse.text());
-            } else {
-              console.log("Orçamento do evento atualizado com sucesso!");
-            }
-          } catch (error) {
-            console.error("Erro ao atualizar orçamento do evento:", error);
-          }
-        }
       } else {
         // Código existente para adição de novo promoter
         console.log("Adicionando promoter ao evento:", dataToSend);
@@ -209,37 +175,6 @@ export default function EventPromoterForm({ event, onSuccess, editingItem }) {
         }
         
         toast.success("Promoter adicionado com sucesso!");
-        
-        // Atualizar o orçamento total do evento
-        if (event && dataToSend.total_fee) {
-          try {
-            const totalFeeValue = parseFloat(dataToSend.total_fee) || 0;
-            const currentBudget = parseFloat(event.budget) || 0;
-            const newBudget = currentBudget + totalFeeValue;
-            
-            console.log(`Atualizando orçamento do evento: ${currentBudget} + ${totalFeeValue} = ${newBudget}`);
-            
-            const updateResponse = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/events/${event.id}`, {
-              method: 'PUT',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
-              },
-              body: JSON.stringify({
-                ...event,
-                budget: newBudget
-              })
-            });
-            
-            if (!updateResponse.ok) {
-              console.error("Erro ao atualizar orçamento do evento:", await updateResponse.text());
-            } else {
-              console.log("Orçamento do evento atualizado com sucesso!");
-            }
-          } catch (error) {
-            console.error("Erro ao atualizar orçamento do evento:", error);
-          }
-        }
       }
       
       // Reset do formulário e retorno

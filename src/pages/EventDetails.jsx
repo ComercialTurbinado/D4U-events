@@ -43,6 +43,7 @@ export default function EventDetailsPage() {
     tasks: { completed: 0, total: 0, percentage: 0 },
     materials: { completed: 0, total: 0, percentage: 0 }
   });
+  const [totalCost, setTotalCost] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -50,6 +51,7 @@ export default function EventDetailsPage() {
       console.log('Event ID no EventDetails:', id);
       loadEventData();
       calculateProgress();
+      calculateTotalCost();
     } else {
       navigate(createPageUrl("Events"));
     }
@@ -105,6 +107,65 @@ export default function EventDetailsPage() {
     }
   };
 
+  const calculateTotalCost = async () => {
+    try {
+      let total = 0;
+      
+      // Somar custos dos materiais
+      const materials = await EventMaterial.list();
+      const eventMaterials = materials.filter(material => material.event_id === id);
+      const materialsCost = eventMaterials.reduce((sum, material) => {
+        return sum + (parseFloat(material.total_cost) || 0);
+      }, 0);
+      
+      // Somar custos dos influenciadores
+      const influencers = await fetch(
+        `${import.meta.env.VITE_API_URL || "https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod"}/entities/event-influencer?event_id=${id}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      
+      let influencersCost = 0;
+      if (influencers.ok) {
+        const influencersData = await influencers.json();
+        influencersCost = influencersData.reduce((sum, inf) => {
+          return sum + (parseFloat(inf.total_fee) || 0);
+        }, 0);
+      }
+      
+      // Somar custos dos promoters
+      const promoters = await fetch(
+        `${import.meta.env.VITE_API_URL || "https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod"}/entities/event-promoter?event_id=${id}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      
+      let promotersCost = 0;
+      if (promoters.ok) {
+        const promotersData = await promoters.json();
+        promotersCost = promotersData.reduce((sum, prom) => {
+          return sum + (parseFloat(prom.total_fee) || 0);
+        }, 0);
+      }
+      
+      // Calcular total
+      total = materialsCost + influencersCost + promotersCost;
+      console.log(`Custo total do evento: ${total} (Materiais: ${materialsCost}, Influenciadores: ${influencersCost}, Promoters: ${promotersCost})`);
+      
+      setTotalCost(total);
+    } catch (error) {
+      console.error("Erro ao calcular custo total:", error);
+    }
+  };
+
   const getStatusLabel = (status) => {
     const statusMap = {
       planning: "Planejamento",
@@ -131,10 +192,10 @@ export default function EventDetailsPage() {
     return "bg-green-500";
   };
 
-  // Adicionar uma função para recarregar os dados
   const refreshEventData = () => {
     loadEventData();
     calculateProgress();
+    calculateTotalCost();
   };
 
   if (isLoading) {
@@ -275,6 +336,34 @@ export default function EventDetailsPage() {
             <div className="pt-2 border-t">
               <p className="text-sm font-medium text-gray-500 mb-2">Tipo de Evento</p>
               <p className="font-medium">{eventType?.name || "Personalizado"}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-gray-500 flex items-center gap-2">
+              <DollarSign className="h-4 w-4" /> Orçamento e Custo
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col gap-1">
+              <div className="flex justify-between">
+                <span>Orçamento:</span>
+                <span className="font-medium">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(event.budget || 0)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Custo Atual:</span>
+                <span className="font-medium">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalCost || 0)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Saldo:</span>
+                <span className={`font-medium ${((event.budget || 0) - totalCost) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((event.budget || 0) - totalCost)}
+                </span>
+              </div>
             </div>
           </CardContent>
         </Card>
