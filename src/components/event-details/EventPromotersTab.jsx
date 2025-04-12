@@ -213,11 +213,11 @@ export default function EventPromotersTab({ event, onSuccess }) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-              { influencers.length === 0 ? (
-            <TableRow className="text-center py-4 text-muted-foreground">
-             <TableCell colSpan={6}>Nenhum promoter associado a este evento</TableCell>
-            </TableRow>
-          ) : (promoters.map((item) => (
+                { promoters.length === 0 ? (
+                  <TableRow className="text-center py-4 text-muted-foreground">
+                    <TableCell colSpan={7}>Nenhum promoter associado a este evento</TableCell>
+                  </TableRow>
+                ) : (promoters.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-medium">{item.promoter?.name}</TableCell>
                     <TableCell>{formatCurrency(item.fee)}</TableCell>
