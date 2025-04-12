@@ -493,7 +493,7 @@ export class EventSupplier extends Entity {
 
 export class EventInfluencer extends Entity {
   static collection = "event-influencer";
-
+  
   static async list(filters = {}) {
     const data = await super.list(filters);
     
@@ -508,7 +508,7 @@ export class EventInfluencer extends Entity {
 
     return populatedData;
   }
-
+  
   static async get(id) {
     const data = await super.get(id);
     
@@ -527,7 +527,7 @@ export class Influencer extends Entity {
 
 export class EventPromoter extends Entity {
   static collection = "event-promoter";
-
+  
   static async list(filters = {}) {
     const data = await super.list(filters);
     
@@ -542,7 +542,7 @@ export class EventPromoter extends Entity {
 
     return populatedData;
   }
-
+  
   static async get(id) {
     const data = await super.get(id);
     
@@ -558,60 +558,3 @@ export class EventPromoter extends Entity {
 export class Promoter extends Entity {
   static collection = "promoters";
 }
-
-// Adicionar após o eventUTMSchema e antes do materialCategorySchema
-const eventInfluencerSchema = new mongoose.Schema({
-  event_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
-  influencer_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Influencer', required: true },
-  fee: { type: Number, default: 0 },
-  days: { type: Number, default: 1 },
-  total_fee: { type: Number, default: 0 },
-  status: { 
-    type: String, 
-    enum: ['pending', 'confirmed', 'canceled', 'completed'],
-    default: 'pending'
-  },
-  notes: String,
-  is_active: { type: Boolean, default: true },
-  createdAt: { type: Date, default: Date.now }
-});
-
-const eventPromoterSchema = new mongoose.Schema({
-  event_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
-  promoter_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Promoter', required: true },
-  fee: { type: Number, default: 0 },
-  days: { type: Number, default: 1 },
-  total_fee: { type: Number, default: 0 },
-  status: { 
-    type: String, 
-    enum: ['pending', 'confirmed', 'canceled', 'completed'],
-    default: 'pending'
-  },
-  notes: String,
-  is_active: { type: Boolean, default: true },
-  createdAt: { type: Date, default: Date.now }
-});
-
-// Adicionar os novos models na seção de models:
-const models = {
-  'event-types': mongoose.model('EventType', eventTypeSchema),
-  'tasks': mongoose.model('Task', taskSchema),
-  'materials': mongoose.model('Material', materialSchema),
-  'suppliers': mongoose.model('Supplier', supplierSchema),
-  'promoters': mongoose.model('Promoter', promoterSchema),
-  'influencers': mongoose.model('Influencer', influencerSchema),
-  'departments': mongoose.model('Department', departmentSchema),
-  'events': mongoose.model('Event', eventSchema),
-  'event-tasks': mongoose.model('EventTask', eventTaskSchema),
-  'event-materials': mongoose.model('EventMaterial', eventMaterialSchema),
-  'event-suppliers': mongoose.model('EventSupplier', eventSupplierSchema),
-  'event-utms': mongoose.model('EventUTM', eventUTMSchema),
-  'event-influencer': mongoose.model('EventInfluencer', eventInfluencerSchema),
-  'event-promoter': mongoose.model('EventPromoter', eventPromoterSchema),
-  'task-categories': mongoose.model('TaskCategory', taskCategorySchema),
-  'material-categories': mongoose.model('MaterialCategory', materialCategorySchema),
-  'supplier-categories': mongoose.model('SupplierCategory', supplierCategorySchema),
-  'default-tasks': mongoose.model('DefaultTask', defaultTaskSchema),
-  'default-materials': mongoose.model('DefaultMaterial', defaultMaterialSchema),
-  'teammembers': mongoose.model('TeamMember', teamMemberSchema, 'teammembers')
-};
