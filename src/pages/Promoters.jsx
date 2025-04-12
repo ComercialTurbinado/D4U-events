@@ -23,7 +23,9 @@ export default function Promoters() {
 
   const loadPromoters = async () => {
     try {
+      console.log('Carregando promoters...');
       const data = await Promoter.list();
+      console.log('Dados recebidos:', data);
       setPromoters(data || []);
     } catch (error) {
       console.error("Erro ao carregar promoters:", error);

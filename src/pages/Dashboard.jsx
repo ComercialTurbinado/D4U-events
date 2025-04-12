@@ -89,10 +89,18 @@ export default function Dashboard() {
       const completedTasks = tasks.filter(task => task.status === 'completed');
 
       // Carregar contagens das outras entidades
+      console.log('Carregando entidades...');
       const materials = await Material.list();
       const suppliers = await Supplier.list();
       const influencers = await Influencer.list();
       const promoters = await Promoter.list();
+
+      console.log('Dados carregados:', {
+        materials,
+        suppliers,
+        influencers,
+        promoters
+      });
 
       setStats({
         events: {
@@ -103,10 +111,10 @@ export default function Dashboard() {
           total: tasks.length,
           completed: completedTasks.length
         },
-        materials: materials.length,
-        suppliers: suppliers.length,
-        influencers: influencers.length,
-        promoters: promoters.length
+        materials: { total: materials.length },
+        suppliers: { total: suppliers.length },
+        influencers: { total: influencers.length },
+        promoters: { total: promoters.length }
       });
 
     } catch (error) {

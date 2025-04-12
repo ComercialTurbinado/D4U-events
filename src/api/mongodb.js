@@ -1,7 +1,7 @@
 // Adicionar console.log para depuração da URL
 console.log('Variável de ambiente VITE_API_URL:', import.meta.env.VITE_API_URL);
 
-export const API_URL = import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod';
+export const API_URL = (import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod') + '/entities';
 
 console.log('API_URL final:', API_URL);
 
@@ -196,7 +196,7 @@ export const cleanDataForApi = (data) => {
 
 export const createEntityOperations = (collection) => ({
   list: async (sort) => {
-    const url = `${API_URL}/entities/${collection}${sort ? `?sort=${sort}` : ''}`;
+    const url = `${API_URL}/${collection}${sort ? `?sort=${sort}` : ''}`;
     console.log(`Fazendo requisição GET para ${url}`);
     
     const headers = createHeaders();
@@ -215,7 +215,7 @@ export const createEntityOperations = (collection) => ({
   },
 
   get: async (id) => {
-    const url = `${API_URL}/entities/${collection}/${id}`;
+    const url = `${API_URL}/${collection}/${id}`;
     console.log(`Fazendo requisição GET para ${url}`);
     
     const headers = createHeaders();
@@ -247,7 +247,7 @@ export const createEntityOperations = (collection) => ({
     const dataWithUser = addUserToRequest(cleanData);
     
     const headers = createHeaders();
-    const response = await fetch(`${API_URL}/entities/${collection}`, {
+    const response = await fetch(`${API_URL}/${collection}`, {
       method: 'POST',
       headers,
       body: JSON.stringify(dataWithUser),
@@ -281,7 +281,7 @@ export const createEntityOperations = (collection) => ({
     const headers = createHeaders();
     console.log('Headers da requisição:', headers);
     
-    const response = await fetch(`${API_URL}/entities/${collection}/${id}`, {
+    const response = await fetch(`${API_URL}/${collection}/${id}`, {
       method: 'PUT',
       headers,
       body: JSON.stringify(dataWithUser),
@@ -306,8 +306,8 @@ export const createEntityOperations = (collection) => ({
     // Para deletar, geralmente precisamos verificar o item antes para saber o departamento
     try {
       // Buscar o item diretamente em vez de usar this
-      console.log(`Buscando item para verificar permissões de deleção: ${API_URL}/entities/${collection}/${id}`);
-      const response = await fetch(`${API_URL}/entities/${collection}/${id}`, {
+      console.log(`Buscando item para verificar permissões de deleção: ${API_URL}/${collection}/${id}`);
+      const response = await fetch(`${API_URL}/${collection}/${id}`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': localStorage.getItem('token') ? `Bearer ${localStorage.getItem('token')}` : ''
@@ -329,7 +329,7 @@ export const createEntityOperations = (collection) => ({
     // Para DELETE, enviamos o usuário em um body vazio
     const userInfo = addUserToRequest({});
     
-    const response = await fetch(`${API_URL}/entities/${collection}/${id}`, {
+    const response = await fetch(`${API_URL}/${collection}/${id}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -355,7 +355,7 @@ export const createEntityOperations = (collection) => ({
       // Adiciona o usuário ao body
       const dataWithUser = addUserToRequest(cleanData);
        
-      return fetch(`${API_URL}/entities/${collection}`, {
+      return fetch(`${API_URL}/${collection}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -399,7 +399,7 @@ export class Entity {
 
   async list(query = '') {
     try {
-      const url = `${API_URL}/entities/${this.collection}${query}`;
+      const url = `${API_URL}/${this.collection}${query}`;
       console.log('URL da requisição:', url);
       
       const response = await fetch(url, {
@@ -419,7 +419,7 @@ export class Entity {
 
   async get(id) {
     try {
-      const response = await fetch(`${API_URL}/entities/${this.collection}/${id}`, {
+      const response = await fetch(`${API_URL}/${this.collection}/${id}`, {
         headers: createHeaders()
       });
       
@@ -437,7 +437,7 @@ export class Entity {
   async create(data) {
     try {
       const cleanData = cleanDataForApi(data);
-      const response = await fetch(`${API_URL}/entities/${this.collection}`, {
+      const response = await fetch(`${API_URL}/${this.collection}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -460,7 +460,7 @@ export class Entity {
   async update(id, data) {
     try {
       const cleanData = cleanDataForApi(data);
-      const response = await fetch(`${API_URL}/entities/${this.collection}/${id}`, {
+      const response = await fetch(`${API_URL}/${this.collection}/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -482,7 +482,7 @@ export class Entity {
 
   async delete(id) {
     try {
-      const response = await fetch(`${API_URL}/entities/${this.collection}/${id}`, {
+      const response = await fetch(`${API_URL}/${this.collection}/${id}`, {
         method: 'DELETE',
         headers: createHeaders()
       });

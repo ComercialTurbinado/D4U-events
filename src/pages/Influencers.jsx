@@ -23,7 +23,9 @@ export default function Influencers() {
 
   const loadInfluencers = async () => {
     try {
+      console.log('Carregando influencers...');
       const data = await Influencer.list();
+      console.log('Dados recebidos:', data);
       setInfluencers(data);
     } catch (error) {
       console.error("Erro ao carregar influenciadores:", error);
