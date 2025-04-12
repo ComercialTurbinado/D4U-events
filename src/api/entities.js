@@ -9,8 +9,6 @@ const DefaultSupplier = DefaultSupplierOps;
 const Task = TaskOps;
 const Material = MaterialOps;
 const Supplier = SupplierOps;
-const Promoter = new Entity('promoters');
-const Influencer = new Entity('influencers');
 const Department = DepartmentOps;
 const Event = EventOps;
 const EventTask = EventTaskOps;
@@ -29,6 +27,14 @@ const User = {
 };
 
 const EventUTM = new Entity('event-utms');
+
+class Influencer extends Entity {
+  static collection = "influencers";
+}
+
+class Promoter extends Entity {
+  static collection = "promoters";
+}
 
 class EventInfluencer extends Entity {
   static collection = "event_influencers";

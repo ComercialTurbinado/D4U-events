@@ -17,6 +17,31 @@ import Settings from "@/pages/Settings"
 import { Toaster } from "@/components/ui/toaster"
 import { PrivateRoute } from "@/middleware/auth.jsx"
 import LoginPage from "@/pages/login"
+import { createBrowserRouter } from "react-router-dom"
+import Influencers from "./pages/Influencers"
+import Promoters from "./pages/Promoters"
+
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Layout />,
+    children: [
+      { path: "/", element: <Dashboard /> },
+      { path: "/events", element: <Events /> },
+      { path: "/events/:id", element: <EventDetails /> },
+      { path: "/tasks", element: <Tasks /> },
+      { path: "/materials", element: <Materials /> },
+      { path: "/suppliers", element: <Suppliers /> },
+      { path: "/influencers", element: <Influencers /> },
+      { path: "/influencers/new", element: <Influencers /> },
+      { path: "/influencers/:id", element: <Influencers /> },
+      { path: "/promoters", element: <Promoters /> },
+      { path: "/promoters/new", element: <Promoters /> },
+      { path: "/promoters/:id", element: <Promoters /> },
+      { path: "/settings", element: <Settings /> }
+    ]
+  }
+])
 
 function App() {
   return (

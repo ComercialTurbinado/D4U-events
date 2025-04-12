@@ -91,7 +91,7 @@ export default function EventInfluencerTab({ eventId }) {
         <TableHeader>
           <TableRow>
             <TableHead>Nome</TableHead>
-            <TableHead>Quantidade</TableHead>
+            <TableHead>Diária(s)</TableHead>
             <TableHead>Valor Unitário</TableHead>
             <TableHead>Valor Total</TableHead>
             <TableHead>Observações</TableHead>

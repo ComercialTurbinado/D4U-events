@@ -95,7 +95,7 @@ export default function EventPromoterTab({ eventId }) {
         <TableHeader>
           <TableRow>
             <TableHead>Promotor</TableHead>
-            <TableHead>Quantidade</TableHead>
+            <TableHead>Diária(s)</TableHead>
             <TableHead>Valor Unitário</TableHead>
             <TableHead>Valor Total</TableHead>
             <TableHead>Observações</TableHead>

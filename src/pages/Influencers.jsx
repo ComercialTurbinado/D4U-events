@@ -1,144 +1,102 @@
 import React, { useState, useEffect } from "react";
-import { Influencer } from "@/api/entities";
 import { Button } from "@/components/ui/button";
-import { UserPlus } from "lucide-react";
-import InfluencerList from "@/components/influencers/InfluencerList";
-import InfluencerForm from "@/components/influencers/InfluencerForm";
-import DeleteConfirmationDialog from "@/components/DeleteConfirmationDialog";
-import { useSearchParams } from "react-router-dom";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Influencer } from "@/api/entities";
+import { formatCurrency } from "@/lib/utils";
+import { Edit, Trash2, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Influencers() {
-  const [searchParams, setSearchParams] = useSearchParams();
   const [influencers, setInfluencers] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [editInfluencer, setEditInfluencer] = useState(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [influencerToDelete, setInfluencerToDelete] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadInfluencers();
-
-    const editId = searchParams.get("edit");
-    if (editId) {
-      handleEdit(editId);
-    }
-  }, [searchParams]);
+  }, []);
 
   const loadInfluencers = async () => {
-    setIsLoading(true);
     try {
       const data = await Influencer.list();
-      setInfluencers(data || []);
+      setInfluencers(data);
     } catch (error) {
       console.error("Erro ao carregar influenciadores:", error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const handleCreateInfluencer = async (influencerData) => {
-    try {
-      await Influencer.create(influencerData);
-      await loadInfluencers();
-      setShowForm(false);
-    } catch (error) {
-      console.error("Erro ao criar influenciador:", error);
-    }
-  };
-
-  const handleUpdateInfluencer = async (id, influencerData) => {
-    try {
-      await Influencer.update(id, influencerData);
-      await loadInfluencers();
-      setEditInfluencer(null);
-      setShowForm(false);
-      // Limpar o parâmetro de edição da URL
-      searchParams.delete("edit");
-      setSearchParams(searchParams);
-    } catch (error) {
-      console.error("Erro ao atualizar influenciador:", error);
-    }
-  };
-
-  const handleDeleteInfluencer = async (id) => {
-    try {
-      await Influencer.delete(id);
-      await loadInfluencers();
-      setDeleteDialogOpen(false);
-      setInfluencerToDelete(null);
-    } catch (error) {
-      console.error("Erro ao excluir influenciador:", error);
-    }
-  };
-
-  const handleEdit = async (id) => {
-    try {
-      if (typeof id === "object") {
-        // Se for chamado diretamente com o objeto influencer
-        setEditInfluencer(id);
-        setShowForm(true);
-        return;
+  const handleDelete = async (id) => {
+    if (window.confirm("Tem certeza que deseja remover este influenciador?")) {
+      try {
+        await Influencer.delete(id);
+        loadInfluencers();
+      } catch (error) {
+        console.error("Erro ao remover influenciador:", error);
       }
-
-      // Buscar o influencer para edição se tiver apenas o ID
-      const influencer = await Influencer.get(id);
-      if (influencer) {
-        setEditInfluencer(influencer);
-        setShowForm(true);
-      }
-    } catch (error) {
-      console.error("Erro ao buscar influenciador para edição:", error);
     }
-  };
-
-  const handleDelete = (id) => {
-    setInfluencerToDelete(id);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleCancelForm = () => {
-    setEditInfluencer(null);
-    setShowForm(false);
-    // Limpar o parâmetro de edição da URL
-    searchParams.delete("edit");
-    setSearchParams(searchParams);
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-7xl">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Influenciadores</h1>
-        {!showForm && (
-          <Button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700">
-            <UserPlus className="h-4 w-4 mr-2" />
-            Novo Influenciador
-          </Button>
-        )}
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold tracking-tight">Influenciadores</h2>
+        <Button onClick={() => navigate("/influencers/new")}>
+          <Plus className="h-4 w-4 mr-2" />
+          Novo Influenciador
+        </Button>
       </div>
 
-      {showForm ? (
-        <InfluencerForm
-          initialData={editInfluencer}
-          onSubmit={editInfluencer ? handleUpdateInfluencer : handleCreateInfluencer}
-          onCancel={handleCancelForm}
-        />
-      ) : (
-        <InfluencerList
-          influencers={influencers}
-          isLoading={isLoading}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
-      )}
-
-      <DeleteConfirmationDialog
-        isOpen={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
-        onConfirm={() => handleDeleteInfluencer(influencerToDelete)}
-        title="Excluir Influenciador"
-        description="Tem certeza que deseja excluir este influenciador? Esta ação não pode ser desfeita."
-      />
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Nome</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Telefone</TableHead>
+            <TableHead>Valor Base</TableHead>
+            <TableHead className="w-[100px]">Ações</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {influencers.map((influencer) => (
+            <TableRow key={influencer.id}>
+              <TableCell>{influencer.name}</TableCell>
+              <TableCell>{influencer.email}</TableCell>
+              <TableCell>{influencer.phone}</TableCell>
+              <TableCell>{formatCurrency(influencer.reference_value)}</TableCell>
+              <TableCell>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => navigate(`/influencers/${influencer.id}`)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleDelete(influencer.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+          {influencers.length === 0 && (
+            <TableRow>
+              <TableCell colSpan={5} className="text-center">
+                Nenhum influenciador cadastrado
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
     </div>
   );
 } 

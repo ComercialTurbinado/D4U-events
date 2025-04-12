@@ -65,7 +65,7 @@ export default function EventPromoterForm({ eventId, promoter, onSubmit, onCance
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Quantidade</Label>
+          <Label>Diária(s)</Label>
           <Input
             type="number"
             min="1"

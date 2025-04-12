@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Event, EventTask, Supplier, Material } from "@/api/entities";
+import { Event, EventTask, Supplier, Material, Influencer, Promoter } from "@/api/entities";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,11 @@ import {
   Briefcase,
   PlusCircle,
   Calendar,
-  ChevronRight
+  ChevronRight,
+  ClipboardList,
+  Truck,
+  User,
+  Users
 } from "lucide-react";
 import { formatDistanceToNow, format, differenceInDays, isAfter, isBefore, isToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -32,11 +36,12 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [stats, setStats] = useState({
-    upcoming: 0,
-    completed: 0,
-    total: 0,
-    suppliers: 0,
-    materials: 0
+    events: { total: 0, completed: 0 },
+    tasks: { total: 0, completed: 0 },
+    materials: { total: 0 },
+    suppliers: { total: 0 },
+    influencers: { total: 0 },
+    promoters: { total: 0 }
   });
   
   useEffect(() => {
@@ -65,42 +70,38 @@ export default function Dashboard() {
 
   const loadStats = async () => {
     try {
-      const [allEvents, suppliers, materials] = await Promise.all([
-        Event.list("-start_date"),
+      const [events, tasks, materials, suppliers, influencers, promoters] = await Promise.all([
+        Event.list(),
+        EventTask.list(),
+        Material.list(),
         Supplier.list(),
-        Material.list()
+        Influencer.list(),
+        Promoter.list()
       ]);
-      
-      console.log('Eventos carregados para stats:', allEvents);
-      
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      const upcoming = allEvents.filter(event => {
-        const eventDate = new Date(event.start_date);
-        eventDate.setHours(0, 0, 0, 0);
-        return (event.status === "planning" || event.status === "in_progress") && 
-               (isToday(eventDate) || isAfter(eventDate, today));
-      }).length;
-      
-      const completed = allEvents.filter(event => {
-        const eventDate = new Date(event.start_date);
-        eventDate.setHours(0, 0, 0, 0);
-        return eventDate < today || event.status === "completed";
-      }).length;
-      
-      console.log('Eventos próximos:', upcoming);
-      console.log('Eventos concluídos:', completed);
-      
+
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+
       setStats({
-        upcoming,
-        completed,
-        total: allEvents.length,
-        suppliers: suppliers.length,
-        materials: materials.length
+        events: {
+          total: events.length,
+          completed: events.filter(event => {
+            const startDate = new Date(event.start_date);
+            startDate.setHours(0, 0, 0, 0);
+            return startDate < now || event.status === "completed";
+          }).length
+        },
+        tasks: {
+          total: tasks.length,
+          completed: tasks.filter(task => task.status === "completed").length
+        },
+        materials: { total: materials.length },
+        suppliers: { total: suppliers.length },
+        influencers: { total: influencers.length },
+        promoters: { total: promoters.length }
       });
     } catch (error) {
-      console.error("Error loading stats:", error);
+      console.error("Erro ao carregar estatísticas:", error);
     }
   };
 
@@ -252,7 +253,7 @@ export default function Dashboard() {
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-sm font-medium text-blue-600">Próximos Eventos</p>
-                <p className="text-3xl font-bold mt-2">{stats.upcoming}</p>
+                <p className="text-3xl font-bold mt-2">{stats.events.total}</p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                 <Calendar className="h-6 w-6 text-blue-600" />
@@ -273,14 +274,14 @@ export default function Dashboard() {
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-sm font-medium text-green-600">Eventos Concluídos</p>
-                <p className="text-3xl font-bold mt-2">{stats.completed}</p>
+                <p className="text-3xl font-bold mt-2">{stats.events.completed}</p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                 <CheckCheck className="h-6 w-6 text-green-600" />
               </div>
             </div>
             <div className="mt-2 text-xs text-green-600">
-              {((stats.completed / (stats.total || 1)) * 100).toFixed(0)}% do total
+              {((stats.events.completed / (stats.events.total || 1)) * 100).toFixed(0)}% do total
             </div>
           </CardContent>
         </Card>
@@ -290,7 +291,7 @@ export default function Dashboard() {
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-sm font-medium text-amber-600">Total de Eventos</p>
-                <p className="text-3xl font-bold mt-2">{stats.total}</p>
+                <p className="text-3xl font-bold mt-2">{stats.events.total}</p>
               </div>
               <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
                 <CalendarDays className="h-6 w-6 text-amber-600" />
@@ -311,7 +312,7 @@ export default function Dashboard() {
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-sm font-medium text-purple-600">Fornecedores</p>
-                <p className="text-3xl font-bold mt-2">{stats.suppliers}</p>
+                <p className="text-3xl font-bold mt-2">{stats.suppliers.total}</p>
               </div>
               <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
                 <Briefcase className="h-6 w-6 text-purple-600" />
@@ -332,7 +333,7 @@ export default function Dashboard() {
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-sm font-medium text-indigo-600">Materiais</p>
-                <p className="text-3xl font-bold mt-2">{stats.materials}</p>
+                <p className="text-3xl font-bold mt-2">{stats.materials.total}</p>
               </div>
               <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
                 <Package className="h-6 w-6 text-indigo-600" />
@@ -342,6 +343,48 @@ export default function Dashboard() {
               variant="link" 
               className="px-0 text-indigo-600 mt-2"
               onClick={() => navigate(createPageUrl("Materials"))}
+            >
+              Ver todos <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-pink-50">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm font-medium text-pink-600">Influenciadores</p>
+                <p className="text-3xl font-bold mt-2">{stats.influencers.total}</p>
+              </div>
+              <div className="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center">
+                <User className="h-6 w-6 text-pink-600" />
+              </div>
+            </div>
+            <Button 
+              variant="link" 
+              className="px-0 text-pink-600 mt-2"
+              onClick={() => navigate(createPageUrl("Influencers"))}
+            >
+              Ver todos <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-teal-50">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <p className="text-sm font-medium text-teal-600">Promoters</p>
+                <p className="text-3xl font-bold mt-2">{stats.promoters.total}</p>
+              </div>
+              <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center">
+                <Users className="h-6 w-6 text-teal-600" />
+              </div>
+            </div>
+            <Button 
+              variant="link" 
+              className="px-0 text-teal-600 mt-2"
+              onClick={() => navigate(createPageUrl("Promoters"))}
             >
               Ver todos <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
