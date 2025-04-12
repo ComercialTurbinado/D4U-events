@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Event, EventTask, Supplier, Material, Influencer, Promoter } from "@/api/entities";
+import { Event, EventTask, Supplier, Material } from "@/api/mongodb";
+import { InfluencerOps, PromoterOps } from "@/api/mongodb";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
@@ -92,8 +93,8 @@ export default function Dashboard() {
       console.log('Carregando entidades...');
       const materials = await Material.list();
       const suppliers = await Supplier.list();
-      const influencers = await Influencer.list();
-      const promoters = await Promoter.list();
+      const influencers = await InfluencerOps.list();
+      const promoters = await PromoterOps.list();
 
       console.log('Dados carregados:', {
         materials,

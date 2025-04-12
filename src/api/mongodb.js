@@ -390,6 +390,8 @@ export const DefaultSupplierOps = createEntityOperations('default-suppliers');
 export const TeamMemberOps = createEntityOperations('teammembers');
 export const EventPromoterOps = createEntityOperations('event-promoters');
 export const PromoterOps = createEntityOperations('promoters');
+export const InfluencerOps = createEntityOperations('influencers');
+export const EventInfluencerOps = createEntityOperations('event-influencers');
 
 // Certifique-se de que a classe Entity é exportada
 export class Entity {
