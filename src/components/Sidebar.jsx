@@ -1,25 +1,93 @@
+import { Link, useLocation } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import {
+  LayoutDashboard,
   Calendar,
-  CalendarDays,
-  ClipboardList,
-  Home,
+  ListTodo,
   Package,
-  ShoppingCart,
   Truck,
+  Settings,
+  Building2,
   Users,
-  UserPlus,
-  Coffee,
   User,
-  Settings
+  UserPlus
 } from "lucide-react";
 
 const menuItems = [
-  { href: "/", label: "Dashboard", icon: <Calendar className="h-4 w-4" /> },
-  { href: "/events", label: "Eventos", icon: <CalendarDays className="h-4 w-4" /> },
-  { href: "/tasks", label: "Tarefas", icon: <ClipboardList className="h-4 w-4" /> },
-  { href: "/materials", label: "Materiais", icon: <Package className="h-4 w-4" /> },
-  { href: "/suppliers", label: "Fornecedores", icon: <Truck className="h-4 w-4" /> },
-  { href: "/influencers", label: "Influenciadores", icon: <User className="h-4 w-4" /> },
-  { href: "/promoters", label: "Promoters", icon: <Users className="h-4 w-4" /> },
-  { href: "/settings", label: "Configurações", icon: <Settings className="h-4 w-4" /> }
-]; 
+  {
+    title: "Dashboard",
+    href: "/",
+    icon: LayoutDashboard,
+  },
+  {
+    title: "Eventos",
+    href: "/events",
+    icon: Calendar,
+  },
+  {
+    title: "Tarefas",
+    href: "/tasks",
+    icon: ListTodo,
+  },
+  {
+    title: "Materiais",
+    href: "/materials",
+    icon: Package,
+  },
+  {
+    title: "Fornecedores",
+    href: "/suppliers",
+    icon: Truck,
+  },
+  {
+    title: "Influenciadores",
+    href: "/influencers",
+    icon: User,
+  },
+  {
+    title: "Promoters",
+    href: "/promoters",
+    icon: UserPlus,
+  },
+  {
+    title: "Departamentos",
+    href: "/departments",
+    icon: Building2,
+  },
+  {
+    title: "Configurações",
+    href: "/settings",
+    icon: Settings,
+  },
+];
+
+export default function Sidebar() {
+  const location = useLocation();
+
+  return (
+    <div className="pb-12 min-h-screen">
+      <div className="space-y-4 py-4">
+        <div className="px-3 py-2">
+          <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
+            Menu
+          </h2>
+          <div className="space-y-1">
+            {menuItems.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={cn(
+                  "flex items-center rounded-lg px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground",
+                  location.pathname === item.href ? "bg-accent" : "transparent"
+                )}
+              >
+                <item.icon className="mr-2 h-4 w-4" />
+                {item.title}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+} 

@@ -18,7 +18,9 @@ import { PrivateRoute } from "@/middleware/auth.jsx"
 import LoginPage from "@/pages/login"
 import { createBrowserRouter, RouterProvider } from "react-router-dom"
 import Influencers from "./pages/Influencers"
+import InfluencerForm from "./pages/InfluencerForm"
 import Promoters from "./pages/Promoters"
+import PromoterForm from "./pages/PromoterForm"
 
 const router = createBrowserRouter([
   {
@@ -38,11 +40,11 @@ const router = createBrowserRouter([
       { path: "/departments", element: <Departments /> },
       { path: "/departments/members", element: <TeamMembers /> },
       { path: "/influencers", element: <Influencers /> },
-      { path: "/influencers/new", element: <Influencers /> },
-      { path: "/influencers/:id", element: <Influencers /> },
+      { path: "/influencers/new", element: <InfluencerForm /> },
+      { path: "/influencers/:id", element: <InfluencerForm /> },
       { path: "/promoters", element: <Promoters /> },
-      { path: "/promoters/new", element: <Promoters /> },
-      { path: "/promoters/:id", element: <Promoters /> },
+      { path: "/promoters/new", element: <PromoterForm /> },
+      { path: "/promoters/:id", element: <PromoterForm /> },
       { path: "/settings", element: <Settings /> }
     ]
   },
