@@ -151,6 +151,8 @@ export default function EventPromotersTab({ event, onSuccess }) {
           </div>
         </div>
       ) : (
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-medium">Influenciadores do Evento</h3>
         <Button onClick={() => {
           setShowForm(true);
           setEditingItem(null);
@@ -158,13 +160,11 @@ export default function EventPromotersTab({ event, onSuccess }) {
           <Plus className="h-4 w-4 mr-2" />
           Adicionar Promoter
         </Button>
+        </div>
       )}
 
       <Card>
-        <CardHeader>
-          <CardTitle>Promoters do Evento</CardTitle>
-          <CardDescription>Gerenciar os promoters associados a este evento</CardDescription>
-        </CardHeader>
+        
         <CardContent>
           {isLoading ? (
             <div className="text-center py-4">Carregando...</div>

@@ -151,20 +151,22 @@ export default function EventInfluencersTab({ event, onSuccess }) {
           </div>
         </div>
       ) : (
-        <Button onClick={() => {
-          setShowForm(true);
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-medium">Influenciadores do Evento</h3>
+          <Button onClick={() => {
+            setShowForm(true);
           setEditingItem(null);
         }}>
+
+          
           <Plus className="h-4 w-4 mr-2" />
           Adicionar Influenciador
         </Button>
+        </div>
       )}
 
       <Card>
-        <CardHeader>
-          <CardTitle>Influenciadores do Evento</CardTitle>
-          <CardDescription>Gerenciar os influenciadores associados a este evento</CardDescription>
-        </CardHeader>
+        
         <CardContent>
           {isLoading ? (
             <div className="text-center py-4">Carregando...</div>
