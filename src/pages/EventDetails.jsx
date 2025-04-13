@@ -15,8 +15,6 @@ import EventTasksTab from "../components/event-details/EventTasksTab";
 import EventMaterialsTab from "../components/event-details/EventMaterialsTab";
 import EventSuppliersTab from "../components/event-details/EventSuppliersTab";
 import EventUTMTab from '@/components/event-details/EventUTMTab';
-import EventInfluencerTab from '../components/event-details/EventInfluencerTab';
-import EventPromoterTab from '../components/event-details/EventPromoterTab';
 import EventInfluencersTab from "@/components/event-details/EventInfluencersTab";
 import EventPromotersTab from "@/components/event-details/EventPromotersTab";
 
@@ -237,7 +235,7 @@ export default function EventDetailsPage() {
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h1 className="text-3xl font-bold text-gray-900">{event.name}</h1>
+        <h1 className="text-3xl font-bold text-gray-900">{eventType?.name || "Personalizado"} - {event.name}</h1>
         <Badge className={getStatusColor(event.status)}>
           {getStatusLabel(event.status)}
         </Badge>
@@ -373,7 +371,7 @@ export default function EventDetailsPage() {
             <TabsTrigger value="influencers"><User className="h-4 w-4 mr-2" />Influenciadores</TabsTrigger>
             <TabsTrigger value="promoters"><Users className="h-4 w-4 mr-2" />Promoters</TabsTrigger>
             <TabsTrigger value="utm"><QrCode className="h-4 w-4 mr-2" />UTM</TabsTrigger>
-            <TabsTrigger value="details"><StickyNote className="h-4 w-4 mr-2" />Notas</TabsTrigger>
+            
           </TabsList> 
           
           <TabsContent value="tasks">

@@ -19,10 +19,12 @@ import {
 import { toast } from "react-hot-toast";
 import { InfluencerOps, EventInfluencerOps } from "@/api/mongodb";
 import { formatCurrency } from "@/lib/utils";
+import { Upload, Image, X } from "lucide-react";
 
 export default function EventInfluencerForm({ event, onSuccess, editingItem }) {
   const [influencers, setInfluencers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [imagePreview, setImagePreview] = useState(null);
   const [formData, setFormData] = useState({
     event_id: event.id,
     influencer_id: "",
@@ -30,7 +32,8 @@ export default function EventInfluencerForm({ event, onSuccess, editingItem }) {
     days: "1",
     total_fee: "",
     notes: "",
-    status: "pending"
+    status: "pending",
+    image_url: ""
   });
 
   useEffect(() => {
@@ -46,8 +49,13 @@ export default function EventInfluencerForm({ event, onSuccess, editingItem }) {
         days: editingItem.days ? editingItem.days.toString() : "1",
         total_fee: editingItem.total_fee ? editingItem.total_fee.toString() : "",
         notes: editingItem.notes || "",
-        status: editingItem.status || "pending"
+        status: editingItem.status || "pending",
+        image_url: editingItem.image_url || ""
       });
+      
+      if (editingItem.image_url) {
+        setImagePreview(editingItem.image_url);
+      }
     }
   }, [editingItem, event.id]);
 
@@ -76,6 +84,44 @@ export default function EventInfluencerForm({ event, onSuccess, editingItem }) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Verificar tipo e tamanho
+    if (!file.type.includes('image/')) {
+      toast.error('Por favor, selecione apenas arquivos de imagem');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB
+      toast.error('A imagem deve ter no máximo 5MB');
+      return;
+    }
+
+    // Criar uma URL para a prévia
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreview(previewUrl);
+
+    // Converter para Base64 para enviar para a API
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      setFormData(prev => ({
+        ...prev,
+        image_url: reader.result
+      }));
+    };
+  };
+
+  const removeImage = () => {
+    setImagePreview(null);
+    setFormData(prev => ({
+      ...prev,
+      image_url: ""
+    }));
   };
 
   const handleChange = (e) => {
@@ -172,6 +218,35 @@ export default function EventInfluencerForm({ event, onSuccess, editingItem }) {
         }
         
         toast.success("Influenciador adicionado com sucesso!");
+        
+        // Atualizar orçamento do evento se houver fee
+        if (parseFloat(total_fee) > 0) {
+          // Obter o orçamento atual
+          const oldBudget = parseFloat(event.budget) || 0;
+          const fee = parseFloat(total_fee) || 0;
+          const newBudget = oldBudget + fee;
+          
+          console.log(`Atualizando orçamento: ${oldBudget} + ${fee} = ${newBudget}`);
+          
+          // Atualizar o orçamento do evento
+          const eventUpdateResponse = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/events/${event.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+              ...event,
+              budget: newBudget
+            })
+          });
+          
+          if (!eventUpdateResponse.ok) {
+            console.error("Erro ao atualizar orçamento do evento");
+          } else {
+            console.log("Orçamento atualizado com sucesso!");
+          }
+        }
       }
       
       // Reset do formulário e retorno
@@ -182,8 +257,10 @@ export default function EventInfluencerForm({ event, onSuccess, editingItem }) {
         days: "1",
         total_fee: "",
         notes: "",
-        status: "pending"
+        status: "pending",
+        image_url: ""
       });
+      setImagePreview(null);
       
       if (onSuccess) onSuccess();
     } catch (error) {
@@ -264,6 +341,53 @@ export default function EventInfluencerForm({ event, onSuccess, editingItem }) {
               disabled={true}
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Foto do Influenciador no Evento</Label>
+            <div className="flex items-center space-x-4">
+              <div className="flex-1">
+                <Input
+                  id="image"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  disabled={isLoading}
+                  className="hidden"
+                />
+                <Label 
+                  htmlFor="image" 
+                  className="flex items-center justify-center h-32 border-2 border-dashed rounded-md cursor-pointer hover:border-gray-400 transition-colors"
+                >
+                  {imagePreview ? (
+                    <div className="relative w-full h-full">
+                      <img 
+                        src={imagePreview} 
+                        alt="Preview" 
+                        className="object-cover w-full h-full rounded-md" 
+                      />
+                      <Button 
+                        type="button"
+                        variant="destructive" 
+                        size="icon" 
+                        className="absolute top-1 right-1 h-6 w-6 rounded-full"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeImage();
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center text-gray-500">
+                      <Upload className="h-6 w-6 mb-2" />
+                      <span className="text-sm">Clique para adicionar foto</span>
+                    </div>
+                  )}
+                </Label>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-2">

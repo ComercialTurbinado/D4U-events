@@ -15,7 +15,7 @@ import {
   CardTitle,
   CardDescription
 } from "@/components/ui/card";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Image as ImageIcon } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { EventPromoterOps, PromoterOps } from "@/api/mongodb";
 import { formatCurrency } from "@/lib/utils";
@@ -26,6 +26,7 @@ export default function EventPromotersTab({ event, onSuccess }) {
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
 
   useEffect(() => {
     loadEventPromoters();
@@ -132,6 +133,16 @@ export default function EventPromotersTab({ event, onSuccess }) {
     if (onSuccess) onSuccess();
   };
 
+  const openImageModal = (imageUrl) => {
+    if (imageUrl) {
+      setSelectedImage(imageUrl);
+    }
+  };
+
+  const closeImageModal = () => {
+    setSelectedImage(null);
+  };
+
   return (
     <div className="space-y-6">
       {showForm ? (
@@ -152,7 +163,7 @@ export default function EventPromotersTab({ event, onSuccess }) {
         </div>
       ) : (
         <div className="flex justify-between items-center">
-          <h3 className="text-lg font-medium">Influenciadores do Evento</h3>
+          <h3 className="text-lg font-medium">Promoters do Evento</h3>
         <Button onClick={() => {
           setShowForm(true);
           setEditingItem(null);
@@ -164,7 +175,6 @@ export default function EventPromotersTab({ event, onSuccess }) {
       )}
 
       <Card>
-        
         <CardContent>
           {isLoading ? (
             <div className="text-center py-4">Carregando...</div>
@@ -172,6 +182,7 @@ export default function EventPromotersTab({ event, onSuccess }) {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Foto</TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead>Valor Diária</TableHead>
                   <TableHead>Dias</TableHead>
@@ -184,10 +195,28 @@ export default function EventPromotersTab({ event, onSuccess }) {
               <TableBody>
                 { promoters.length === 0 ? (
                   <TableRow className="text-center py-4 text-muted-foreground">
-                    <TableCell colSpan={7}>Nenhum promoter associado a este evento</TableCell>
+                    <TableCell colSpan={8}>Nenhum promoter associado a este evento</TableCell>
                   </TableRow>
                 ) : (promoters.map((item) => (
                   <TableRow key={item.id}>
+                    <TableCell>
+                      {item.image_url ? (
+                        <div 
+                          className="h-10 w-10 rounded-full overflow-hidden cursor-pointer"
+                          onClick={() => openImageModal(item.image_url)}
+                        >
+                          <img 
+                            src={item.image_url} 
+                            alt={`Foto de ${item.promoter?.name}`} 
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                          <ImageIcon className="h-5 w-5 text-gray-500" />
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell className="font-medium">{item.promoter?.name}</TableCell>
                     <TableCell>{formatCurrency(item.fee)}</TableCell>
                     <TableCell>{item.days}</TableCell>
@@ -221,6 +250,37 @@ export default function EventPromotersTab({ event, onSuccess }) {
           )}
         </CardContent>
       </Card>
+
+      {/* Modal para visualização de imagem em tamanho maior */}
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={closeImageModal}
+        >
+          <div 
+            className="bg-white rounded-lg p-2 max-w-3xl max-h-[90vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-lg font-medium">Foto do Promoter</h3>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={closeImageModal}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </Button>
+            </div>
+            <div className="overflow-auto max-h-[calc(90vh-60px)]">
+              <img 
+                src={selectedImage} 
+                alt="Foto ampliada" 
+                className="max-w-full h-auto"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 
