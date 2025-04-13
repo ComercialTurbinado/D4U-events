@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Upload, X, User } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 export default function InfluencerForm() {
   const navigate = useNavigate();
   const { id } = useParams();
   const [isLoading, setIsLoading] = useState(false);
+  const [imagePreview, setImagePreview] = useState(null);
   
   // Log para depuração
   console.log("Objeto Influencer:", Influencer);
@@ -40,17 +41,64 @@ export default function InfluencerForm() {
     }
   }, [id]);
 
+  useEffect(() => {
+    if (formData.image_url) {
+      setImagePreview(formData.image_url);
+    }
+  }, [formData.image_url]);
+
   const loadInfluencer = async () => {
     try {
       setIsLoading(true);
       const data = await Influencer.get(id);
       setFormData(data);
+      if (data.image_url) {
+        setImagePreview(data.image_url);
+      }
     } catch (error) {
       console.error("Erro ao carregar influenciador:", error);
       toast.error("Erro ao carregar influenciador");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Verificar tipo e tamanho
+    if (!file.type.includes('image/')) {
+      toast.error('Por favor, selecione apenas arquivos de imagem');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB
+      toast.error('A imagem deve ter no máximo 5MB');
+      return;
+    }
+
+    // Criar uma URL para a prévia
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreview(previewUrl);
+
+    // Converter para Base64 para enviar para a API
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      setFormData(prev => ({
+        ...prev,
+        image_url: reader.result
+      }));
+    };
+  };
+
+  const removeImage = () => {
+    setImagePreview(null);
+    setFormData(prev => ({
+      ...prev,
+      image_url: ""
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -193,6 +241,54 @@ export default function InfluencerForm() {
         </div>
 
         <div className="space-y-2">
+          <Label htmlFor="image_upload">Foto do Influenciador</Label>
+          <div className="flex items-start gap-4 mt-1">
+            <div 
+              className={`border rounded-md flex items-center justify-center bg-gray-50 w-32 h-32 overflow-hidden ${!imagePreview ? 'border-dashed' : ''}`}
+            >
+              {imagePreview ? (
+                <img src={imagePreview} alt="Foto do influenciador" className="w-full h-full object-cover" />
+              ) : (
+                <User className="w-10 h-10 text-gray-300" />
+              )}
+            </div>
+            
+            <div className="flex flex-col">
+              <label 
+                htmlFor="image_upload" 
+                className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                {isLoading ? 'Processando...' : 'Carregar foto'}
+              </label>
+              <input
+                id="image_upload"
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={handleImageUpload}
+                disabled={isLoading}
+              />
+              {imagePreview && (
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={removeImage}
+                >
+                  <X className="w-4 h-4 mr-2" />
+                  Remover foto
+                </Button>
+              )}
+              <p className="mt-2 text-xs text-gray-500">
+                Formatos suportados: JPEG, PNG, GIF. Tamanho máximo: 5MB.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-2">
           <Label htmlFor="description">Descrição</Label>
           <Textarea
             id="description"
@@ -235,12 +331,8 @@ export default function InfluencerForm() {
           </div>
         </div>
 
-        <div className="flex justify-end gap-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => navigate("/influencers")}
-          >
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" type="button" onClick={() => navigate("/influencers")}>
             Cancelar
           </Button>
           <Button type="submit" disabled={isLoading}>
