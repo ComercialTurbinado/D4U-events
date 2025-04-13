@@ -88,7 +88,14 @@ export default function Dashboard() {
       const completedEvents = events.filter(event => {
         const eventDate = new Date(event.start_date);
         eventDate.setHours(0, 0, 0, 0);
-        return eventDate < today;
+        return eventDate < today || event.status === "completed";
+      });
+
+      const upcomingEvents = events.filter(event => {
+        const eventDate = new Date(event.start_date);
+        eventDate.setHours(0, 0, 0, 0);
+        return (event.status === "planning" || event.status === "in_progress") && 
+               (isToday(eventDate) || isAfter(eventDate, today));
       });
 
       // Carregar tarefas
@@ -112,7 +119,8 @@ export default function Dashboard() {
       setStats({
         events: {
           total: events.length,
-          completed: completedEvents.length
+          completed: completedEvents.length,
+          upcoming: upcomingEvents.length
         },
         tasks: {
           total: tasks.length,
@@ -280,7 +288,7 @@ export default function Dashboard() {
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-sm font-medium text-blue-600">Próximos Eventos</p>
-                <p className="text-3xl font-bold mt-2">{stats.events.total}</p>
+                <p className="text-3xl font-bold mt-2">{stats.events.upcoming || 0}</p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                 <Calendar className="h-6 w-6 text-blue-600" />

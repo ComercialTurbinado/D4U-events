@@ -11,7 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/utils";
-import { Edit, Trash2, Plus } from "lucide-react";
+import { Edit, Trash2, Plus, User } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 export default function Promoters() {
@@ -86,67 +86,85 @@ export default function Promoters() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold tracking-tight">Promoters</h2>
-        <Button onClick={() => navigate("/promoters/new")}>
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Promoter
-        </Button>
-      </div>
+    <div className="container mx-auto py-8 max-w-7xl">
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h2 className="text-3xl font-bold tracking-tight">Promoters</h2>
+          <Button onClick={() => navigate("/promoters/new")}>
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Promoter
+          </Button>
+        </div>
 
-      {isLoading ? (
-        <div className="text-center py-4">Carregando...</div>
-      ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Telefone</TableHead>
-              <TableHead>Contato</TableHead>
-              <TableHead>Valor Base</TableHead>
-              <TableHead className="w-[100px]">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {promoters.map((promoter) => (
-              <TableRow key={promoter.id}>
-                <TableCell className="font-medium">{promoter.name}</TableCell>
-                <TableCell>{promoter.email}</TableCell>
-                <TableCell>{promoter.phone}</TableCell>
-                <TableCell>{promoter.contact_person}</TableCell>
-                <TableCell>{formatCurrency(promoter.reference_value)}</TableCell>
-                <TableCell>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => navigate(`/promoters/${promoter.id}`)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(promoter.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-            {promoters.length === 0 && (
+        {isLoading ? (
+          <div className="text-center py-4">Carregando...</div>
+        ) : (
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={6} className="text-center">
-                  Nenhum promoter cadastrado
-                </TableCell>
+                <TableHead>Foto</TableHead>
+                <TableHead>Nome</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Telefone</TableHead>
+                <TableHead>Contato</TableHead>
+                <TableHead>Valor Base</TableHead>
+                <TableHead className="w-[100px]">Ações</TableHead>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      )}
+            </TableHeader>
+            <TableBody>
+              {promoters.map((promoter) => (
+                <TableRow key={promoter.id}>
+                  <TableCell>
+                    {promoter.image_url ? (
+                      <div className="h-10 w-10 rounded-full overflow-hidden">
+                        <img 
+                          src={promoter.image_url} 
+                          alt={`Foto de ${promoter.name}`} 
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                        <User className="h-5 w-5 text-gray-500" />
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell className="font-medium">{promoter.name}</TableCell>
+                  <TableCell>{promoter.email}</TableCell>
+                  <TableCell>{promoter.phone}</TableCell>
+                  <TableCell>{promoter.contact_person}</TableCell>
+                  <TableCell>{formatCurrency(promoter.reference_value)}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => navigate(`/promoters/${promoter.id}`)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(promoter.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {promoters.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center">
+                    Nenhum promoter cadastrado
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        )}
+      </div>
     </div>
   );
 } 

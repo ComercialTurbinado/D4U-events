@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/table";
 import { InfluencerOps as Influencer } from "@/api/mongodb";
 import { formatCurrency } from "@/lib/utils";
-import { Edit, Trash2, Plus } from "lucide-react";
+import { Edit, Trash2, Plus, Image as ImageIcon, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 
@@ -100,6 +100,7 @@ export default function Influencers() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Foto</TableHead>
               <TableHead>Nome</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Telefone</TableHead>
@@ -112,6 +113,21 @@ export default function Influencers() {
           <TableBody>
             {influencers.map((influencer) => (
               <TableRow key={influencer.id}>
+                <TableCell>
+                  {influencer.image_url ? (
+                    <div className="h-10 w-10 rounded-full overflow-hidden">
+                      <img 
+                        src={influencer.image_url} 
+                        alt={`Foto de ${influencer.name}`} 
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                      <User className="h-5 w-5 text-gray-500" />
+                    </div>
+                  )}
+                </TableCell>
                 <TableCell className="font-medium">{influencer.name}</TableCell>
                 <TableCell>{influencer.email}</TableCell>
                 <TableCell>{influencer.phone}</TableCell>
@@ -140,7 +156,7 @@ export default function Influencers() {
             ))}
             {influencers.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center">
+                <TableCell colSpan={8} className="text-center">
                   Nenhum influenciador cadastrado
                 </TableCell>
               </TableRow>
