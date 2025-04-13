@@ -308,7 +308,7 @@ export default function EventDetailsPage() {
           <CardHeader>
             <CardTitle>Progresso</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 ">
             <div>
               <div className="flex justify-between mb-1">
                 <span className="text-sm font-medium">Tarefas</span>
@@ -360,49 +360,65 @@ export default function EventDetailsPage() {
           className="bg-blue-600 hover:bg-blue-700"
         >
           <Edit className="w-4 h-4 mr-2" />
-          Editar Evento a
+          Editar Evento
         </Button>
       </div>
 
-      <Tabs defaultValue="utm" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="mb-4">
-          <TabsTrigger value="details">Detalhes</TabsTrigger>
-          <TabsTrigger value="tasks">Tarefas</TabsTrigger>
-          <TabsTrigger value="materials">Materiais</TabsTrigger>
-          <TabsTrigger value="suppliers">Fornecedores</TabsTrigger>
-          <TabsTrigger value="influencers">Influenciadores</TabsTrigger>
-          <TabsTrigger value="promoters">Promoters</TabsTrigger>
-          <TabsTrigger value="utm">UTM</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="tasks">
-          <EventTasksTab eventId={id} eventTypeId={event?.event_type_id} />
-        </TabsContent>
-        
-        <TabsContent value="materials">
-          <EventMaterialsTab eventId={id} eventTypeId={event?.event_type_id} />
-        </TabsContent>
-        
-        <TabsContent value="suppliers">
-          <EventSuppliersTab eventId={id} eventTypeId={event?.event_type_id} />
-        </TabsContent>
-        
-        <TabsContent value="notes">
-          {/* Implemente a lógica para exibir a aba de notas */}
-        </TabsContent>
-        
-        <TabsContent value="influencers">
-          <EventInfluencersTab event={event} onSuccess={refreshEventData} />
-        </TabsContent>
+        <Tabs defaultValue="utm" value={activeTab} onValueChange={setActiveTab} className="space-y-4 ">
+          <TabsList className="mb-4 w-full">
+            
+            <TabsTrigger value="tasks"><ListTodo className="h-4 w-4 mr-2" />Tarefas</TabsTrigger>
+            <TabsTrigger value="materials"><Package className="h-4 w-4 mr-2" />Materiais</TabsTrigger>
+            <TabsTrigger value="suppliers"><Truck className="h-4 w-4 mr-2" />Fornecedores</TabsTrigger>
+            <TabsTrigger value="influencers"><User className="h-4 w-4 mr-2" />Influenciadores</TabsTrigger>
+            <TabsTrigger value="promoters"><Users className="h-4 w-4 mr-2" />Promoters</TabsTrigger>
+            <TabsTrigger value="utm"><QrCode className="h-4 w-4 mr-2" />UTM</TabsTrigger>
+            <TabsTrigger value="details"><StickyNote className="h-4 w-4 mr-2" />Notas</TabsTrigger>
+          </TabsList> 
+          
+          <TabsContent value="tasks">
+            <EventTasksTab eventId={id} eventTypeId={event?.event_type_id} />
+          </TabsContent>
+          
+          <TabsContent value="materials">
+            <EventMaterialsTab eventId={id} eventTypeId={event?.event_type_id} />
+          </TabsContent>
+          
+          <TabsContent value="suppliers">
+            <EventSuppliersTab eventId={id} eventTypeId={event?.event_type_id} />
+          </TabsContent>
+          
+          <TabsContent value="notes">
+            {/* Implemente a lógica para exibir a aba de notas */}
+          </TabsContent>
+          
+          <TabsContent value="influencers">
+            <EventInfluencersTab event={event} onSuccess={refreshEventData} />
+          </TabsContent>
 
-        <TabsContent value="promoters">
-          <EventPromotersTab event={event} onSuccess={refreshEventData} />
-        </TabsContent>
-        
-        <TabsContent value="utm">
-          <EventUTMTab event={event} />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="promoters">
+            <EventPromotersTab event={event} onSuccess={refreshEventData} />
+          </TabsContent>
+          
+          <TabsContent value="utm">
+            <EventUTMTab event={event} />
+          </TabsContent>
+          
+          <TabsContent value="details">
+            <Card>
+              <CardHeader>
+                <CardTitle>Notas do Evento</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <p className="text-gray-700">
+                    {event.notes || "Sem notas adicionais para este evento."}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
     </div>
   );
 }
