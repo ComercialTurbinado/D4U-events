@@ -80,7 +80,19 @@ export default function EventInfluencersTab({ event, onSuccess }) {
         })
       );
 
-      setInfluencers(populatedInfluencers);
+      // Processa os dados para usar a foto do influenciador quando não tiver foto específica
+      const processedInfluencers = populatedInfluencers.map(item => {
+        // Se não tiver image_url no item, mas tiver no influencer, usa a do influencer
+        if (!item.image_url && item.influencer && item.influencer.image_url) {
+          return {
+            ...item, 
+            image_url: item.influencer.image_url
+          };
+        }
+        return item;
+      });
+
+      setInfluencers(processedInfluencers);
     } catch (error) {
       console.error("Erro ao carregar influenciadores do evento:", error);
       toast.error("Erro ao carregar influenciadores do evento");

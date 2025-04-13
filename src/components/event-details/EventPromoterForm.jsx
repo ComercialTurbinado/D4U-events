@@ -144,13 +144,26 @@ export default function EventPromoterForm({ event, onSuccess, editingItem }) {
     // Se selecionou um promoter, preenche o valor de referência
     if (name === "promoter_id") {
       const selectedPromoter = promoters.find(p => p.id === value);
-      if (selectedPromoter && selectedPromoter.reference_value) {
-        setFormData(prev => ({
-          ...prev,
-          fee: selectedPromoter.reference_value.toString()
-        }));
+      if (selectedPromoter) {
+        // Preenche o valor de referência
+        if (selectedPromoter.reference_value) {
+          setFormData(prev => ({
+            ...prev,
+            fee: selectedPromoter.reference_value.toString()
+          }));
+          
+          console.log(`Valor de referência preenchido: ${selectedPromoter.reference_value}`);
+        }
         
-        console.log(`Valor de referência preenchido: ${selectedPromoter.reference_value}`);
+        // Preenche a imagem com a foto do cadastro original
+        if (selectedPromoter.image_url) {
+          setImagePreview(selectedPromoter.image_url);
+          setFormData(prev => ({
+            ...prev,
+            image_url: selectedPromoter.image_url
+          }));
+          console.log("Imagem do promoter carregada do cadastro original");
+        }
       }
     }
   };

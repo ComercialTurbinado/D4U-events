@@ -141,13 +141,26 @@ export default function EventInfluencerForm({ event, onSuccess, editingItem }) {
     // Se selecionou um influenciador, preenche o valor de referência
     if (name === "influencer_id") {
       const selectedInfluencer = influencers.find(i => i.id === value);
-      if (selectedInfluencer && selectedInfluencer.reference_value) {
-        setFormData(prev => ({
-          ...prev,
-          fee: selectedInfluencer.reference_value.toString()
-        }));
+      if (selectedInfluencer) {
+        // Preenche o valor de referência
+        if (selectedInfluencer.reference_value) {
+          setFormData(prev => ({
+            ...prev,
+            fee: selectedInfluencer.reference_value.toString()
+          }));
+          
+          console.log(`Valor de referência preenchido: ${selectedInfluencer.reference_value}`);
+        }
         
-        console.log(`Valor de referência preenchido: ${selectedInfluencer.reference_value}`);
+        // Preenche a imagem com a foto do cadastro original
+        if (selectedInfluencer.image_url) {
+          setImagePreview(selectedInfluencer.image_url);
+          setFormData(prev => ({
+            ...prev,
+            image_url: selectedInfluencer.image_url
+          }));
+          console.log("Imagem do influenciador carregada do cadastro original");
+        }
       }
     }
   };

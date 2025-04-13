@@ -80,7 +80,19 @@ export default function EventPromotersTab({ event, onSuccess }) {
         })
       );
 
-      setPromoters(populatedPromoters);
+      // Processa os dados para usar a foto do promoter quando não tiver foto específica
+      const processedPromoters = populatedPromoters.map(item => {
+        // Se não tiver image_url no item, mas tiver no promoter, usa a do promoter
+        if (!item.image_url && item.promoter && item.promoter.image_url) {
+          return {
+            ...item, 
+            image_url: item.promoter.image_url
+          };
+        }
+        return item;
+      });
+
+      setPromoters(processedPromoters);
     } catch (error) {
       console.error("Erro ao carregar promoters do evento:", error);
       toast.error("Erro ao carregar promoters do evento");
