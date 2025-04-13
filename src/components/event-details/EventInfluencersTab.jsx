@@ -106,7 +106,7 @@ export default function EventInfluencersTab({ event, onSuccess }) {
     setShowForm(true);
   };
 
-  const handleDelete = async (id, totalFee) => {
+  const handleDelete = async (id, fee) => {
     if (window.confirm("Tem certeza que deseja remover este influenciador do evento?")) {
       try {
         setIsLoading(true);
@@ -124,6 +124,35 @@ export default function EventInfluencersTab({ event, onSuccess }) {
 
         if (!response.ok) {
           throw new Error("Erro ao remover influenciador do evento");
+        }
+
+        // Atualizar o orçamento do evento após remover o influenciador
+        try {
+          console.log("Atualizando orçamento após remover influenciador:", fee);
+          const currentBudget = event.budget || 0;
+          const newBudget = Math.max(0, currentBudget - fee); // Garante que não seja negativo
+          
+          const budgetResponse = await fetch(
+            `${import.meta.env.VITE_API_URL || "https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod"}/entities/events/${event.id}`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+              body: JSON.stringify({
+                budget: newBudget
+              }),
+            }
+          );
+
+          if (!budgetResponse.ok) {
+            console.error("Erro ao atualizar orçamento do evento");
+          } else {
+            console.log("Orçamento atualizado com sucesso:", newBudget);
+          }
+        } catch (budgetError) {
+          console.error("Erro ao atualizar orçamento:", budgetError);
         }
 
         toast.success("Influenciador removido com sucesso");

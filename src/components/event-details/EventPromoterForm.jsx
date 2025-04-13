@@ -23,7 +23,7 @@ import { PromoterOps, EventPromoterOps } from "@/api/mongodb";
 import { formatCurrency } from "@/lib/utils";
 import { Upload, Image, X } from "lucide-react";
 
-export default function EventPromoterForm({ event, onSuccess, editingItem }) {
+export default function EventPromoterForm({ event, onSuccess, editingItem = null }) {
   const [promoters, setPromoters] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
@@ -43,25 +43,10 @@ export default function EventPromoterForm({ event, onSuccess, editingItem }) {
   }, []);
 
   useEffect(() => {
-    // Atualiza o valor total quando o fee ou os dias mudam
-    const feeValue = parseFloat(formData.fee) || 0;
-    const daysValue = parseFloat(formData.days) || 1;
-    const total = feeValue * daysValue;
-    
-    console.log(`Calculando total para promoter: ${feeValue} * ${daysValue} = ${total}`);
-    
-    setFormData(prev => ({
-      ...prev,
-      total_fee: total.toString()
-    }));
-  }, [formData.fee, formData.days]);
-
-  // Se tiver um item em edição, carrega os dados
-  useEffect(() => {
     if (editingItem) {
       setFormData({
         event_id: event.id,
-        promoter_id: editingItem.promoter_id,
+        promoter_id: editingItem.promoter_id || "",
         fee: editingItem.fee ? editingItem.fee.toString() : "",
         days: editingItem.days ? editingItem.days.toString() : "1",
         total_fee: editingItem.total_fee ? editingItem.total_fee.toString() : "",
@@ -76,25 +61,31 @@ export default function EventPromoterForm({ event, onSuccess, editingItem }) {
     }
   }, [editingItem, event.id]);
 
+  useEffect(() => {
+    // Atualiza o valor total quando o fee ou os dias mudam
+    const feeValue = parseFloat(formData.fee) || 0;
+    const daysValue = parseFloat(formData.days) || 1;
+    const total = feeValue * daysValue;
+    
+    console.log(`Calculando total: ${feeValue} * ${daysValue} = ${total}`);
+    
+    setFormData(prev => ({
+      ...prev,
+      total_fee: total.toString()
+    }));
+  }, [formData.fee, formData.days]);
+
   const loadPromoters = async () => {
     try {
       setIsLoading(true);
       const data = await PromoterOps.list();
       setPromoters(data || []);
     } catch (error) {
-      console.error("Erro ao carregar promoters:", error);
-      toast.error("Erro ao carregar promoters");
+      console.error("Erro ao carregar promotores:", error);
+      toast.error("Erro ao carregar promotores");
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
   };
 
   const handleImageUpload = (e) => {
@@ -135,13 +126,21 @@ export default function EventPromoterForm({ event, onSuccess, editingItem }) {
     }));
   };
 
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   const handleSelectChange = (name, value) => {
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
 
-    // Se selecionou um promoter, preenche o valor de referência
+    // Se selecionou um promotor, preenche o valor de referência
     if (name === "promoter_id") {
       const selectedPromoter = promoters.find(p => p.id === value);
       if (selectedPromoter) {
@@ -162,7 +161,7 @@ export default function EventPromoterForm({ event, onSuccess, editingItem }) {
             ...prev,
             image_url: selectedPromoter.image_url
           }));
-          console.log("Imagem do promoter carregada do cadastro original");
+          console.log("Imagem do promotor carregada do cadastro original");
         }
       }
     }
@@ -171,7 +170,7 @@ export default function EventPromoterForm({ event, onSuccess, editingItem }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.promoter_id) {
-      toast.error("Selecione um promoter");
+      toast.error("Selecione um promotor");
       return;
     }
 
@@ -187,15 +186,15 @@ export default function EventPromoterForm({ event, onSuccess, editingItem }) {
       total_fee
     };
 
-    console.log("Dados completos do promoter a serem enviados:", JSON.stringify(dataToSend, null, 2));
+    console.log("Dados completos a serem enviados:", JSON.stringify(dataToSend, null, 2));
 
     setIsLoading(true);
     try {
       // Verificar se é uma edição ou uma adição
       if (editingItem) {
-        console.log("Atualizando promoter no evento:", dataToSend);
+        console.log("Atualizando promotor no evento:", dataToSend);
         
-        // Atualizar o evento-promoter
+        // Atualizar o evento-promotor
         const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/event-promoter/${editingItem.id}`, {
           method: 'PUT',
           headers: {
@@ -208,14 +207,14 @@ export default function EventPromoterForm({ event, onSuccess, editingItem }) {
         if (!response.ok) {
           const errorText = await response.text();
           console.error("Erro na resposta:", errorText);
-          throw new Error("Erro ao atualizar promoter no evento");
+          throw new Error("Erro ao atualizar promotor no evento");
         }
         
-        toast.success("Promoter atualizado com sucesso!");
+        toast.success("Promotor atualizado com sucesso!");
         
       } else {
-        // Código existente para adição de novo promoter
-        console.log("Adicionando promoter ao evento:", dataToSend);
+        // Código para adição de novo promotor
+        console.log("Adicionando promotor ao evento:", dataToSend);
         
         // Usando fetch diretamente para garantir que funcione
         const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/event-promoter`, {
@@ -230,10 +229,10 @@ export default function EventPromoterForm({ event, onSuccess, editingItem }) {
         if (!response.ok) {
           const errorText = await response.text();
           console.error("Erro na resposta:", errorText);
-          throw new Error("Erro ao adicionar promoter ao evento");
+          throw new Error("Erro ao adicionar promotor ao evento");
         }
         
-        toast.success("Promoter adicionado com sucesso!");
+        toast.success("Promotor adicionado com sucesso!");
         
         // Atualizar orçamento do evento se houver fee
         if (parseFloat(total_fee) > 0) {
@@ -280,8 +279,8 @@ export default function EventPromoterForm({ event, onSuccess, editingItem }) {
       
       if (onSuccess) onSuccess();
     } catch (error) {
-      console.error("Erro ao salvar promoter:", error);
-      toast.error(`Erro ao ${editingItem ? 'atualizar' : 'adicionar'} promoter ao evento`);
+      console.error("Erro ao salvar promotor:", error);
+      toast.error(`Erro ao ${editingItem ? 'atualizar' : 'adicionar'} promotor ao evento`);
     } finally {
       setIsLoading(false);
     }
@@ -290,156 +289,174 @@ export default function EventPromoterForm({ event, onSuccess, editingItem }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{editingItem ? "Editar Promoter" : "Adicionar Promoter"}</CardTitle>
+        <CardTitle>{editingItem ? "Editar Promotor" : "Adicionar Promotor"}</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="promoter_id">Promoter</Label>
-            <Select
-              value={formData.promoter_id}
-              onValueChange={(value) => handleSelectChange("promoter_id", value)}
-              disabled={isLoading}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um promoter" />
-              </SelectTrigger>
-              <SelectContent>
-                {promoters.map((promoter) => (
-                  <SelectItem key={promoter.id} value={promoter.id}>
-                    {promoter.name} - {formatCurrency(promoter.reference_value)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="fee">Valor da diária</Label>
-              <Input
-                id="fee"
-                name="fee"
-                type="number"
-                step="0.01"
-                value={formData.fee}
-                onChange={handleChange}
-                disabled={isLoading}
-                required
-              />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Coluna da foto - 1/3 da largura */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Foto do Promotor no Evento</Label>
+                <div className="flex-1">
+                  <Input
+                    id="image"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={isLoading}
+                    className="hidden"
+                  />
+                  <Label 
+                    htmlFor="image" 
+                    className="flex items-center justify-center h-64 border-2 border-dashed rounded-md cursor-pointer hover:border-gray-400 transition-colors"
+                  >
+                    {imagePreview ? (
+                      <div className="relative w-full h-full">
+                        <img 
+                          src={imagePreview} 
+                          alt="Preview" 
+                          className="object-cover w-full h-full rounded-md" 
+                        />
+                        <Button 
+                          type="button"
+                          variant="destructive" 
+                          size="icon" 
+                          className="absolute top-1 right-1 h-6 w-6 rounded-full"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeImage();
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center text-gray-500">
+                        <Upload className="h-8 w-8 mb-2" />
+                        <span className="text-sm">Clique para adicionar foto</span>
+                      </div>
+                    )}
+                  </Label>
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="days">Dias</Label>
-              <Input
-                id="days"
-                name="days"
-                type="number"
-                min="1"
-                step="1"
-                value={formData.days}
-                onChange={handleChange}
-                disabled={isLoading}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="total_fee">Valor Total</Label>
-            <Input
-              id="total_fee"
-              name="total_fee"
-              type="number"
-              step="0.01"
-              value={formData.total_fee}
-              onChange={handleChange}
-              disabled={true}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Foto do Promoter no Evento</Label>
-            <div className="flex items-center space-x-4">
-              <div className="flex-1">
-                <Input
-                  id="image"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
+            {/* Coluna principal - 2/3 da largura */}
+            <div className="md:col-span-2 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="promoter_id">Promotor</Label>
+                <Select
+                  value={formData.promoter_id}
+                  onValueChange={(value) => handleSelectChange("promoter_id", value)}
                   disabled={isLoading}
-                  className="hidden"
-                />
-                <Label 
-                  htmlFor="image" 
-                  className="flex items-center justify-center h-32 border-2 border-dashed rounded-md cursor-pointer hover:border-gray-400 transition-colors"
                 >
-                  {imagePreview ? (
-                    <div className="relative w-full h-full">
-                      <img 
-                        src={imagePreview} 
-                        alt="Preview" 
-                        className="object-cover w-full h-full rounded-md" 
-                      />
-                      <Button 
-                        type="button"
-                        variant="destructive" 
-                        size="icon" 
-                        className="absolute top-1 right-1 h-6 w-6 rounded-full"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeImage();
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center text-gray-500">
-                      <Upload className="h-6 w-6 mb-2" />
-                      <span className="text-sm">Clique para adicionar foto</span>
-                    </div>
-                  )}
-                </Label>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um promotor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {promoters.map((promoter) => (
+                      <SelectItem key={promoter.id} value={promoter.id}>
+                        {promoter.name} - {formatCurrency(promoter.reference_value)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(value) => handleSelectChange("status", value)}
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pendente</SelectItem>
+                      <SelectItem value="confirmed">Confirmado</SelectItem>
+                      <SelectItem value="canceled">Cancelado</SelectItem>
+                      <SelectItem value="completed">Concluído</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Observações</Label>
+                  <Textarea
+                    id="notes"
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                    rows={3}
+                    placeholder="Informações adicionais sobre a participação no evento"
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="notes">Observações</Label>
-            <Textarea
-              id="notes"
-              name="notes"
-              value={formData.notes}
-              onChange={handleChange}
-              disabled={isLoading}
-              rows={3}
-            />
+          {/* Seção de valores e cálculos - ocupa toda a largura */}
+          <div className="pt-6 border-t mt-6">
+            <h3 className="text-lg font-medium mb-4">Informações de Pagamento</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="fee">Valor da diária</Label>
+                <Input
+                  id="fee"
+                  name="fee"
+                  type="number"
+                  step="0.01"
+                  value={formData.fee}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                  required
+                  className="text-lg"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="days">Dias</Label>
+                <Input
+                  id="days"
+                  name="days"
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={formData.days}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                  required
+                  className="text-lg"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="total_fee">Valor Total</Label>
+                <Input
+                  id="total_fee"
+                  name="total_fee"
+                  type="number"
+                  step="0.01"
+                  value={formData.total_fee}
+                  onChange={handleChange}
+                  disabled={true}
+                  required
+                  className="text-lg font-bold"
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Select
-              value={formData.status}
-              onValueChange={(value) => handleSelectChange("status", value)}
-              disabled={isLoading}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pending">Pendente</SelectItem>
-                <SelectItem value="confirmed">Confirmado</SelectItem>
-                <SelectItem value="canceled">Cancelado</SelectItem>
-                <SelectItem value="completed">Concluído</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex justify-end mt-6">
+            <Button type="submit" disabled={isLoading} className="w-1/3">
+              {isLoading ? (editingItem ? "Atualizando..." : "Adicionando...") : (editingItem ? "Atualizar Promotor" : "Adicionar Promotor")}
+            </Button>
           </div>
-
-          <Button type="submit" disabled={isLoading} className="w-full">
-            {isLoading ? (editingItem ? "Atualizando..." : "Adicionando...") : (editingItem ? "Atualizar Promoter" : "Adicionar Promoter")}
-          </Button>
         </form>
       </CardContent>
     </Card>

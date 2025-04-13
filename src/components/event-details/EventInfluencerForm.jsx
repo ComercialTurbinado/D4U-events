@@ -290,153 +290,171 @@ export default function EventInfluencerForm({ event, onSuccess, editingItem }) {
         <CardTitle>{editingItem ? "Editar Influenciador" : "Adicionar Influenciador"}</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="influencer_id">Influenciador</Label>
-            <Select
-              value={formData.influencer_id}
-              onValueChange={(value) => handleSelectChange("influencer_id", value)}
-              disabled={isLoading}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um influenciador" />
-              </SelectTrigger>
-              <SelectContent>
-                {influencers.map((influencer) => (
-                  <SelectItem key={influencer.id} value={influencer.id}>
-                    {influencer.name} - {formatCurrency(influencer.reference_value)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="fee">Valor da diária</Label>
-              <Input
-                id="fee"
-                name="fee"
-                type="number"
-                step="0.01"
-                value={formData.fee}
-                onChange={handleChange}
-                disabled={isLoading}
-                required
-              />
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Coluna da foto - 1/3 da largura */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Foto do Influenciador no Evento</Label>
+                <div className="flex-1">
+                  <Input
+                    id="image"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={isLoading}
+                    className="hidden"
+                  />
+                  <Label 
+                    htmlFor="image" 
+                    className="flex items-center justify-center h-64 border-2 border-dashed rounded-md cursor-pointer hover:border-gray-400 transition-colors"
+                  >
+                    {imagePreview ? (
+                      <div className="relative w-full h-full">
+                        <img 
+                          src={imagePreview} 
+                          alt="Preview" 
+                          className="object-cover w-full h-full rounded-md" 
+                        />
+                        <Button 
+                          type="button"
+                          variant="destructive" 
+                          size="icon" 
+                          className="absolute top-1 right-1 h-6 w-6 rounded-full"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeImage();
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center text-gray-500">
+                        <Upload className="h-8 w-8 mb-2" />
+                        <span className="text-sm">Clique para adicionar foto</span>
+                      </div>
+                    )}
+                  </Label>
+                </div>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="days">Dias</Label>
-              <Input
-                id="days"
-                name="days"
-                type="number"
-                min="1"
-                step="1"
-                value={formData.days}
-                onChange={handleChange}
-                disabled={isLoading}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="total_fee">Valor Total</Label>
-            <Input
-              id="total_fee"
-              name="total_fee"
-              type="number"
-              step="0.01"
-              value={formData.total_fee}
-              onChange={handleChange}
-              disabled={true}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Foto do Influenciador no Evento</Label>
-            <div className="flex items-center space-x-4">
-              <div className="flex-1">
-                <Input
-                  id="image"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
+            {/* Coluna principal - 2/3 da largura */}
+            <div className="md:col-span-2 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="influencer_id">Influenciador</Label>
+                <Select
+                  value={formData.influencer_id}
+                  onValueChange={(value) => handleSelectChange("influencer_id", value)}
                   disabled={isLoading}
-                  className="hidden"
-                />
-                <Label 
-                  htmlFor="image" 
-                  className="flex items-center justify-center h-32 border-2 border-dashed rounded-md cursor-pointer hover:border-gray-400 transition-colors"
                 >
-                  {imagePreview ? (
-                    <div className="relative w-full h-full">
-                      <img 
-                        src={imagePreview} 
-                        alt="Preview" 
-                        className="object-cover w-full h-full rounded-md" 
-                      />
-                      <Button 
-                        type="button"
-                        variant="destructive" 
-                        size="icon" 
-                        className="absolute top-1 right-1 h-6 w-6 rounded-full"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeImage();
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center text-gray-500">
-                      <Upload className="h-6 w-6 mb-2" />
-                      <span className="text-sm">Clique para adicionar foto</span>
-                    </div>
-                  )}
-                </Label>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um influenciador" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {influencers.map((influencer) => (
+                      <SelectItem key={influencer.id} value={influencer.id}>
+                        {influencer.name} - {formatCurrency(influencer.reference_value)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(value) => handleSelectChange("status", value)}
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pendente</SelectItem>
+                      <SelectItem value="confirmed">Confirmado</SelectItem>
+                      <SelectItem value="canceled">Cancelado</SelectItem>
+                      <SelectItem value="completed">Concluído</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="notes">Observações</Label>
+                  <Textarea
+                    id="notes"
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleChange}
+                    disabled={isLoading}
+                    rows={3}
+                    placeholder="Informações adicionais sobre a participação no evento"
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="notes">Observações</Label>
-            <Textarea
-              id="notes"
-              name="notes"
-              value={formData.notes}
-              onChange={handleChange}
-              disabled={isLoading}
-              rows={3}
-            />
+          {/* Seção de valores e cálculos - ocupa toda a largura */}
+          <div className="pt-6 border-t mt-6">
+            <h3 className="text-lg font-medium mb-4">Informações de Pagamento</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="fee">Valor da diária</Label>
+                <Input
+                  id="fee"
+                  name="fee"
+                  type="number"
+                  step="0.01"
+                  value={formData.fee}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                  required
+                  className="text-lg"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="days">Dias</Label>
+                <Input
+                  id="days"
+                  name="days"
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={formData.days}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                  required
+                  className="text-lg"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="total_fee">Valor Total</Label>
+                <Input
+                  id="total_fee"
+                  name="total_fee"
+                  type="number"
+                  step="0.01"
+                  value={formData.total_fee}
+                  onChange={handleChange}
+                  disabled={true}
+                  required
+                  className="text-lg font-bold"
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Select
-              value={formData.status}
-              onValueChange={(value) => handleSelectChange("status", value)}
-              disabled={isLoading}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pending">Pendente</SelectItem>
-                <SelectItem value="confirmed">Confirmado</SelectItem>
-                <SelectItem value="canceled">Cancelado</SelectItem>
-                <SelectItem value="completed">Concluído</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex justify-end mt-6">
+            <Button type="submit" disabled={isLoading} className="w-1/3">
+              {isLoading ? (editingItem ? "Atualizando..." : "Adicionando...") : (editingItem ? "Atualizar Influenciador" : "Adicionar Influenciador")}
+            </Button>
           </div>
-
-          <Button type="submit" disabled={isLoading} className="w-full">
-            {isLoading ? (editingItem ? "Atualizando..." : "Adicionando...") : (editingItem ? "Atualizar Influenciador" : "Adicionar Influenciador")}
-          </Button>
         </form>
       </CardContent>
     </Card>

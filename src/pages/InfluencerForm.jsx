@@ -160,184 +160,205 @@ export default function InfluencerForm() {
         </h2>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4 max-w-2xl">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nome</Label>
-            <Input
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phone">Telefone</Label>
-            <Input
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="social_media">Rede Social</Label>
-            <Input
-              id="social_media"
-              name="social_media"
-              value={formData.social_media}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="followers_count">Número de Seguidores</Label>
-            <Input
-              id="followers_count"
-              name="followers_count"
-              type="number"
-              value={formData.followers_count}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="engagement_rate">Taxa de Engajamento (%)</Label>
-            <Input
-              id="engagement_rate"
-              name="engagement_rate"
-              type="number"
-              step="0.01"
-              value={formData.engagement_rate}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="reference_value">Valor de Referência</Label>
-            <Input
-              id="reference_value"
-              name="reference_value"
-              type="number"
-              step="0.01"
-              value={formData.reference_value}
-              onChange={handleChange}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="image_upload">Foto do Influenciador</Label>
-          <div className="flex items-start gap-4 mt-1">
-            <div 
-              className={`border rounded-md flex items-center justify-center bg-gray-50 w-32 h-32 overflow-hidden ${!imagePreview ? 'border-dashed' : ''}`}
-            >
-              {imagePreview ? (
-                <img src={imagePreview} alt="Foto do influenciador" className="w-full h-full object-cover" />
-              ) : (
-                <User className="w-10 h-10 text-gray-300" />
-              )}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Coluna da Foto - 1/3 da largura */}
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="image_upload">Foto do Influenciador</Label>
+              <div className="flex items-start gap-4 mt-1">
+                <div 
+                  className={`border rounded-md flex items-center justify-center bg-gray-50 w-full h-64 overflow-hidden ${!imagePreview ? 'border-dashed' : ''}`}
+                >
+                  {imagePreview ? (
+                    <img src={imagePreview} alt="Foto do influenciador" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-20 h-20 text-gray-300" />
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex flex-col">
+                <label 
+                  htmlFor="image_upload" 
+                  className="cursor-pointer inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  {isLoading ? 'Processando...' : 'Carregar foto'}
+                </label>
+                <input
+                  id="image_upload"
+                  type="file"
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  disabled={isLoading}
+                />
+                {imagePreview && (
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-2"
+                    onClick={removeImage}
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    Remover foto
+                  </Button>
+                )}
+                <p className="mt-2 text-xs text-gray-500">
+                  Formatos suportados: JPEG, PNG, GIF
+                </p>
+              </div>
             </div>
             
-            <div className="flex flex-col">
-              <label 
-                htmlFor="image_upload" 
-                className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                {isLoading ? 'Processando...' : 'Carregar foto'}
-              </label>
-              <input
-                id="image_upload"
-                type="file"
-                className="hidden"
-                accept="image/*"
-                onChange={handleImageUpload}
-                disabled={isLoading}
+            <div className="space-y-2">
+              <Label htmlFor="social_media">Rede Social</Label>
+              <Input
+                id="social_media"
+                name="social_media"
+                value={formData.social_media}
+                onChange={handleChange}
+                placeholder="@username"
               />
-              {imagePreview && (
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-2"
-                  onClick={removeImage}
-                >
-                  <X className="w-4 h-4 mr-2" />
-                  Remover foto
-                </Button>
-              )}
-              <p className="mt-2 text-xs text-gray-500">
-                Formatos suportados: JPEG, PNG, GIF. Tamanho máximo: 5MB.
-              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="followers_count">Número de Seguidores</Label>
+              <Input
+                id="followers_count"
+                name="followers_count"
+                type="number"
+                value={formData.followers_count}
+                onChange={handleChange}
+                placeholder="Ex: 50000"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="engagement_rate">Taxa de Engajamento (%)</Label>
+              <Input
+                id="engagement_rate"
+                name="engagement_rate"
+                type="number"
+                step="0.01"
+                value={formData.engagement_rate}
+                onChange={handleChange}
+                placeholder="Ex: 3.5"
+              />
             </div>
           </div>
-        </div>
+          
+          {/* Coluna de Dados Principais - 2/3 da largura */}
+          <div className="md:col-span-2 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nome Completo</Label>
+                <Input
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Nome completo do influenciador"
+                  required
+                />
+              </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="description">Descrição</Label>
-          <Textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            rows={4}
-          />
-        </div>
+              <div className="space-y-2">
+                <Label htmlFor="reference_value">Valor de Referência (R$)</Label>
+                <Input
+                  id="reference_value"
+                  name="reference_value"
+                  type="number"
+                  step="0.01"
+                  value={formData.reference_value}
+                  onChange={handleChange}
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
 
-        <div className="grid grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="country">País</Label>
-            <Input
-              id="country"
-              name="country"
-              value={formData.country}
-              onChange={handleChange}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="email@exemplo.com"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">Telefone</Label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="(00) 00000-0000"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="description">Descrição/Bio</Label>
+              <Textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows={4}
+                placeholder="Uma breve descrição sobre o influenciador e seu trabalho"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="country">País</Label>
+                <Input
+                  id="country"
+                  name="country"
+                  value={formData.country}
+                  onChange={handleChange}
+                  placeholder="Brasil"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="state">Estado</Label>
+                <Input
+                  id="state"
+                  name="state"
+                  value={formData.state}
+                  onChange={handleChange}
+                  placeholder="SP"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="city">Cidade</Label>
+                <Input
+                  id="city"
+                  name="city"
+                  value={formData.city}
+                  onChange={handleChange}
+                  placeholder="São Paulo"
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" type="button" onClick={() => navigate("/influencers")}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Salvando..." : "Salvar"}
+              </Button>
+            </div>
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="state">Estado</Label>
-            <Input
-              id="state"
-              name="state"
-              value={formData.state}
-              onChange={handleChange}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="city">Cidade</Label>
-            <Input
-              id="city"
-              name="city"
-              value={formData.city}
-              onChange={handleChange}
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" type="button" onClick={() => navigate("/influencers")}>
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? "Salvando..." : "Salvar"}
-          </Button>
         </div>
       </form>
     </div>

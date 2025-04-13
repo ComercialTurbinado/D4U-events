@@ -111,6 +111,7 @@ export default function EventPromotersTab({ event, onSuccess }) {
       try {
         setIsLoading(true);
         
+        // Remover o promoter do evento
         const response = await fetch(
           `${import.meta.env.VITE_API_URL || "https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod"}/entities/event-promoter/${id}`,
           {
@@ -126,7 +127,54 @@ export default function EventPromotersTab({ event, onSuccess }) {
           throw new Error("Erro ao remover promoter do evento");
         }
 
-        toast.success("Promoter removido com sucesso");
+        // Atualizar o orçamento do evento subtraindo o valor do promoter
+        console.log('Atualizando orçamento após remover promoter. Valor a subtrair:', totalFee);
+        
+        // Buscar o orçamento atual do evento
+        const eventResponse = await fetch(
+          `${import.meta.env.VITE_API_URL || "https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod"}/entities/events/${event.id}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        
+        if (!eventResponse.ok) {
+          console.error('Erro ao buscar dados do evento para atualizar orçamento');
+          throw new Error("Erro ao atualizar orçamento do evento");
+        }
+        
+        const eventData = await eventResponse.json();
+        const currentBudget = parseFloat(eventData.budget) || 0;
+        
+        // Calcular novo orçamento (garantindo que não fique negativo)
+        const newBudget = Math.max(0, currentBudget - parseFloat(totalFee));
+        console.log('Orçamento atual:', currentBudget, 'Novo orçamento:', newBudget);
+        
+        // Atualizar o orçamento do evento
+        const budgetUpdateResponse = await fetch(
+          `${import.meta.env.VITE_API_URL || "https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod"}/entities/events/${event.id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+            body: JSON.stringify({
+              budget: newBudget
+            }),
+          }
+        );
+        
+        if (!budgetUpdateResponse.ok) {
+          console.error('Erro ao atualizar orçamento do evento');
+          toast.error("Promoter removido, mas houve um erro ao atualizar o orçamento do evento");
+        } else {
+          toast.success("Promoter removido com sucesso e orçamento atualizado");
+        }
+
         loadEventPromoters();
         if (onSuccess) onSuccess();
       } catch (error) {
@@ -247,9 +295,10 @@ export default function EventPromotersTab({ event, onSuccess }) {
                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                         </Button>
                         <Button
-                          variant="ghost"
-                          size="icon"
+                          variant="outline"
+                          size="sm"
                           onClick={() => handleDelete(item.id, item.total_fee)}
+                          disabled={isLoading}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
