@@ -51,7 +51,7 @@ export default function EventUTMTab({ event }) {
           frame_name: "no-frame",
           qr_code_text: generateUTMUrl(),
           image_format: "SVG",
-          qr_code_logo: "scan-me-square"
+          
         })
       });
 
