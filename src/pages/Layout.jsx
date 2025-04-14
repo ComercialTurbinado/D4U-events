@@ -100,7 +100,7 @@ export default function Layout() {
       )}>
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between p-4 border-b">
-            <h1 className="text-xl font-bold">D4U Events</h1>
+            <h1 className="text-xl font-bold"><img src="https://iili.io/3R5bk1R.png" alt="logo" className="text-center mb-5" width="100px" /></h1>
             <Button
               variant="ghost"
               size="icon"
