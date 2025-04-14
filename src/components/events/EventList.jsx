@@ -36,11 +36,7 @@ export default function EventList({ events, isLoading, onEdit, onDelete, onView 
   };
 
   const isEventCompleted = (event) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const eventDate = new Date(event.start_date);
-    eventDate.setHours(0, 0, 0, 0);
-    return eventDate < today && event.status !== "in_progress";
+    return event.status === "completed";
   };
 
   if (isLoading) {
@@ -82,11 +78,6 @@ export default function EventList({ events, isLoading, onEdit, onDelete, onView 
                 <Badge className={getStatusColor(event.status)}>
                   {getStatusLabel(event.status)}
                 </Badge>
-                {isEventCompleted(event) && (
-                  <span className="ml-2 text-xs text-gray-500">
-                    (Concluído)
-                  </span>
-                )}
               </TableCell>
               <TableCell>{event.manager || "-"}</TableCell>
               <TableCell>
@@ -99,25 +90,23 @@ export default function EventList({ events, isLoading, onEdit, onDelete, onView 
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
-                  {!isEventCompleted(event) && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onEdit(event)}
-                        title="Editar"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => onDelete(event.id)}
-                        title="Excluir"
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onEdit(event)}
+                    title="Editar"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  {event.status !== "completed" && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onDelete(event.id)}
+                      title="Excluir"
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
                   )}
                 </div>
               </TableCell>
