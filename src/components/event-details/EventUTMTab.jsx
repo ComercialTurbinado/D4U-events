@@ -40,7 +40,7 @@ export default function EventUTMTab({ event }) {
     setStatus('Gerando QR Code...');
     try {
       // Usaremos nosso próprio backend como proxy para a API do QR Code Generator
-      const response = await fetch(`${API_URL}/entities/generate-qrcode`, {
+      const response = await fetch(`${API_URL}/generate-qrcode`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -51,7 +51,6 @@ export default function EventUTMTab({ event }) {
           frame_name: "no-frame",
           qr_code_text: generateUTMUrl(),
           image_format: "SVG"
-          
         })
       });
 
@@ -80,7 +79,7 @@ export default function EventUTMTab({ event }) {
           campaign: utmParams.campaign,
           content: utmParams.content,
           term: utmParams.term,
-          qr_code_url: dataUrl // Salvamos a imagem do QR Code em vez da URL
+          qr_code_url: dataUrl
         });
         console.log('UTM salva com sucesso!');
         setStatus('UTM e QR Code salvos com sucesso!');
