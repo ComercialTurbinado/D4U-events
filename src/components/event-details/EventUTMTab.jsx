@@ -80,7 +80,7 @@ export default function EventUTMTab({ event }) {
           campaign: utmParams.campaign,
           content: utmParams.content,
           term: utmParams.term,
-          qr_code_url: generateUTMUrl() // Salvamos a URL em vez da imagem
+          qr_code_url: dataUrl // Salvamos a imagem do QR Code em vez da URL
         });
         console.log('UTM salva com sucesso!');
         setStatus('UTM e QR Code salvos com sucesso!');
