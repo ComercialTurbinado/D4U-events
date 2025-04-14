@@ -47,7 +47,7 @@ export default function EventUTMTab({ event }) {
           ...createHeaders()
         },
         body: JSON.stringify({
-          apiKey: 'CO3JxMEAYGJNaSfmdav_EGI-CP8yMa8HuJNoheULlxzRQBTs8Wg8QMBQUPPFU_3c',
+          apiKey: 'sRrX5tcL_2Wz2OzRHvMcrboclh7zUQ8I0Gj5clwKZVx8Fr3tBYrBvEgdc98ONmTA',
           frame_name: "no-frame",
           qr_code_text: generateUTMUrl(),
           image_format: "SVG",
