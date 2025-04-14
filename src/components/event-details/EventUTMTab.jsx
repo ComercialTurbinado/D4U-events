@@ -50,7 +50,7 @@ export default function EventUTMTab({ event }) {
           apiKey: 'sRrX5tcL_2Wz2OzRHvMcrboclh7zUQ8I0Gj5clwKZVx8Fr3tBYrBvEgdc98ONmTA',
           frame_name: "no-frame",
           qr_code_text: generateUTMUrl(),
-          image_format: "SVG",
+          image_format: "SVG"
           
         })
       });
