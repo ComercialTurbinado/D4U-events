@@ -106,83 +106,27 @@ export default function EventPromotersTab({ event, onSuccess }) {
     setShowForm(true);
   };
 
-  const handleDelete = async (id, totalFee) => {
-    if (window.confirm("Tem certeza que deseja remover este promoter do evento?")) {
-      try {
-        setIsLoading(true);
-        
-        // Remover o promoter do evento
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL || "https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod"}/entities/event-promoter/${id}`,
-          {
-            method: "DELETE",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
+  const handleDelete = async (id, fee) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || "https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod"}/entities/event-promoter/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
 
-        if (!response.ok) {
-          throw new Error("Erro ao remover promoter do evento");
-        }
-
-        // Atualizar o orçamento do evento subtraindo o valor do promoter
-        console.log('Atualizando orçamento após remover promoter. Valor a subtrair:', totalFee);
-        
-        // Buscar o orçamento atual do evento
-        const eventResponse = await fetch(
-          `${import.meta.env.VITE_API_URL || "https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod"}/entities/events/${event.id}`,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
-        
-        if (!eventResponse.ok) {
-          console.error('Erro ao buscar dados do evento para atualizar orçamento');
-          throw new Error("Erro ao atualizar orçamento do evento");
-        }
-        
-        const eventData = await eventResponse.json();
-        const currentBudget = parseFloat(eventData.budget) || 0;
-        
-        // Calcular novo orçamento (garantindo que não fique negativo)
-        const newBudget = Math.max(0, currentBudget - parseFloat(totalFee));
-        console.log('Orçamento atual:', currentBudget, 'Novo orçamento:', newBudget);
-        
-        // Atualizar o orçamento do evento
-        const budgetUpdateResponse = await fetch(
-          `${import.meta.env.VITE_API_URL || "https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod"}/entities/events/${event.id}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-            body: JSON.stringify({
-              budget: newBudget
-            }),
-          }
-        );
-        
-        if (!budgetUpdateResponse.ok) {
-          console.error('Erro ao atualizar orçamento do evento');
-          toast.error("Promoter removido, mas houve um erro ao atualizar o orçamento do evento");
-        } else {
-          toast.success("Promoter removido com sucesso e orçamento atualizado");
-        }
-
-        loadEventPromoters();
-        if (onSuccess) onSuccess();
-      } catch (error) {
-        console.error("Erro ao remover promoter:", error);
-        toast.error("Erro ao remover promoter do evento");
-      } finally {
-        setIsLoading(false);
+      if (!response.ok) {
+        throw new Error("Erro ao remover promoter");
       }
+
+      // Remover a lógica de atualização do orçamento
+      setPromoters((prev) => prev.filter((item) => item.id !== id));
+      toast.success("Promoter removido com sucesso!");
+      onSuccess?.();
+    } catch (error) {
+      console.error("Erro ao remover promoter:", error);
+      toast.error("Erro ao remover promoter");
     }
   };
 
@@ -297,7 +241,7 @@ export default function EventPromotersTab({ event, onSuccess }) {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleDelete(item.id, item.total_fee)}
+                          onClick={() => handleDelete(item.id, item.fee)}
                           disabled={isLoading}
                         >
                           <Trash2 className="h-4 w-4" />
