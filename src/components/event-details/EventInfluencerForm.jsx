@@ -19,12 +19,14 @@ import {
 import { toast } from "react-hot-toast";
 import { InfluencerOps, EventInfluencerOps } from "@/api/mongodb";
 import { formatCurrency } from "@/lib/utils";
-import { Upload, Image, X } from "lucide-react";
+import { Upload, Image, X, UserPlus } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function EventInfluencerForm({ event, onSuccess, editingItem }) {
   const [influencers, setInfluencers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
+  const [activeTab, setActiveTab] = useState("select");
   const [formData, setFormData] = useState({
     event_id: event.id,
     influencer_id: "",
@@ -33,6 +35,22 @@ export default function EventInfluencerForm({ event, onSuccess, editingItem }) {
     total_fee: "",
     notes: "",
     status: "pending",
+    image_url: ""
+  });
+  
+  const [newInfluencerData, setNewInfluencerData] = useState({
+    name: "",
+    description: "",
+    contact_person: "",
+    phone: "",
+    email: "",
+    social_media: "",
+    followers_count: "",
+    engagement_rate: "",
+    country: "",
+    state: "",
+    city: "",
+    reference_value: "",
     image_url: ""
   });
 
@@ -109,24 +127,46 @@ export default function EventInfluencerForm({ event, onSuccess, editingItem }) {
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = () => {
-      setFormData(prev => ({
-        ...prev,
-        image_url: reader.result
-      }));
+      if (activeTab === "select") {
+        setFormData(prev => ({
+          ...prev,
+          image_url: reader.result
+        }));
+      } else {
+        setNewInfluencerData(prev => ({
+          ...prev,
+          image_url: reader.result
+        }));
+      }
     };
   };
 
   const removeImage = () => {
     setImagePreview(null);
-    setFormData(prev => ({
-      ...prev,
-      image_url: ""
-    }));
+    if (activeTab === "select") {
+      setFormData(prev => ({
+        ...prev,
+        image_url: ""
+      }));
+    } else {
+      setNewInfluencerData(prev => ({
+        ...prev,
+        image_url: ""
+      }));
+    }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+  
+  const handleNewInfluencerChange = (e) => {
+    const { name, value } = e.target;
+    setNewInfluencerData(prev => ({
       ...prev,
       [name]: value
     }));
@@ -164,10 +204,86 @@ export default function EventInfluencerForm({ event, onSuccess, editingItem }) {
       }
     }
   };
+  
+  const createNewInfluencer = async () => {
+    // Validar campos mínimos
+    if (!newInfluencerData.name) {
+      toast.error("Nome do influenciador é obrigatório");
+      return false;
+    }
+    
+    if (!newInfluencerData.reference_value) {
+      toast.error("Valor de referência é obrigatório");
+      return false;
+    }
+    
+    try {
+      setIsLoading(true);
+      
+      // Criar novo influenciador
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/influencers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          ...newInfluencerData,
+          reference_value: parseFloat(newInfluencerData.reference_value),
+          followers_count: newInfluencerData.followers_count ? parseInt(newInfluencerData.followers_count) : 0,
+          engagement_rate: newInfluencerData.engagement_rate ? parseFloat(newInfluencerData.engagement_rate) : 0,
+          is_active: true
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error("Erro ao criar influenciador");
+      }
+      
+      const newInfluencer = await response.json();
+      toast.success("Influenciador criado com sucesso!");
+      
+      // Atualizar lista de influenciadores
+      await loadInfluencers();
+      
+      // Atualizar o formulário com o novo influenciador
+      setFormData(prev => ({
+        ...prev,
+        influencer_id: newInfluencer.id,
+        fee: newInfluencerData.reference_value,
+      }));
+      
+      // Manter a imagem se foi carregada
+      if (newInfluencerData.image_url) {
+        setFormData(prev => ({
+          ...prev,
+          image_url: newInfluencerData.image_url
+        }));
+      }
+      
+      // Mudar para a aba de seleção
+      setActiveTab("select");
+      
+      return newInfluencer.id;
+    } catch (error) {
+      console.error("Erro ao criar influenciador:", error);
+      toast.error("Erro ao criar influenciador");
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.influencer_id) {
+    
+    let influencerId = formData.influencer_id;
+    
+    // Se estiver na aba de criar novo, primeiro criar o influenciador
+    if (activeTab === "create") {
+      influencerId = await createNewInfluencer();
+      if (!influencerId) return; // Se falhou na criação, não continua
+    } else if (!formData.influencer_id) {
       toast.error("Selecione um influenciador");
       return;
     }
@@ -180,6 +296,7 @@ export default function EventInfluencerForm({ event, onSuccess, editingItem }) {
     // Criar objeto com todos os campos obrigatórios
     const dataToSend = {
       ...formData,
+      influencer_id: influencerId,
       days,
       total_fee
     };
@@ -273,7 +390,23 @@ export default function EventInfluencerForm({ event, onSuccess, editingItem }) {
         status: "pending",
         image_url: ""
       });
+      setNewInfluencerData({
+        name: "",
+        description: "",
+        contact_person: "",
+        phone: "",
+        email: "",
+        social_media: "",
+        followers_count: "",
+        engagement_rate: "",
+        country: "",
+        state: "",
+        city: "",
+        reference_value: "",
+        image_url: ""
+      });
       setImagePreview(null);
+      setActiveTab("select");
       
       if (onSuccess) onSuccess();
     } catch (error) {
@@ -291,168 +424,356 @@ export default function EventInfluencerForm({ event, onSuccess, editingItem }) {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Coluna da foto - 1/3 da largura */}
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Foto do Influenciador no Evento</Label>
-                <div className="flex-1">
-                  <Input
-                    id="image"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    disabled={isLoading}
-                    className="hidden"
-                  />
-                  <Label 
-                    htmlFor="image" 
-                    className="flex items-center justify-center h-64 border-2 border-dashed rounded-md cursor-pointer hover:border-gray-400 transition-colors"
-                  >
-                    {imagePreview ? (
-                      <div className="relative w-full h-full">
-                        <img 
-                          src={imagePreview} 
-                          alt="Preview" 
-                          className="object-cover w-full h-full rounded-md" 
+          {!editingItem && (
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="select">Selecionar Existente</TabsTrigger>
+                <TabsTrigger value="create">Criar Novo</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="select" className="space-y-6 mt-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Coluna da foto - 1/3 da largura */}
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Foto do Influenciador no Evento</Label>
+                      <div className="flex-1">
+                        <Input
+                          id="image"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          disabled={isLoading}
+                          className="hidden"
                         />
-                        <Button 
-                          type="button"
-                          variant="destructive" 
-                          size="icon" 
-                          className="absolute top-1 right-1 h-6 w-6 rounded-full"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeImage();
-                          }}
+                        <Label 
+                          htmlFor="image" 
+                          className="flex items-center justify-center h-64 border-2 border-dashed rounded-md cursor-pointer hover:border-gray-400 transition-colors"
                         >
-                          <X className="h-4 w-4" />
-                        </Button>
+                          {imagePreview ? (
+                            <div className="relative w-full h-full">
+                              <img 
+                                src={imagePreview} 
+                                alt="Preview" 
+                                className="object-cover w-full h-full rounded-md" 
+                              />
+                              <Button 
+                                type="button"
+                                variant="destructive" 
+                                size="icon" 
+                                className="absolute top-1 right-1 h-6 w-6 rounded-full"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeImage();
+                                }}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center text-gray-500">
+                              <Upload className="h-8 w-8 mb-2" />
+                              <span className="text-sm">Clique para adicionar foto</span>
+                            </div>
+                          )}
+                        </Label>
                       </div>
-                    ) : (
-                      <div className="flex flex-col items-center text-gray-500">
-                        <Upload className="h-8 w-8 mb-2" />
-                        <span className="text-sm">Clique para adicionar foto</span>
+                    </div>
+                  </div>
+
+                  {/* Coluna principal - 2/3 da largura */}
+                  <div className="md:col-span-2 space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="influencer_id">Influenciador</Label>
+                      <Select
+                        value={formData.influencer_id}
+                        onValueChange={(value) => handleSelectChange("influencer_id", value)}
+                        disabled={isLoading}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um influenciador" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {influencers.map((influencer) => (
+                            <SelectItem key={influencer.id} value={influencer.id}>
+                              {influencer.name} - {formatCurrency(influencer.reference_value)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="status">Status</Label>
+                        <Select
+                          value={formData.status}
+                          onValueChange={(value) => handleSelectChange("status", value)}
+                          disabled={isLoading}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">Pendente</SelectItem>
+                            <SelectItem value="confirmed">Confirmado</SelectItem>
+                            <SelectItem value="canceled">Cancelado</SelectItem>
+                            <SelectItem value="completed">Concluído</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                    )}
-                  </Label>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="notes">Observações</Label>
+                        <Textarea
+                          id="notes"
+                          name="notes"
+                          value={formData.notes}
+                          onChange={handleChange}
+                          disabled={isLoading}
+                          rows={3}
+                          placeholder="Informações adicionais sobre a participação no evento"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              </TabsContent>
+              
+              <TabsContent value="create" className="space-y-6 mt-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Coluna da foto - 1/3 da largura */}
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Foto do Influenciador</Label>
+                      <div className="flex-1">
+                        <Input
+                          id="new-image"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          disabled={isLoading}
+                          className="hidden"
+                        />
+                        <Label 
+                          htmlFor="new-image" 
+                          className="flex items-center justify-center h-64 border-2 border-dashed rounded-md cursor-pointer hover:border-gray-400 transition-colors"
+                        >
+                          {imagePreview ? (
+                            <div className="relative w-full h-full">
+                              <img 
+                                src={imagePreview} 
+                                alt="Preview" 
+                                className="object-cover w-full h-full rounded-md" 
+                              />
+                              <Button 
+                                type="button"
+                                variant="destructive" 
+                                size="icon" 
+                                className="absolute top-1 right-1 h-6 w-6 rounded-full"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeImage();
+                                }}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center text-gray-500">
+                              <Upload className="h-8 w-8 mb-2" />
+                              <span className="text-sm">Clique para adicionar foto</span>
+                            </div>
+                          )}
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Coluna principal - 2/3 da largura */}
+                  <div className="md:col-span-2 space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="new-name">Nome do Influenciador*</Label>
+                      <Input
+                        id="new-name"
+                        name="name"
+                        value={newInfluencerData.name}
+                        onChange={handleNewInfluencerChange}
+                        disabled={isLoading}
+                        required
+                        placeholder="Nome completo do influenciador"
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="new-contact">Contato</Label>
+                        <Input
+                          id="new-contact"
+                          name="contact_person"
+                          value={newInfluencerData.contact_person}
+                          onChange={handleNewInfluencerChange}
+                          disabled={isLoading}
+                          placeholder="Nome do contato"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="new-phone">Telefone</Label>
+                        <Input
+                          id="new-phone"
+                          name="phone"
+                          value={newInfluencerData.phone}
+                          onChange={handleNewInfluencerChange}
+                          disabled={isLoading}
+                          placeholder="Telefone para contato"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="new-email">Email</Label>
+                        <Input
+                          id="new-email"
+                          name="email"
+                          type="email"
+                          value={newInfluencerData.email}
+                          onChange={handleNewInfluencerChange}
+                          disabled={isLoading}
+                          placeholder="Email para contato"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="new-social-media">Rede Social</Label>
+                        <Input
+                          id="new-social-media"
+                          name="social_media"
+                          value={newInfluencerData.social_media}
+                          onChange={handleNewInfluencerChange}
+                          disabled={isLoading}
+                          placeholder="Instagram, TikTok, etc."
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="new-followers">Seguidores</Label>
+                        <Input
+                          id="new-followers"
+                          name="followers_count"
+                          type="number"
+                          value={newInfluencerData.followers_count}
+                          onChange={handleNewInfluencerChange}
+                          disabled={isLoading}
+                          placeholder="Quantidade de seguidores"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="new-engagement">Taxa de Engajamento (%)</Label>
+                        <Input
+                          id="new-engagement"
+                          name="engagement_rate"
+                          type="number"
+                          step="0.01"
+                          value={newInfluencerData.engagement_rate}
+                          onChange={handleNewInfluencerChange}
+                          disabled={isLoading}
+                          placeholder="Taxa de engajamento"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="new-reference-value">Valor de Referência (R$)*</Label>
+                        <Input
+                          id="new-reference-value"
+                          name="reference_value"
+                          type="number"
+                          step="0.01"
+                          value={newInfluencerData.reference_value}
+                          onChange={handleNewInfluencerChange}
+                          disabled={isLoading}
+                          required
+                          placeholder="Valor de referência diário"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="new-description">Descrição</Label>
+                      <Textarea
+                        id="new-description"
+                        name="description"
+                        value={newInfluencerData.description}
+                        onChange={handleNewInfluencerChange}
+                        disabled={isLoading}
+                        rows={2}
+                        placeholder="Descrição do influenciador"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="fee">Valor Diário (R$)</Label>
+              <Input
+                id="fee"
+                name="fee"
+                type="number"
+                step="0.01"
+                min="0"
+                value={formData.fee}
+                onChange={handleChange}
+                disabled={isLoading}
+                placeholder="Ex: 1000.00"
+              />
             </div>
-
-            {/* Coluna principal - 2/3 da largura */}
-            <div className="md:col-span-2 space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="influencer_id">Influenciador</Label>
-                <Select
-                  value={formData.influencer_id}
-                  onValueChange={(value) => handleSelectChange("influencer_id", value)}
-                  disabled={isLoading}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um influenciador" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {influencers.map((influencer) => (
-                      <SelectItem key={influencer.id} value={influencer.id}>
-                        {influencer.name} - {formatCurrency(influencer.reference_value)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value) => handleSelectChange("status", value)}
-                    disabled={isLoading}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">Pendente</SelectItem>
-                      <SelectItem value="confirmed">Confirmado</SelectItem>
-                      <SelectItem value="canceled">Cancelado</SelectItem>
-                      <SelectItem value="completed">Concluído</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Observações</Label>
-                  <Textarea
-                    id="notes"
-                    name="notes"
-                    value={formData.notes}
-                    onChange={handleChange}
-                    disabled={isLoading}
-                    rows={3}
-                    placeholder="Informações adicionais sobre a participação no evento"
-                  />
-                </div>
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="days">Dias</Label>
+              <Input
+                id="days"
+                name="days"
+                type="number"
+                min="1"
+                value={formData.days}
+                onChange={handleChange}
+                disabled={isLoading}
+                placeholder="Quantidade de dias"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="total_fee">Valor Total (R$)</Label>
+              <Input
+                id="total_fee"
+                value={formData.total_fee}
+                disabled={true}
+                className="bg-gray-100"
+              />
             </div>
           </div>
 
-          {/* Seção de valores e cálculos - ocupa toda a largura */}
-          <div className="pt-6 border-t mt-6">
-            <h3 className="text-lg font-medium mb-4">Informações de Pagamento</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="fee">Valor da diária</Label>
-                <Input
-                  id="fee"
-                  name="fee"
-                  type="number"
-                  step="0.01"
-                  value={formData.fee}
-                  onChange={handleChange}
-                  disabled={isLoading}
-                  required
-                  className="text-lg"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="days">Dias</Label>
-                <Input
-                  id="days"
-                  name="days"
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={formData.days}
-                  onChange={handleChange}
-                  disabled={isLoading}
-                  required
-                  className="text-lg"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="total_fee">Valor Total</Label>
-                <Input
-                  id="total_fee"
-                  name="total_fee"
-                  type="number"
-                  step="0.01"
-                  value={formData.total_fee}
-                  onChange={handleChange}
-                  disabled={true}
-                  required
-                  className="text-lg font-bold"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end mt-6">
-            <Button type="submit" disabled={isLoading} className="w-1/3">
-              {isLoading ? (editingItem ? "Atualizando..." : "Adicionando...") : (editingItem ? "Atualizar Influenciador" : "Adicionar Influenciador")}
+          <div className="flex justify-end space-x-4">
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onSuccess} 
+              disabled={isLoading}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={isLoading} 
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {isLoading ? "Salvando..." : editingItem ? "Atualizar Influenciador" : "Adicionar Influenciador"}
             </Button>
           </div>
         </form>

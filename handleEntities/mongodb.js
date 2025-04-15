@@ -240,6 +240,7 @@ const eventInfluencerSchema = new mongoose.Schema({
     default: 'pending'
   },
   notes: String,
+  image_url: String,
   is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
@@ -256,6 +257,7 @@ const eventPromoterSchema = new mongoose.Schema({
     default: 'pending'
   },
   notes: String,
+  image_url: String,
   is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
