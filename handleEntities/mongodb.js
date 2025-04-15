@@ -199,14 +199,19 @@ const eventMaterialSchema = new mongoose.Schema({
 
 const eventSupplierSchema = new mongoose.Schema({
   event_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Event', required: true },
-  supplier_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier', required: true },
+  supplier_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier' },
+  name: { type: String, required: true },
+  supplier_type: { type: String, default: "other" },
+  contact_person: String,
+  contact_phone: String,
+  service_description: String,
+  cost: { type: Number, default: 0 },
   status: { 
     type: String, 
-    enum: ['pending', 'contacted', 'confirmed', 'cancelled'],
-    default: 'pending'
+    enum: ['requested', 'contacted', 'confirmed', 'cancelled'],
+    default: 'requested'
   },
   notes: String,
-  price: Number,
   is_active: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
@@ -288,6 +293,12 @@ const defaultMaterialSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+const defaultSupplierSchema = new mongoose.Schema({
+  event_type_id: { type: mongoose.Schema.Types.ObjectId, ref: 'EventType', required: true },
+  supplier_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier', required: true },
+  is_active: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now }
+});
 
 const taskCategorySchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -367,6 +378,7 @@ const models = {
   'supplier-categories': mongoose.model('SupplierCategory', supplierCategorySchema),
   'default-tasks': mongoose.model('DefaultTask', defaultTaskSchema),
   'default-materials': mongoose.model('DefaultMaterial', defaultMaterialSchema),
+  'default-suppliers': mongoose.model('DefaultSupplier', defaultSupplierSchema),
   'teammembers': mongoose.model('TeamMember', teamMemberSchema, 'teammembers')
 };
 

@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import EventSupplierForm from "./EventSupplierForm";
 
-export default function EventSuppliersTab({ eventId, eventTypeId }) {
+export default function EventSuppliersTab({ eventId, eventTypeId, onSuccess }) {
   console.log('EventSuppliersTab - Props recebidas:', { eventId, eventTypeId });
   
   const [suppliers, setSuppliers] = useState([]);
@@ -113,6 +113,7 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
       
       setShowForm(false);
       await loadSuppliers();
+      if (onSuccess) onSuccess();
     } catch (error) {
       console.error("Erro ao criar fornecedor:", error);
     }
@@ -144,6 +145,7 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
       setShowForm(false);
       setEditingSupplier(null);
       await loadSuppliers();
+      if (onSuccess) onSuccess();
     } catch (error) {
       console.error("Erro ao atualizar fornecedor:", error);
     }
@@ -153,6 +155,7 @@ export default function EventSuppliersTab({ eventId, eventTypeId }) {
     try {
       await EventSupplier.delete(id);
       loadSuppliers();
+      if (onSuccess) onSuccess();
     } catch (error) {
       console.error("Erro ao deletar fornecedor:", error);
     }

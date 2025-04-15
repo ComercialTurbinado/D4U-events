@@ -116,6 +116,13 @@ export default function EventDetailsPage() {
         return sum + (parseFloat(material.total_cost) || 0);
       }, 0);
       
+      // Somar custos dos fornecedores
+      const suppliers = await EventSupplier.list();
+      const eventSuppliers = suppliers.filter(supplier => supplier.event_id === id);
+      const suppliersCost = eventSuppliers.reduce((sum, supplier) => {
+        return sum + (parseFloat(supplier.cost) || 0);
+      }, 0);
+      
       // Somar custos dos influenciadores
       const influencers = await fetch(
         `${import.meta.env.VITE_API_URL || "https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod"}/entities/event-influencer?event_id=${id}`,
@@ -155,8 +162,8 @@ export default function EventDetailsPage() {
       }
       
       // Calcular total
-      total = materialsCost + influencersCost + promotersCost;
-      console.log(`Custo total do evento: ${total} (Materiais: ${materialsCost}, Influenciadores: ${influencersCost}, Promoters: ${promotersCost})`);
+      total = materialsCost + suppliersCost + influencersCost + promotersCost;
+      console.log(`Custo total do evento: ${total} (Materiais: ${materialsCost}, Fornecedores: ${suppliersCost}, Influenciadores: ${influencersCost}, Promoters: ${promotersCost})`);
       
       setTotalCost(total);
     } catch (error) {
@@ -271,21 +278,39 @@ export default function EventDetailsPage() {
         <Card>
            
           <CardContent className="pb-6 pt-6">
-            <div className="grid grid-cols-3  gap-1">
-              <div className="grid grid-cols-1 justify-between">
-                <span>Orçamento:</span>
-                <span className="font-medium">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(event.budget || 0)}</span>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-3 gap-1">
+                <div className="grid grid-cols-1 justify-between">
+                  <span className="text-sm font-medium text-gray-500">Orçamento:</span>
+                  <span className="font-medium text-lg">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(event.budget || 0)}</span>
+                </div>
+                <div className="grid grid-cols-1 justify-between">
+                  <span className="text-sm font-medium text-gray-500">Custo Atual:</span>
+                  <span className="font-medium text-lg">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalCost || 0)}</span>
+                </div>
+                <div className="grid grid-cols-1 justify-between">
+                  <span className="text-sm font-medium text-gray-500">Saldo:</span>
+                  <span className={`font-medium text-lg ${((event.budget || 0) - totalCost) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((event.budget || 0) - totalCost)}
+                  </span>
+                </div>
               </div>
-              <div className="grid grid-cols-1 justify-between">
-                <span>Custo Atual:</span>
-                <span className="font-medium">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalCost || 0)}</span>
-              </div>
-              <div className="grid grid-cols-1 justify-between">
-                <span>Saldo:</span>
-                <span className={`font-medium ${((event.budget || 0) - totalCost) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((event.budget || 0) - totalCost)}
-                </span>
-              </div>
+              
+              {event.budget > 0 && (
+                <div>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm font-medium">Orçamento utilizado</span>
+                    <span className="text-sm font-medium">
+                      {Math.min(100, Math.round((totalCost / event.budget) * 100))}%
+                    </span>
+                  </div>
+                  <Progress 
+                    value={Math.min(100, (totalCost / event.budget) * 100)} 
+                    className="h-2" 
+                    indicatorClassName={totalCost <= event.budget ? 'bg-green-500' : 'bg-red-500'}
+                  />
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -383,7 +408,7 @@ export default function EventDetailsPage() {
           </TabsContent>
           
           <TabsContent value="suppliers">
-            <EventSuppliersTab eventId={id} eventTypeId={event?.event_type_id} />
+            <EventSuppliersTab eventId={id} eventTypeId={event?.event_type_id} onSuccess={refreshEventData} />
           </TabsContent>
           
           <TabsContent value="notes">
