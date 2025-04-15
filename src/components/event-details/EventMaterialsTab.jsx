@@ -156,6 +156,53 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
       
       await EventMaterial.create(newMaterial);
       setShowForm(false);
+      
+      // Atualizar orçamento do evento se houver custo
+      if (parseFloat(newMaterial.total_cost) > 0) {
+        try {
+          // Obter os dados atuais do evento
+          const eventResponse = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/events/${eventId}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+          
+          if (eventResponse.ok) {
+            const eventData = await eventResponse.json();
+            
+            // Calcular novo orçamento
+            const oldBudget = parseFloat(eventData.budget) || 0;
+            const materialCost = parseFloat(newMaterial.total_cost) || 0;
+            const newBudget = oldBudget + materialCost;
+            
+            console.log(`Atualizando orçamento: ${oldBudget} + ${materialCost} = ${newBudget}`);
+            
+            // Atualizar o orçamento do evento
+            const eventUpdateResponse = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/events/${eventId}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              },
+              body: JSON.stringify({
+                ...eventData,
+                budget: newBudget
+              })
+            });
+            
+            if (!eventUpdateResponse.ok) {
+              console.error("Erro ao atualizar orçamento do evento");
+            } else {
+              console.log("Orçamento atualizado com sucesso!");
+            }
+          }
+        } catch (budgetError) {
+          console.error("Erro ao atualizar orçamento:", budgetError);
+        }
+      }
+      
       await loadMaterials();
     } catch (error) {
       console.error("Erro ao criar material:", error);
@@ -197,6 +244,56 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
           console.error("Erro ao atualizar o estoque no formulário:", error);
         }
       }
+      
+      // Atualizar o orçamento do evento com a diferença de custo
+      try {
+        // Obter os dados atuais do evento
+        const eventResponse = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/events/${eventId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (eventResponse.ok) {
+          const eventData = await eventResponse.json();
+          
+          // Calcular diferença de custo
+          const oldCost = parseFloat(existingMaterial.total_cost) || 0;
+          const newCost = parseFloat(updatedMaterial.total_cost) || 0;
+          const costDiff = newCost - oldCost;
+          
+          if (costDiff !== 0) {
+            // Calcular novo orçamento
+            const oldBudget = parseFloat(eventData.budget) || 0;
+            const newBudget = oldBudget + costDiff;
+            
+            console.log(`Atualizando orçamento: ${oldBudget} + (${newCost} - ${oldCost}) = ${newBudget}`);
+            
+            // Atualizar o orçamento do evento
+            const eventUpdateResponse = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/events/${eventId}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              },
+              body: JSON.stringify({
+                ...eventData,
+                budget: newBudget
+              })
+            });
+            
+            if (!eventUpdateResponse.ok) {
+              console.error("Erro ao atualizar orçamento do evento");
+            } else {
+              console.log("Orçamento atualizado com sucesso!");
+            }
+          }
+        }
+      } catch (budgetError) {
+        console.error("Erro ao atualizar orçamento:", budgetError);
+      }
   
       setShowForm(false);
       setEditingMaterial(null);
@@ -207,8 +304,61 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
   };
 
   const handleDeleteMaterial = async (id) => {
-    await EventMaterial.delete(id);
-    loadMaterials();
+    try {
+      const material = materials.find(m => m.id === id);
+      if (!material) return;
+
+      // Remover o material
+      await EventMaterial.delete(id);
+      
+      // Atualizar o orçamento do evento
+      try {
+        // Obter os dados atuais do evento
+        const eventResponse = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/events/${eventId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (eventResponse.ok) {
+          const eventData = await eventResponse.json();
+          
+          // Calcular novo orçamento
+          const oldBudget = parseFloat(eventData.budget) || 0;
+          const materialCost = parseFloat(material.total_cost) || 0;
+          const newBudget = Math.max(0, oldBudget - materialCost); // Garantir que não fique negativo
+          
+          console.log(`Atualizando orçamento: ${oldBudget} - ${materialCost} = ${newBudget}`);
+          
+          // Atualizar o orçamento do evento
+          const eventUpdateResponse = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/events/${eventId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+              ...eventData,
+              budget: newBudget
+            })
+          });
+          
+          if (!eventUpdateResponse.ok) {
+            console.error("Erro ao atualizar orçamento do evento");
+          } else {
+            console.log("Orçamento atualizado com sucesso!");
+          }
+        }
+      } catch (budgetError) {
+        console.error("Erro ao atualizar orçamento:", budgetError);
+      }
+      
+      await loadMaterials();
+    } catch (error) {
+      console.error("Erro ao excluir material:", error);
+    }
   };
 
   const handleEdit = (material) => {
@@ -392,10 +542,60 @@ export default function EventMaterialsTab({ eventId, eventTypeId }) {
         quantity
       });
       
+      // Calcular diferença de custo para atualizar o orçamento
+      const oldCost = parseFloat(material.total_cost) || 0;
+      const newCost = parseFloat(totalCost) || 0;
+      const costDiff = newCost - oldCost;
+      
       const updatedMaterial = await EventMaterial.update(id, {
         unit_cost: unitCost,
         total_cost: totalCost
       });
+      
+      // Atualizar o orçamento do evento se houver mudança no custo
+      if (costDiff !== 0) {
+        try {
+          // Obter os dados atuais do evento
+          const eventResponse = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/events/${eventId}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+          
+          if (eventResponse.ok) {
+            const eventData = await eventResponse.json();
+            
+            // Calcular novo orçamento
+            const oldBudget = parseFloat(eventData.budget) || 0;
+            const newBudget = oldBudget + costDiff;
+            
+            console.log(`Atualizando orçamento: ${oldBudget} + (${newCost} - ${oldCost}) = ${newBudget}`);
+            
+            // Atualizar o orçamento do evento
+            const eventUpdateResponse = await fetch(`${import.meta.env.VITE_API_URL || 'https://ugx0zohehd.execute-api.us-east-1.amazonaws.com/v1-prod'}/entities/events/${eventId}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              },
+              body: JSON.stringify({
+                ...eventData,
+                budget: newBudget
+              })
+            });
+            
+            if (!eventUpdateResponse.ok) {
+              console.error("Erro ao atualizar orçamento do evento");
+            } else {
+              console.log("Orçamento atualizado com sucesso!");
+            }
+          }
+        } catch (budgetError) {
+          console.error("Erro ao atualizar orçamento:", budgetError);
+        }
+      }
       
       console.log('Material atualizado após salvar custo:', updatedMaterial);
       await loadMaterials();
